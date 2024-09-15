@@ -13,6 +13,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "constants.hpp"
+
 using namespace glm;
 using namespace std;
 
@@ -71,6 +73,7 @@ void A1::init()
 	col_uni = m_shader.getUniformLocation( "colour" );
 
 	initGrid();
+	initAvatar();
 
 	// Set up initial view and projection matrices (need to do this here,
 	// since it depends on the GLFW window being set up correctly).
@@ -132,6 +135,33 @@ void A1::initGrid()
 
 	// OpenGL has the buffer now, there's no need for us to keep a copy.
 	delete [] verts;
+
+	CHECK_GL_ERRORS;
+}
+
+void A1::initAvatar()
+{
+	// TODO for now, avatar is a cube. Set as sphere later.
+	// Record buffer assignments in the vertex array
+	glGenVertexArrays(1, &m_avatar_vao);
+	glBindVertexArray(m_avatar_vao);
+
+	// creating the vertex buffer
+	glGenBuffers(1, &m_avatar_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, m_avatar_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(c_unitCubeVertices), c_unitCubeVertices.data(), GL_DYNAMIC_DRAW);
+	m_avatar_count = c_unitCubeVertices.size();
+
+	// Specify the means of extracting the position values properly.
+	GLint posAttrib = m_shader.getAttribLocation( "position" );
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	// Reset state to prevent rogue code from messing with *my*
+	// stuff!
+	glBindVertexArray( 0 );
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
 	CHECK_GL_ERRORS;
 }
@@ -225,8 +255,14 @@ void A1::draw()
 		glUniform3f( col_uni, 1, 1, 1 );
 		glDrawArrays( GL_LINES, 0, (3+DIM)*4 );
 
+		// Draw the avatar
+		glBindVertexArray(m_avatar_vao);
+		glUniform3f( col_uni, 1, 0, 0 );
+		glDrawArrays(GL_TRIANGLES, 0, m_avatar_count);
+
 		// Draw the cubes
 		// Highlight the active square.
+
 	m_shader.disable();
 
 	// Restore defaults

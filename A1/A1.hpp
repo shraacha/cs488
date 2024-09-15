@@ -31,6 +31,8 @@ protected:
 
 private:
 	void initGrid();
+	void initWalls();
+	void initAvatar();
 
 	// Fields related to the shader and uniforms.
 	ShaderProgram m_shader;
@@ -42,6 +44,12 @@ private:
 	// Fields related to grid geometry.
 	GLuint m_grid_vao; // Vertex Array Object
 	GLuint m_grid_vbo; // Vertex Buffer Object
+
+	// Fields related to the avatar geometry
+	GLuint m_avatar_vao; // Vertex Array Object
+	GLuint m_avatar_vbo; // Vertex Buffer Object
+	size_t m_avatar_count; // # of indices
+
 
 	// Matrices controlling the camera and projection.
 	glm::mat4 proj;
