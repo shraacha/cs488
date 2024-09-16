@@ -150,7 +150,12 @@ void A1::initAvatar()
 	glGenBuffers(1, &m_avatar_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, m_avatar_vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(c_unitCubeVertices), c_unitCubeVertices.data(), GL_DYNAMIC_DRAW);
-	m_avatar_count = c_unitCubeVertices.size();
+
+	// creating the element buffer
+	glGenBuffers(1, &m_avatar_ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_avatar_ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(c_unitCubeIndices), c_unitCubeIndices.data(), GL_DYNAMIC_DRAW);
+	m_avatar_count =  c_unitCubeIndices.size();
 
 	// Specify the means of extracting the position values properly.
 	GLint posAttrib = m_shader.getAttribLocation( "position" );
@@ -258,7 +263,7 @@ void A1::draw()
 		// Draw the avatar
 		glBindVertexArray(m_avatar_vao);
 		glUniform3f( col_uni, 1, 0, 0 );
-		glDrawArrays(GL_TRIANGLES, 0, m_avatar_count);
+		glDrawElements(GL_TRIANGLES, m_avatar_count, GL_UNSIGNED_INT, 0);
 
 		// Draw the cubes
 		// Highlight the active square.

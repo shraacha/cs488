@@ -48,6 +48,7 @@ private:
 	// Fields related to the avatar geometry
 	GLuint m_avatar_vao; // Vertex Array Object
 	GLuint m_avatar_vbo; // Vertex Buffer Object
+	GLuint m_avatar_ebo; // Element Buffer Object
 	size_t m_avatar_count; // # of indices
 
 
