@@ -34,6 +34,8 @@ private:
 	void initWalls();
 	void initAvatar();
 
+	Maze m_maze;
+
 	// Fields related to the shader and uniforms.
 	ShaderProgram m_shader;
 	GLint P_uni; // Uniform location for Projection matrix.
@@ -45,17 +47,26 @@ private:
 	GLuint m_grid_vao; // Vertex Array Object
 	GLuint m_grid_vbo; // Vertex Buffer Object
 
+	// Wall geometry
+	GLuint m_wall_vao; // Vertex Array Object
+	GLuint m_wall_vbo; // Vertex Buffer Object
+	GLuint m_wall_ebo; // Element Buffer Object
+	size_t m_wallBlockCount; // # of indices
+
 	// Fields related to the avatar geometry
 	GLuint m_avatar_vao; // Vertex Array Object
 	GLuint m_avatar_vbo; // Vertex Buffer Object
 	GLuint m_avatar_ebo; // Element Buffer Object
-	size_t m_avatar_count; // # of indices
-
+	size_t m_avatarCount; // # of indices
 
 	// Matrices controlling the camera and projection.
 	glm::mat4 proj;
 	glm::mat4 view;
 
-	float colour[3];
+	float groundColour[3];
+	float wallColour[3];
+	float avatarColour[3];
+
+	float colourFromGUI[3];
 	int current_col;
 };
