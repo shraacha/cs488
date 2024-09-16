@@ -23,11 +23,14 @@ static const size_t DIM = 16;
 //----------------------------------------------------------------------------------------
 // Constructor
 A1::A1()
-	: current_col( 0 ), m_maze(DIM)
+	: current_col( 0 ),
+	  m_maze(DIM),
+	  colourFromGUI(c_defaultGroundColour),
+	  m_groundColour(c_defaultGroundColour),
+	  m_wallColour(c_defaultWallColour),
+	  m_avatarColour(c_defaultAvatarColour),
+	  m_wallHeightScale(2.0f)
 {
-	colour[0] = 0.0f;
-	colour[1] = 0.0f;
-	colour[2] = 0.0f;
 }
 
 //----------------------------------------------------------------------------------------
@@ -202,6 +205,25 @@ void A1::initWalls() {
 
 	CHECK_GL_ERRORS;
 }
+// helpers
+
+void A1::setEntityColour(int entity, const std::array<float, 3> & colour) {
+	switch (entity) {
+		case 0:
+			m_groundColour = colour;
+			break;
+		case 1:
+			m_wallColour = colour;
+			break;
+		case 2:
+			m_avatarColour = colour;
+			break;
+	}
+}
+
+inline glm::vec3 A1::getWallScaleVec() {
+	return glm::vec3(1, m_wallHeightScale, 1);
+}
 
 //----------------------------------------------------------------------------------------
 /*
@@ -243,44 +265,23 @@ void A1::guiLogic()
 		// Prefixing a widget name with "##" keeps it from being
 		// displayed.
 
+		// Colour picker
 		ImGui::PushID( 0 );
 		ImGui::Text("Set Colours:");
 		ImGui::SameLine();
-		if( ImGui::RadioButton( "Ground", &current_col, 0 ) ) {
-			colour[0] = groundColour[0];
-			colour[1] = groundColour[1];
-			colour[2] = groundColour[2];
+		if ( ImGui::RadioButton( "Ground", &current_col, 0 ) ) {
+			colourFromGUI = m_groundColour;
 		}
 		ImGui::SameLine();
-		if( ImGui::RadioButton( "Wall", &current_col, 1 ) ) {
-			colour[0] = wallColour[0];
-			colour[1] = wallColour[1];
-			colour[2] = wallColour[2];
+		if (ImGui::RadioButton( "Wall", &current_col, 1 ) ) {
+			colourFromGUI = m_wallColour;
 		}
 		ImGui::SameLine();
-		if( ImGui::RadioButton( "Avatar", &current_col, 2 ) ) {
-			colour[0] = avatarColour[0];
-			colour[1] = avatarColour[1];
-			colour[2] = avatarColour[2];
+		if (ImGui::RadioButton( "Avatar", &current_col, 2 ) ) {
+			colourFromGUI = m_avatarColour;
 		}
-		ImGui::ColorEdit3( "##color", colourFromGUI );
-		switch(current_col) {
-			case 0:
-				groundColour[0] = colour[0];
-				groundColour[1] = colour[1];
-				groundColour[2] = colour[2];
-				break;
-			case 1:
-				wallColour[0] = colour[0];
-				wallColour[1] = colour[1];
-				wallColour[2] = colour[2];
-				break;
-			case 2:
-				avatarColour[0] = colour[0];
-				avatarColour[1] = colour[1];
-				avatarColour[2] = colour[2];
-				break;
-		}
+		ImGui::ColorEdit3( "##color", colourFromGUI.data() );
+		setEntityColour(current_col, colourFromGUI);
 		ImGui::PopID();
 
 /*
@@ -313,7 +314,7 @@ void A1::draw()
 	W = glm::translate( W, vec3( -float(DIM)/2.0f, 0, -float(DIM)/2.0f ) );
 
 	// Wall Transform matrix
-	mat4 wallTransform = W;
+	mat4 wallTransform = glm::scale(W, getWallScaleVec());
 
 	m_shader.enable();
 		glEnable( GL_DEPTH_TEST );
@@ -324,11 +325,11 @@ void A1::draw()
 
 		// drawing the grid
 		glBindVertexArray( m_grid_vao );
-		glUniform3f( col_uni, 1, 1, 1 ); // TODO add slider for this
+		glUniform3f( col_uni, 1, 1, 1 );
 		glDrawArrays( GL_LINES, 0, (3+DIM)*4 );
 
 		// draw the walls
-		glUniform3f( col_uni, 0, 1, 0 ); // TODO add slider for this
+		glUniform3f( col_uni, m_wallColour[0], m_wallColour[1], m_wallColour[2] );
 
 		for(int i = 0; i < DIM; i++) {
 			for(int j = 0; j < DIM; j++) {
@@ -342,7 +343,7 @@ void A1::draw()
 		}
 
 		// Draw the avatar
-		glUniform3f( col_uni, 1, 0, 0 ); // TODO add slider for this
+		glUniform3f( col_uni, m_avatarColour[0], m_avatarColour[1], m_avatarColour[2] );
 
 		glBindVertexArray(m_avatar_vao);
 		glDrawElements(GL_TRIANGLES, m_avatarCount, GL_UNSIGNED_INT, 0);

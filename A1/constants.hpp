@@ -2,6 +2,10 @@
 
 #include <array>
 
+const std::array<float, 3> c_defaultGroundColour = {0,  0, 1};
+const std::array<float, 3> c_defaultWallColour = {1,  0, 0};
+const std::array<float, 3> c_defaultAvatarColour = {0,  1, 0};
+
 const std::array<float, 24> c_unitCubeVertices = {
     0, 0, 0,
     0, 0, 1,

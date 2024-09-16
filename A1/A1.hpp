@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <array>
+
 #include <glm/glm.hpp>
 
 #include "cs488-framework/CS488Window.hpp"
@@ -34,6 +36,10 @@ private:
 	void initWalls();
 	void initAvatar();
 
+	// helpers
+	void setEntityColour(int entity, const std::array<float, 3> & colour);
+	glm::vec3 getWallScaleVec();
+
 	Maze m_maze;
 
 	// Fields related to the shader and uniforms.
@@ -63,10 +69,13 @@ private:
 	glm::mat4 proj;
 	glm::mat4 view;
 
-	float groundColour[3];
-	float wallColour[3];
-	float avatarColour[3];
-
-	float colourFromGUI[3];
+	// colours
+	std::array<float, 3> m_groundColour;
+	std::array<float, 3> m_wallColour;
+	std::array<float, 3> m_avatarColour;
+	std::array<float, 3> colourFromGUI;
 	int current_col;
+
+	// other
+	float m_wallHeightScale;
 };
