@@ -2,6 +2,11 @@
 
 #include <array>
 
+const int c_minWallHeight = 0;
+const int c_maxWallHeight = 10;
+const int c_defaultWallHeight = 1;
+const int c_wallHeightStepSize = 1;
+
 const std::array<float, 3> c_defaultGroundColour = {0,  0, 1};
 const std::array<float, 3> c_defaultWallColour = {1,  0, 0};
 const std::array<float, 3> c_defaultAvatarColour = {0,  1, 0};

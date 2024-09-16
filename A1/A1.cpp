@@ -29,7 +29,7 @@ A1::A1()
 	  m_groundColour(c_defaultGroundColour),
 	  m_wallColour(c_defaultWallColour),
 	  m_avatarColour(c_defaultAvatarColour),
-	  m_wallHeightScale(2.0f)
+	  m_wallHeight(c_defaultWallHeight)
 {
 }
 
@@ -205,6 +205,7 @@ void A1::initWalls() {
 
 	CHECK_GL_ERRORS;
 }
+//----------------------------------------------------------------------------------------
 // helpers
 
 void A1::setEntityColour(int entity, const std::array<float, 3> & colour) {
@@ -221,8 +222,16 @@ void A1::setEntityColour(int entity, const std::array<float, 3> & colour) {
 	}
 }
 
-inline glm::vec3 A1::getWallScaleVec() {
-	return glm::vec3(1, m_wallHeightScale, 1);
+glm::vec3 A1::getWallScaleVec() {
+	return glm::vec3(1.0f, float(m_wallHeight), 1.0f);
+}
+
+void A1::downsizeWalls() {
+	m_wallHeight = (m_wallHeight - c_wallHeightStepSize) <= c_minWallHeight ? c_minWallHeight : (m_wallHeight - c_wallHeightStepSize);
+}
+
+void A1::upsizeWalls() {
+	m_wallHeight = (m_wallHeight + c_wallHeightStepSize) >= c_maxWallHeight ? c_maxWallHeight : (m_wallHeight + c_wallHeightStepSize);
 }
 
 //----------------------------------------------------------------------------------------
@@ -252,9 +261,16 @@ void A1::guiLogic()
 	float opacity(0.5f);
 
 	ImGui::Begin("Debug Window", &showDebugWindow, ImVec2(100,100), opacity, windowFlags);
+
+	    // Quit (Q)
 		if( ImGui::Button( "Quit Application" ) ) {
 			glfwSetWindowShouldClose(m_window, GL_TRUE);
 		}
+
+		// Reset (R)
+
+		// Dig (D)
+
 
 		// Eventually you'll create multiple colour widgets with
 		// radio buttons.  If you use PushID/PopID to give them all
@@ -267,7 +283,7 @@ void A1::guiLogic()
 
 		// Colour picker
 		ImGui::PushID( 0 );
-		ImGui::Text("Set Colours:");
+		ImGui::Text("Set colour for:");
 		ImGui::SameLine();
 		if ( ImGui::RadioButton( "Ground", &current_col, 0 ) ) {
 			colourFromGUI = m_groundColour;
@@ -280,9 +296,21 @@ void A1::guiLogic()
 		if (ImGui::RadioButton( "Avatar", &current_col, 2 ) ) {
 			colourFromGUI = m_avatarColour;
 		}
+		ImGui::SameLine();
 		ImGui::ColorEdit3( "##color", colourFromGUI.data() );
 		setEntityColour(current_col, colourFromGUI);
 		ImGui::PopID();
+
+		// Scaling (scroll)
+
+		// Growing Bars (space/backspace)
+		ImGui::Text("Wall height: "); ImGui::SameLine();
+		ImGui::SliderInt("##Wall Height", &m_wallHeight, c_minWallHeight, c_maxWallHeight);
+
+	    // List other controls:
+		// - arrow keys to move
+		// - shift arrow keys to break walls
+		// - rotation
 
 /*
 		// For convenience, you can uncomment this to show ImGui's massive
@@ -448,7 +476,14 @@ bool A1::keyInputEvent(int key, int action, int mods) {
 	// Fill in with event handling code...
 	if( action == GLFW_PRESS ) {
 		// Respond to some key events.
-	}
 
+		// scaling walls
+		if (key == GLFW_KEY_SPACE) {
+			upsizeWalls();
+		}
+		if (key == GLFW_KEY_BACKSPACE) {
+			downsizeWalls();
+		}
+	}
 	return eventHandled;
 }

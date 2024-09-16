@@ -38,7 +38,9 @@ private:
 
 	// helpers
 	void setEntityColour(int entity, const std::array<float, 3> & colour);
-	glm::vec3 getWallScaleVec();
+	inline glm::vec3 getWallScaleVec();
+	void downsizeWalls();
+	void upsizeWalls();
 
 	Maze m_maze;
 
@@ -77,5 +79,5 @@ private:
 	int current_col;
 
 	// other
-	float m_wallHeightScale;
+	int m_wallHeight;
 };
