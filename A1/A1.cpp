@@ -3,6 +3,7 @@
 #include "A1.hpp"
 #include "cs488-framework/GlErrorCheck.hpp"
 
+#include <cmath>
 #include <iostream>
 
 #include <sys/types.h>
@@ -22,12 +23,29 @@ static const size_t DIM = 16;
 
 // Static helpers
 
-static glm::mat4 rotateMatrixYByTheta(const glm::mat4 & W, const float & theta) {
+static inline glm::mat4 rotateMatrixYByTheta(const glm::mat4 & W, const float & theta) {
 	return glm::rotate(W, theta, vec3(0.0f, 1.0f, 0.0f));
 }
 
-static float calculateRotationAngleFromDistance(const double & distance) {
+static inline float calculateRotationAngleFromDistance(const double & distance) {
 	return (float)(distance * c_distanceToAngleScale);
+}
+
+static inline glm::vec3 getDefaultCameraPos() {
+	return glm::vec3( 0.0f, 2.*float(DIM)*2.0*M_SQRT1_2, float(DIM)*2.0*M_SQRT1_2 );
+}
+
+static inline glm::vec3 getDefaultCameraTarget() {
+	return glm::vec3( 0.0f, 0.0f, 0.0f );
+}
+
+static inline glm::mat4 getViewMatrix(const glm::vec3 & camPosition, const glm::vec3 & camTarget) {
+	return glm::lookAt(camPosition, camTarget, glm::vec3( 0.0f, 1.0f, 0.0f ));
+}
+
+// moves pos distance * units towards target, returns new pos
+static inline glm::vec3 moveTowardsTarget(const glm::vec3 & position, const glm::vec3 & target, const float & distance) {
+	return position - glm::normalize(position - target) * distance;
 }
 
 //----------------------------------------------------------------------------------------
@@ -41,7 +59,9 @@ A1::A1()
 	  m_avatarColour(c_defaultAvatarColour),
 	  m_wallHeight(c_defaultWallHeight),
 	  m_worldTranslation(translateMatrixToModelCenter(glm::mat4())),
-	  m_worldRotation(glm::mat4())
+	  m_worldRotation(glm::mat4()),
+	  m_cameraPos(getDefaultCameraPos()),
+	  m_cameraTarget(getDefaultCameraTarget())
 {
 }
 
@@ -87,10 +107,7 @@ void A1::init()
 
 	// Set up initial view and projection matrices (need to do this here,
 	// since it depends on the GLFW window being set up correctly).
-	view = glm::lookAt( 
-		glm::vec3( 0.0f, 2.*float(DIM)*2.0*M_SQRT1_2, float(DIM)*2.0*M_SQRT1_2 ),
-		glm::vec3( 0.0f, 0.0f, 0.0f ),
-		glm::vec3( 0.0f, 1.0f, 0.0f ) );
+	view = getViewMatrix(m_cameraPos, m_cameraTarget);
 
 	proj = glm::perspective( 
 		glm::radians( 30.0f ),
@@ -334,6 +351,18 @@ void A1::moveAvatarUp() {
 	m_maze.movePlayerDown();
 }
 
+void A1::moveCameraIn() {
+	if (glm::length(m_cameraPos - m_cameraTarget - c_worldScaleStep) >= c_camMinDist) {
+		m_cameraPos = moveTowardsTarget(m_cameraPos, m_cameraTarget, c_worldScaleStep);
+	}
+}
+
+void A1::moveCameraOut() {
+	if (glm::length(m_cameraPos - m_cameraTarget + c_worldScaleStep) <= c_camMaxDist) {
+		m_cameraPos = moveTowardsTarget(m_cameraPos, m_cameraTarget, -c_worldScaleStep);
+	}
+}
+
 //----------------------------------------------------------------------------------------
 /*
  * Called once per frame, before guiLogic().
@@ -347,6 +376,7 @@ void A1::appLogic()
 
 	// update the world rotation based on mouse data
 	m_worldRotation = rotateMatrixYByTheta(m_worldRotation, calculateRotationAngleFromDistance(m_mouseXDiffWhenPressed));
+	view = getViewMatrix(m_cameraPos, m_cameraTarget);
 }
 
 //----------------------------------------------------------------------------------------
@@ -368,10 +398,13 @@ void A1::guiLogic()
 
 	ImGui::Begin("Debug Window", &showDebugWindow, ImVec2(100,100), opacity, windowFlags);
 
+
+		ImGui::Separator();
 	    // Quit (Q)
 		if( ImGui::Button( "Quit Application (Q)" ) ) {
 			glfwSetWindowShouldClose(m_window, GL_TRUE);
 		}
+		ImGui::SameLine();
 
 		// Reset (R) TODO
 		// if( ImGui::Button( "Reset (R)" ) ) {
@@ -383,6 +416,8 @@ void A1::guiLogic()
 			digMaze();
 		}
 
+		ImGui::Separator();
+		ImGui::Text( "Settings:");
 		// Eventually you'll create multiple colour widgets with
 		// radio buttons.  If you use PushID/PopID to give them all
 		// unique IDs, then ImGui will be able to keep them separate.
@@ -403,29 +438,32 @@ void A1::guiLogic()
 		setEntityColour(m_currentColEntity, colourFromGUI);
 		ImGui::PopID();
 
-		// Scaling (scroll) TODO
-
 		// Growing Bars (space/backspace)
 		ImGui::Text("Wall height: "); ImGui::SameLine();
 		ImGui::SliderInt("##Wall Height", &m_wallHeight, c_minWallHeight, c_maxWallHeight);
 
+		ImGui::Separator();
 	    // List other controls:
-		// - TODO arrow keys to move
+		ImGui::Text( "Controls:");
+		ImGui::Text( "- Use the arrow keys to move.");
+		ImGui::Text( "- Click with LMB and drag to rotate the maze.");
+		ImGui::Text( "- Release LMB while dragging to spin freely.");
+		ImGui::Text( "- Scroll up/down to scale the model up/down.");
+
 		// - TODO shift arrow keys to break walls
-		// - TODO rotation
 
 /*
 		// For convenience, you can uncomment this to show ImGui's massive
 		// demonstration window right in your application.  Very handy for
-		// browsing around to get the widget you want.  Then look in 
+		// browsing around to get the widget you want.  Then look in
 		// shared/imgui/imgui_demo.cpp to see how it's done.
 		if( ImGui::Button( "Test Window" ) ) {
 			showTestWindow = !showTestWindow;
 		}
 */
-
+		ImGui::Separator();
 		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
-		ImGui::Text( "X pos of start click %ff", m_mouseXDiffWhenPressed);
+		ImGui::Text( "Camera distance from target: %f units", glm::length(m_cameraPos - m_cameraTarget));
 
 	ImGui::End();
 
@@ -571,6 +609,11 @@ bool A1::mouseScrollEvent(double xOffSet, double yOffSet) {
 	bool eventHandled(false);
 
 	// Zoom in or out.
+	if (yOffSet < 0) {
+		moveCameraOut();
+	} else if (yOffSet > 0) {
+		moveCameraIn();
+	}
 
 	return eventHandled;
 }

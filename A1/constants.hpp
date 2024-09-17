@@ -13,6 +13,10 @@ const std::array<float, 3> c_defaultWallColour = {140/255.0, 186/255.0, 128/255.
 const std::array<float, 3> c_defaultAvatarColour = {148/255.0, 132/255.0, 155/255.0};
 const std::array<float, 3> c_blackColour = {0,  0, 0};
 
+const float c_worldScaleStep = 1;
+const float c_camMinDist = 15;
+const float c_camMaxDist = 150;
+
 const std::array<float, 24> c_unitCubeVertices = {
     0, 0, 0,
     0, 0, 1,

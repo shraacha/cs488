@@ -58,6 +58,8 @@ private:
 	inline void moveAvatarDown();
 	inline void moveAvatarUp();
 
+	inline void moveCameraIn();
+	inline void moveCameraOut();
 
 	Maze m_maze;
 
@@ -94,6 +96,9 @@ private:
 	glm::mat4 view;
 	glm::mat4 m_worldTranslation; // matrix for world translation
 	glm::mat4 m_worldRotation;
+
+	glm::vec3 m_cameraPos;
+	glm::vec3 m_cameraTarget;
 
 	// rotation data
 	double m_mouseXPrevPos;
