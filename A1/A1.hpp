@@ -38,6 +38,8 @@ private:
 	void initFloor();
 
 	// helpers
+	void updateMouseData();
+
 	inline void setEntityColour(const int & entity, const std::array<float, 3> & colour);
 	inline std::array<float, 3> getEntityColour(const int & entity) const;
 	inline bool getWallState(const int & x, const int & z) const;
@@ -45,7 +47,7 @@ private:
 	inline glm::vec3 getFloorScaleVec() const;
 	inline glm::vec3 getAvatarPosition() const;
 	inline glm::mat4 translateMatrixToModelCenter(const glm::mat4 & W) const;
-	inline glm::mat4 rotateMatrixZByTheta(const glm::mat4 & W, const float & theta) const;
+
 	void downsizeWalls();
 	void upsizeWalls();
 	inline void digMaze();
@@ -55,6 +57,7 @@ private:
 	inline void moveAvatarLeft();
 	inline void moveAvatarDown();
 	inline void moveAvatarUp();
+
 
 	Maze m_maze;
 
@@ -89,7 +92,13 @@ private:
 	// Matrices controlling the camera and projection.
 	glm::mat4 proj;
 	glm::mat4 view;
-	glm::mat4 m_worldTransformation; // matrix for world transformation
+	glm::mat4 m_worldTranslation; // matrix for world translation
+	glm::mat4 m_worldRotation;
+
+	// rotation data
+	double m_mouseXPrevPos;
+	bool m_mouseLeftPressed;
+	double m_mouseXDiffWhenPressed;
 
 	// colours
 	std::array<float, 3> m_floorColour;

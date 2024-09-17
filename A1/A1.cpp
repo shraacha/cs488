@@ -20,6 +20,16 @@ using namespace std;
 
 static const size_t DIM = 16;
 
+// Static helpers
+
+static glm::mat4 rotateMatrixYByTheta(const glm::mat4 & W, const float & theta) {
+	return glm::rotate(W, theta, vec3(0.0f, 1.0f, 0.0f));
+}
+
+static float calculateRotationAngleFromDistance(const double & distance) {
+	return (float)(distance * c_distanceToAngleScale);
+}
+
 //----------------------------------------------------------------------------------------
 // Constructor
 A1::A1()
@@ -29,9 +39,10 @@ A1::A1()
 	  m_floorColour(c_defaultFloorColour),
 	  m_wallColour(c_defaultWallColour),
 	  m_avatarColour(c_defaultAvatarColour),
-	  m_wallHeight(c_defaultWallHeight)
+	  m_wallHeight(c_defaultWallHeight),
+	  m_worldTranslation(translateMatrixToModelCenter(glm::mat4())),
+	  m_worldRotation(glm::mat4())
 {
-	m_worldTransformation = translateMatrixToModelCenter(m_worldTransformation);
 }
 
 //----------------------------------------------------------------------------------------
@@ -228,7 +239,17 @@ void A1::initFloor() {
 
 //----------------------------------------------------------------------------------------
 // helpers
+void A1::updateMouseData() {
+	if (!ImGui::IsMouseHoveringAnyWindow()) {
+		double xPos, yPos;
+		glfwGetCursorPos( m_window, &xPos, &yPos );
+		if(m_mouseLeftPressed) {
+			m_mouseXDiffWhenPressed = xPos - m_mouseXPrevPos;
+		}
 
+		m_mouseXPrevPos = xPos;
+	}
+}
 
 void A1::setEntityColour(const int &entity, const std::array<float, 3> &colour) {
 	switch (entity) {
@@ -281,10 +302,6 @@ glm::mat4 A1::translateMatrixToModelCenter(const glm::mat4 & W) const {
 	return glm::translate( W, vec3( -float(DIM)/2.0f, 0, -float(DIM)/2.0f ) );
 }
 
-glm::mat4 A1::rotateMatrixZByTheta(const glm::mat4 & W, const float & theta) const {
-	return glm::rotate(W, theta, vec3(0.0f, 0.0f, 1.0f));
-}
-
 void A1::downsizeWalls() {
 	m_wallHeight = (m_wallHeight - c_wallHeightStepSize) <= c_minWallHeight ? c_minWallHeight : (m_wallHeight - c_wallHeightStepSize);
 }
@@ -324,6 +341,12 @@ void A1::moveAvatarUp() {
 void A1::appLogic()
 {
 	// Place per frame, application logic here ...
+
+	// updating mouse data
+	updateMouseData();
+
+	// update the world rotation based on mouse data
+	m_worldRotation = rotateMatrixYByTheta(m_worldRotation, calculateRotationAngleFromDistance(m_mouseXDiffWhenPressed));
 }
 
 //----------------------------------------------------------------------------------------
@@ -402,6 +425,7 @@ void A1::guiLogic()
 */
 
 		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
+		ImGui::Text( "X pos of start click %ff", m_mouseXDiffWhenPressed);
 
 	ImGui::End();
 
@@ -416,39 +440,40 @@ void A1::guiLogic()
  */
 void A1::draw()
 {
-	// Wall Transform matrix
-	mat4 wallTransform = glm::scale(m_worldTransformation, getWallScaleVec());
-
-	// Floor Transform matrix
-	mat4 floorTransform = glm::scale(m_worldTransformation, getFloorScaleVec());
-
-	mat4 avatarTransform;
 	m_shader.enable();
 		glEnable( GL_DEPTH_TEST );
 
 		glUniformMatrix4fv( P_uni, 1, GL_FALSE, value_ptr( proj ) );
 		glUniformMatrix4fv( V_uni, 1, GL_FALSE, value_ptr( view ) );
-		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( m_worldTransformation ) );
 
 		// Draw the grid
 		glBindVertexArray( m_grid_vao );
+	    mat4 gridTransform = m_worldRotation * m_worldTranslation;
+		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( gridTransform ) );
 		glUniform3f( col_uni, 1, 1, 1 );
 		glDrawArrays( GL_LINES, 0, (3+DIM)*4 );
 
 		// Draw the floor
+	    // Floor Transform matrix
+	    mat4 floorTransform = glm::scale(m_worldTranslation, getFloorScaleVec());
 		glUniform3f( col_uni, m_floorColour[0], m_floorColour[1], m_floorColour[2] );
+		floorTransform = m_worldRotation * floorTransform;
 		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( floorTransform ) );
 		glBindVertexArray(m_floor_vao);
 		glDrawArrays(GL_TRIANGLES, 0, m_floorCount);
 
 		// Draw the walls
+	    // Wall Transform matrix
+	    mat4 wallTransform = glm::scale(m_worldTranslation, getWallScaleVec());
+	    mat4 individualWallTransform;
 		glUniform3f( col_uni, m_wallColour[0], m_wallColour[1], m_wallColour[2] );
 
 		for(int i = 0; i < DIM; i++) {
 			for(int j = 0; j < DIM; j++) {
 				if (getWallState(j, i) == 1) {
-					mat4 wallTranslate = glm::translate(wallTransform, vec3(float(j), 0, float(i))); // translate the wall to the right position
-					glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( wallTranslate ) );
+					mat4 individualWallTranslate = glm::translate(glm::mat4(), vec3(float(j), 0, float(i))); // translate the wall to the right position
+					individualWallTransform = m_worldRotation * individualWallTranslate * wallTransform;
+					glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( individualWallTransform ) );
 					glBindVertexArray(m_wall_vao);
 					glDrawElements(GL_TRIANGLES, m_wallBlockCount, GL_UNSIGNED_INT, 0);
 				}
@@ -456,7 +481,8 @@ void A1::draw()
 		}
 
 		// Draw the avatar
-		avatarTransform = glm::translate(m_worldTransformation, getAvatarPosition()); // TODO update on avatar position change for efficiency
+		mat4 avatarTranslate = glm::translate(glm::mat4(), getAvatarPosition()); // TODO update on avatar position change for efficiency
+		mat4 avatarTransform = m_worldRotation * avatarTranslate * m_worldTranslation;
 		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( avatarTransform ) );
 		glUniform3f( col_uni, m_avatarColour[0], m_avatarColour[1], m_avatarColour[2] );
 
@@ -464,7 +490,7 @@ void A1::draw()
 		glDrawElements(GL_TRIANGLES, m_avatarCount, GL_UNSIGNED_INT, 0);
 
 
-		// Highlight the active square.
+		// Highlight the active square. TODO
 
 	m_shader.disable();
 
@@ -524,6 +550,14 @@ bool A1::mouseButtonInputEvent(int button, int actions, int mods) {
 	if (!ImGui::IsMouseHoveringAnyWindow()) {
 		// The user clicked in the window.  If it's the left
 		// mouse button, initiate a rotation.
+
+		if (button == GLFW_MOUSE_BUTTON_LEFT && actions == GLFW_PRESS) {
+			m_mouseLeftPressed = true;
+		}
+
+		if (button == GLFW_MOUSE_BUTTON_LEFT && actions == GLFW_RELEASE) {
+			m_mouseLeftPressed = false;
+		}
 	}
 
 	return eventHandled;
@@ -549,6 +583,12 @@ bool A1::windowResizeEvent(int width, int height) {
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+
+	// re-calculate the proj matrix due to window resize
+	proj = glm::perspective(
+		glm::radians( 30.0f ),
+		float( m_framebufferWidth ) / float( m_framebufferHeight ),
+		1.0f, 1000.0f );
 
 	return eventHandled;
 }
@@ -594,7 +634,6 @@ bool A1::keyInputEvent(int key, int action, int mods) {
 		if (key == GLFW_KEY_UP) {
 			moveAvatarUp();
 		}
-
 	}
 	return eventHandled;
 }
