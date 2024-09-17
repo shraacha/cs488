@@ -46,9 +46,9 @@ const std::array<unsigned int, 36> c_unitCubeIndices = {
 
 const std::array<float, 24> c_unitSquareVertices = {
     0, 0, 1,
+    1, 0, 0,
     0, 0, 0,
-    1, 0, 0,
-    1, 0, 0,
+    0, 0, 1,
     1, 0, 1,
-    0, 0, 1
+    1, 0, 0
 };
