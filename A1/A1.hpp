@@ -38,11 +38,14 @@ private:
 	void initFloor();
 
 	// helpers
-	void setEntityColour(int entity, const std::array<float, 3> & colour);
+	inline void setEntityColour(const int & entity, const std::array<float, 3> & colour);
+	inline std::array<float, 3> getEntityColour(const int & entity) const;
 	inline bool getWallState(const int & x, const int & z) const;
 	inline glm::vec3 getWallScaleVec() const;
 	inline glm::vec3 getFloorScaleVec() const;
 	inline glm::vec3 getAvatarPosition() const;
+	inline glm::mat4 translateMatrixToModelCenter(const glm::mat4 & W) const;
+	inline glm::mat4 rotateMatrixZByTheta(const glm::mat4 & W, const float & theta) const;
 	void downsizeWalls();
 	void upsizeWalls();
 	inline void digMaze();
@@ -66,13 +69,13 @@ private:
 	GLuint m_grid_vao; // Vertex Array Object
 	GLuint m_grid_vbo; // Vertex Buffer Object
 
-	// Wall geometry
+	// Fields related to the wall geometry
 	GLuint m_wall_vao; // Vertex Array Object
 	GLuint m_wall_vbo; // Vertex Buffer Object
 	GLuint m_wall_ebo; // Element Buffer Object
 	size_t m_wallBlockCount; // # of indices
 
-	// floor geometry
+	// Fields related to the floor geometry
 	GLuint m_floor_vao;
 	GLuint m_floor_vbo;
 	size_t m_floorCount;
@@ -86,13 +89,14 @@ private:
 	// Matrices controlling the camera and projection.
 	glm::mat4 proj;
 	glm::mat4 view;
+	glm::mat4 m_worldTransformation; // matrix for world transformation
 
 	// colours
 	std::array<float, 3> m_floorColour;
 	std::array<float, 3> m_wallColour;
 	std::array<float, 3> m_avatarColour;
 	std::array<float, 3> colourFromGUI;
-	int current_col;
+	int m_currentColEntity;
 
 	// other
 	int m_wallHeight;

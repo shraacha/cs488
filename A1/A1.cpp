@@ -23,7 +23,7 @@ static const size_t DIM = 16;
 //----------------------------------------------------------------------------------------
 // Constructor
 A1::A1()
-	: current_col( 0 ),
+	: m_currentColEntity( 0 ),
 	  m_maze(DIM),
 	  colourFromGUI(c_defaultFloorColour),
 	  m_floorColour(c_defaultFloorColour),
@@ -31,6 +31,7 @@ A1::A1()
 	  m_avatarColour(c_defaultAvatarColour),
 	  m_wallHeight(c_defaultWallHeight)
 {
+	m_worldTransformation = translateMatrixToModelCenter(m_worldTransformation);
 }
 
 //----------------------------------------------------------------------------------------
@@ -228,7 +229,8 @@ void A1::initFloor() {
 //----------------------------------------------------------------------------------------
 // helpers
 
-void A1::setEntityColour(int entity, const std::array<float, 3> & colour) {
+
+void A1::setEntityColour(const int &entity, const std::array<float, 3> &colour) {
 	switch (entity) {
 		case 0:
 			m_floorColour = colour;
@@ -239,6 +241,21 @@ void A1::setEntityColour(int entity, const std::array<float, 3> & colour) {
 		case 2:
 			m_avatarColour = colour;
 			break;
+		default:
+			break;
+	}
+}
+
+std::array<float, 3> A1::getEntityColour(const int &entity) const {
+	switch (entity) {
+		case 0:
+			return m_floorColour;
+		case 1:
+			return m_wallColour;
+		case 2:
+			return m_avatarColour;
+		default:
+			return c_blackColour;
 	}
 }
 
@@ -258,6 +275,14 @@ glm::vec3 A1::getFloorScaleVec() const {
 glm::vec3 A1::getAvatarPosition() const {
 	std::pair<int, int> playerPos = m_maze.getPlayerPos();
 	return glm::vec3((float)playerPos.first, 0.0f, (float)playerPos.second);
+}
+
+glm::mat4 A1::translateMatrixToModelCenter(const glm::mat4 & W) const {
+	return glm::translate( W, vec3( -float(DIM)/2.0f, 0, -float(DIM)/2.0f ) );
+}
+
+glm::mat4 A1::rotateMatrixZByTheta(const glm::mat4 & W, const float & theta) const {
+	return glm::rotate(W, theta, vec3(0.0f, 0.0f, 1.0f));
 }
 
 void A1::downsizeWalls() {
@@ -346,22 +371,13 @@ void A1::guiLogic()
 
 		// Colour picker
 		ImGui::PushID( 0 );
-		ImGui::Text("Set colour for:");
-		ImGui::SameLine();
-		if ( ImGui::RadioButton( "Floor", &current_col, 0 ) ) {
-			colourFromGUI = m_floorColour;
-		}
-		ImGui::SameLine();
-		if (ImGui::RadioButton( "Wall", &current_col, 1 ) ) {
-			colourFromGUI = m_wallColour;
-		}
-		ImGui::SameLine();
-		if (ImGui::RadioButton( "Avatar", &current_col, 2 ) ) {
-			colourFromGUI = m_avatarColour;
-		}
-		ImGui::SameLine();
+		ImGui::Text("Set colour for:"); ImGui::SameLine();
+		ImGui::RadioButton( "Floor", &m_currentColEntity, 0 ); ImGui::SameLine();
+		ImGui::RadioButton( "Wall", &m_currentColEntity, 1 ); ImGui::SameLine();
+		ImGui::RadioButton( "Avatar", &m_currentColEntity, 2 ); ImGui::SameLine();
+		colourFromGUI = getEntityColour(m_currentColEntity);
 		ImGui::ColorEdit3( "##color", colourFromGUI.data() );
-		setEntityColour(current_col, colourFromGUI);
+		setEntityColour(m_currentColEntity, colourFromGUI);
 		ImGui::PopID();
 
 		// Scaling (scroll) TODO
@@ -400,15 +416,11 @@ void A1::guiLogic()
  */
 void A1::draw()
 {
-	// Create a global transformation for the model (centre it).
-	mat4 W;
-	W = glm::translate( W, vec3( -float(DIM)/2.0f, 0, -float(DIM)/2.0f ) );
-
 	// Wall Transform matrix
-	mat4 wallTransform = glm::scale(W, getWallScaleVec());
+	mat4 wallTransform = glm::scale(m_worldTransformation, getWallScaleVec());
 
 	// Floor Transform matrix
-	mat4 floorTransform = glm::scale(W, getFloorScaleVec());
+	mat4 floorTransform = glm::scale(m_worldTransformation, getFloorScaleVec());
 
 	mat4 avatarTransform;
 	m_shader.enable();
@@ -416,7 +428,7 @@ void A1::draw()
 
 		glUniformMatrix4fv( P_uni, 1, GL_FALSE, value_ptr( proj ) );
 		glUniformMatrix4fv( V_uni, 1, GL_FALSE, value_ptr( view ) );
-		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( W ) );
+		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( m_worldTransformation ) );
 
 		// Draw the grid
 		glBindVertexArray( m_grid_vao );
@@ -444,7 +456,7 @@ void A1::draw()
 		}
 
 		// Draw the avatar
-		avatarTransform = glm::translate(W, getAvatarPosition()); // TODO update on avatar position update for efficiency
+		avatarTransform = glm::translate(m_worldTransformation, getAvatarPosition()); // TODO update on avatar position change for efficiency
 		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( avatarTransform ) );
 		glUniform3f( col_uni, m_avatarColour[0], m_avatarColour[1], m_avatarColour[2] );
 

@@ -7,9 +7,10 @@ const int c_maxWallHeight = 10;
 const int c_defaultWallHeight = 1;
 const int c_wallHeightStepSize = 1;
 
-const std::array<float, 3> c_defaultFloorColour = {0,  0, 1};
-const std::array<float, 3> c_defaultWallColour = {1,  0, 0};
-const std::array<float, 3> c_defaultAvatarColour = {0,  1, 0};
+const std::array<float, 3> c_defaultFloorColour = {46.0/255.0, 53/255.0, 50/255.0};
+const std::array<float, 3> c_defaultWallColour = {140/255.0, 186/255.0, 128/255.0};
+const std::array<float, 3> c_defaultAvatarColour = {148/255.0, 132/255.0, 155/255.0};
+const std::array<float, 3> c_blackColour = {0,  0, 0};
 
 const std::array<float, 24> c_unitCubeVertices = {
     0, 0, 0,
