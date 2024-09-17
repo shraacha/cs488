@@ -17,6 +17,11 @@ void Maze::reset()
 {
 	size_t sz = m_dim*m_dim;
 	std::fill( m_values, m_values + sz, 0 );
+	resetPlayerPos();
+}
+
+void Maze::resetPlayerPos() {
+	m_playerPos = {0, 0};
 }
 
 Maze::~Maze()
@@ -78,7 +83,7 @@ void Maze::printMaze() {
 	int i,j;
 	for (i=0; i<m_dim; i++) {
 		for (j=0; j<m_dim; j++) { 
-			if ( getValue(i,j)==1 ) {
+			if ( getValue(j,i)==1 ) {
 				printf("X");
 			} else {
 				printf(" ");
@@ -88,8 +93,27 @@ void Maze::printMaze() {
 	}
 }
 
-std::tuple<int, int> Maze::getPlayerPos() const {
+std::pair<int, int> Maze::getPlayerPos() const {
 	return m_playerPos;
+}
+
+void Maze::movePlayerRight() {
+	movePlayerTo(m_playerPos.first + 1, m_playerPos.second);
+}
+void Maze::movePlayerLeft() {
+	movePlayerTo(m_playerPos.first - 1, m_playerPos.second);
+}
+void Maze::movePlayerDown()  {
+	movePlayerTo(m_playerPos.first, m_playerPos.second - 1);
+}
+void Maze::movePlayerUp() {
+	movePlayerTo(m_playerPos.first, m_playerPos.second + 1);
+}
+
+void Maze::movePlayerTo(const int & x, const int & y) {
+	if(isInBounds(x, y) && !isOccupied(x, y)) {
+		m_playerPos = {x, y};
+	}
 }
 
 void Maze::movePlayerToStart() {
@@ -195,7 +219,7 @@ void Maze::digMaze()
 
 // Returns the position of the open wall at x=0
 // If there is an error, it will return (-1, -1).
-std::tuple<int, int> Maze::getStartPos() const {
+std::pair<int, int> Maze::getStartPos() const {
 	for(int i = 0; i < m_dim; i++) {
 		if (getValue(0, i) != 1) {
 			return {0, i};
@@ -203,4 +227,12 @@ std::tuple<int, int> Maze::getStartPos() const {
 	}
 
 	return{-1, -1};
+}
+
+inline bool Maze::isInBounds(const int &x, const int &y) {
+	return (x >= 0 && x < m_dim && y >= 0 && y < m_dim);
+}
+
+inline bool Maze::isOccupied(const int &x, const int &y) {
+	return (bool) getValue(x, y);
 }

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <tuple>
+#include <utility>
 
 // Holds data about the maze and the player.
 // Manages player movement.
@@ -24,13 +24,23 @@ public:
 	void printMaze(); // for debugging
 
 	void movePlayerToStart(); // call after digMaze()
-	std::tuple<int, int> getPlayerPos() const;
+	std::pair<int, int> getPlayerPos() const;
+
+	void movePlayerRight();
+	void movePlayerLeft();
+	void movePlayerDown();
+	void movePlayerUp();
 
 private:
-	std::tuple<int, int> m_playerPos;
+	void movePlayerTo(const int & x, const int & y);
+	void resetPlayerPos();
+
+	std::pair<int, int> m_playerPos;
 	size_t m_dim;
 	int *m_values;
 	void recDigMaze(int r, int c);
 	int numNeighbors(int r, int c);
-	inline std::tuple<int, int> getStartPos() const;
+	inline std::pair<int, int> getStartPos() const;
+	inline bool isInBounds(const int & x, const int & y);
+	inline bool isOccupied(const int & x, const int & y);
 };

@@ -243,7 +243,7 @@ void A1::setEntityColour(int entity, const std::array<float, 3> & colour) {
 }
 
 bool A1::getWallState(const int & x, const int & z) const {
-	return (bool)m_maze.getValue(z, x); // flipping to match printMaze output
+	return (bool)m_maze.getValue(x, z);
 }
 
 glm::vec3 A1::getWallScaleVec() const {
@@ -256,8 +256,8 @@ glm::vec3 A1::getFloorScaleVec() const {
 
 // Position Relative To 0,0,0
 glm::vec3 A1::getAvatarPosition() const {
-	std::tuple<int, int> playerPos = m_maze.getPlayerPos();
-	return glm::vec3((float)std::get<1>(playerPos), 0.0f, (float)std::get<0>(playerPos)); // flipping to match printMaze output
+	std::pair<int, int> playerPos = m_maze.getPlayerPos();
+	return glm::vec3((float)playerPos.first, 0.0f, (float)playerPos.second);
 }
 
 void A1::downsizeWalls() {
@@ -275,6 +275,21 @@ void A1::digMaze() {
 
 void A1::digWall(const int& x, const int& y) {
 	m_maze.setValue(x, y, 0);
+}
+
+void A1::moveAvatarRight() {
+	m_maze.movePlayerRight();
+}
+void A1::moveAvatarLeft() {
+	m_maze.movePlayerLeft();
+}
+void A1::moveAvatarDown() {
+    // switching just so relative movement makes sense in the starting setup
+	m_maze.movePlayerUp();
+}
+void A1::moveAvatarUp() {
+    // switching just so relative movement makes sense in the starting setup
+	m_maze.movePlayerDown();
 }
 
 //----------------------------------------------------------------------------------------
@@ -311,9 +326,9 @@ void A1::guiLogic()
 		}
 
 		// Reset (R) TODO
-		if( ImGui::Button( "Reset (R)" ) ) {
-			// TODO
-		}
+		// if( ImGui::Button( "Reset (R)" ) ) {
+		// 	// TODO
+		// }
 
 		// Dig (D)
 		if( ImGui::Button( "Dig Maze (D)" ) ) {
@@ -554,6 +569,19 @@ bool A1::keyInputEvent(int key, int action, int mods) {
 			downsizeWalls();
 		}
 
+		// movement
+		if (key == GLFW_KEY_RIGHT) {
+			moveAvatarRight();
+		}
+		if (key == GLFW_KEY_LEFT) {
+			moveAvatarLeft();
+		}
+		if (key == GLFW_KEY_DOWN) {
+			moveAvatarDown();
+		}
+		if (key == GLFW_KEY_UP) {
+			moveAvatarUp();
+		}
 
 	}
 	return eventHandled;

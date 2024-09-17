@@ -48,6 +48,11 @@ private:
 	inline void digMaze();
 	inline void digWall(const int & x, const int & y);
 
+	inline void moveAvatarRight();
+	inline void moveAvatarLeft();
+	inline void moveAvatarDown();
+	inline void moveAvatarUp();
+
 	Maze m_maze;
 
 	// Fields related to the shader and uniforms.
