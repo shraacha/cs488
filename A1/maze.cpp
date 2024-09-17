@@ -29,12 +29,12 @@ size_t Maze::getDim() const
 	return m_dim;
 }
 
-int Maze::getValue( int x, int y ) const
+int Maze::getValue(const int & x, const int & y ) const
 {
 	return m_values[ y * m_dim + x ];
 }
 
-void Maze::setValue( int x, int y, int h )
+void Maze::setValue( const int & x, const int & y, const int & h )
 {
 	m_values[ y * m_dim + x ] = h;
 }
@@ -88,6 +88,13 @@ void Maze::printMaze() {
 	}
 }
 
+std::tuple<int, int> Maze::getPlayerPos() const {
+	return m_playerPos;
+}
+
+void Maze::movePlayerToStart() {
+	m_playerPos = getStartPos();
+}
 
 void Maze::recDigMaze(int r, int c) {
 	int* p;
@@ -184,4 +191,16 @@ void Maze::digMaze()
 		}
 	} while (getValue(m_dim-1,s)==1);
 
+}
+
+// Returns the position of the open wall at x=0
+// If there is an error, it will return (-1, -1).
+std::tuple<int, int> Maze::getStartPos() const {
+	for(int i = 0; i < m_dim; i++) {
+		if (getValue(0, i) != 1) {
+			return {0, i};
+		}
+	}
+
+	return{-1, -1};
 }

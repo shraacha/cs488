@@ -2,6 +2,10 @@
 
 #pragma once
 
+#include <tuple>
+
+// Holds data about the maze and the player.
+// Manages player movement.
 class Maze
 {
 public:
@@ -12,15 +16,21 @@ public:
 
 	size_t getDim() const;
 
-	int getValue( int x, int y ) const;
+	int getValue(const int & x, const int & y ) const;
 
-	void setValue( int x, int y, int h );
+	void setValue(const int & x,const int & y, const int & h );
 
 	void digMaze();
 	void printMaze(); // for debugging
+
+	void movePlayerToStart(); // call after digMaze()
+	std::tuple<int, int> getPlayerPos() const;
+
 private:
+	std::tuple<int, int> m_playerPos;
 	size_t m_dim;
 	int *m_values;
 	void recDigMaze(int r, int c);
 	int numNeighbors(int r, int c);
+	inline std::tuple<int, int> getStartPos() const;
 };

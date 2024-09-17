@@ -25,8 +25,8 @@ static const size_t DIM = 16;
 A1::A1()
 	: current_col( 0 ),
 	  m_maze(DIM),
-	  colourFromGUI(c_defaultGroundColour),
-	  m_groundColour(c_defaultGroundColour),
+	  colourFromGUI(c_defaultFloorColour),
+	  m_floorColour(c_defaultFloorColour),
 	  m_wallColour(c_defaultWallColour),
 	  m_avatarColour(c_defaultAvatarColour),
 	  m_wallHeight(c_defaultWallHeight)
@@ -51,12 +51,6 @@ void A1::init()
 	// same random numbers
 	cout << "Random number seed = " << rseed << endl;
 	
-
-	// DELETE FROM HERE...
-	m_maze.digMaze();
-	m_maze.printMaze();
-	// ...TO HERE
-	
 	// Set the background colour.
 	glClearColor( 0.3, 0.5, 0.7, 1.0 );
 
@@ -77,6 +71,7 @@ void A1::init()
 	initGrid();
 	initAvatar();
 	initWalls();
+	initFloor();
 
 	// Set up initial view and projection matrices (need to do this here,
 	// since it depends on the GLFW window being set up correctly).
@@ -152,12 +147,12 @@ void A1::initAvatar()
 	// creating the vertex buffer
 	glGenBuffers(1, &m_avatar_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, m_avatar_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(c_unitCubeVertices), c_unitCubeVertices.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, c_unitCubeVertices.size() * sizeof(float), c_unitCubeVertices.data(), GL_DYNAMIC_DRAW);
 
 	// creating the element buffer
 	glGenBuffers(1, &m_avatar_ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_avatar_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(c_unitCubeIndices), c_unitCubeIndices.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, c_unitCubeIndices.size() * sizeof(unsigned int), c_unitCubeIndices.data(), GL_DYNAMIC_DRAW);
 	m_avatarCount =  c_unitCubeIndices.size();
 
 	// Specify the means of extracting the position values properly.
@@ -184,12 +179,12 @@ void A1::initWalls() {
 	// creating the vertex buffer
 	glGenBuffers(1, &m_wall_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, m_wall_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(c_unitCubeVertices), c_unitCubeVertices.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, c_unitCubeVertices.size() * sizeof(float), c_unitCubeVertices.data(), GL_STATIC_DRAW);
 
 	// creating the element buffer
 	glGenBuffers(1, &m_wall_ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_wall_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(c_unitCubeIndices), c_unitCubeIndices.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, c_unitCubeIndices.size() * sizeof(unsigned int), c_unitCubeIndices.data(), GL_STATIC_DRAW);
 	m_wallBlockCount =  c_unitCubeIndices.size();
 
 	// Specify the means of extracting the position values properly.
@@ -205,13 +200,38 @@ void A1::initWalls() {
 
 	CHECK_GL_ERRORS;
 }
+
+void A1::initFloor() {
+	glGenVertexArrays(1, &m_floor_vao);
+	glBindVertexArray(m_floor_vao);
+
+	// creating the vertex buffer
+	glGenBuffers(1, &m_floor_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, m_floor_vbo);
+	glBufferData(GL_ARRAY_BUFFER, c_unitSquareVertices.size() * sizeof(float), c_unitSquareVertices.data(), GL_STATIC_DRAW);
+	m_floorCount = c_unitSquareVertices.size();
+
+	// Specify the means of extracting the position values properly.
+	GLint posAttrib = m_shader.getAttribLocation( "position" );
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	// Reset state to prevent rogue code from messing with *my*
+	// stuff!
+	glBindVertexArray( 0 );
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+
+	CHECK_GL_ERRORS;
+}
+
 //----------------------------------------------------------------------------------------
 // helpers
 
 void A1::setEntityColour(int entity, const std::array<float, 3> & colour) {
 	switch (entity) {
 		case 0:
-			m_groundColour = colour;
+			m_floorColour = colour;
 			break;
 		case 1:
 			m_wallColour = colour;
@@ -222,8 +242,22 @@ void A1::setEntityColour(int entity, const std::array<float, 3> & colour) {
 	}
 }
 
-glm::vec3 A1::getWallScaleVec() {
+bool A1::getWallState(const int & x, const int & z) const {
+	return (bool)m_maze.getValue(z, x); // flipping to match printMaze output
+}
+
+glm::vec3 A1::getWallScaleVec() const {
 	return glm::vec3(1.0f, float(m_wallHeight), 1.0f);
+}
+
+glm::vec3 A1::getFloorScaleVec() const {
+	return glm::vec3((float)DIM, 1.0f, (float)DIM);
+}
+
+// Position Relative To 0,0,0
+glm::vec3 A1::getAvatarPosition() const {
+	std::tuple<int, int> playerPos = m_maze.getPlayerPos();
+	return glm::vec3((float)std::get<1>(playerPos), 0.0f, (float)std::get<0>(playerPos)); // flipping to match printMaze output
 }
 
 void A1::downsizeWalls() {
@@ -232,6 +266,15 @@ void A1::downsizeWalls() {
 
 void A1::upsizeWalls() {
 	m_wallHeight = (m_wallHeight + c_wallHeightStepSize) >= c_maxWallHeight ? c_maxWallHeight : (m_wallHeight + c_wallHeightStepSize);
+}
+
+void A1::digMaze() {
+	m_maze.digMaze();
+	m_maze.movePlayerToStart();
+}
+
+void A1::digWall(const int& x, const int& y) {
+	m_maze.setValue(x, y, 0);
 }
 
 //----------------------------------------------------------------------------------------
@@ -263,14 +306,19 @@ void A1::guiLogic()
 	ImGui::Begin("Debug Window", &showDebugWindow, ImVec2(100,100), opacity, windowFlags);
 
 	    // Quit (Q)
-		if( ImGui::Button( "Quit Application" ) ) {
+		if( ImGui::Button( "Quit Application (Q)" ) ) {
 			glfwSetWindowShouldClose(m_window, GL_TRUE);
 		}
 
-		// Reset (R)
+		// Reset (R) TODO
+		if( ImGui::Button( "Reset (R)" ) ) {
+			// TODO
+		}
 
 		// Dig (D)
-
+		if( ImGui::Button( "Dig Maze (D)" ) ) {
+			digMaze();
+		}
 
 		// Eventually you'll create multiple colour widgets with
 		// radio buttons.  If you use PushID/PopID to give them all
@@ -285,8 +333,8 @@ void A1::guiLogic()
 		ImGui::PushID( 0 );
 		ImGui::Text("Set colour for:");
 		ImGui::SameLine();
-		if ( ImGui::RadioButton( "Ground", &current_col, 0 ) ) {
-			colourFromGUI = m_groundColour;
+		if ( ImGui::RadioButton( "Floor", &current_col, 0 ) ) {
+			colourFromGUI = m_floorColour;
 		}
 		ImGui::SameLine();
 		if (ImGui::RadioButton( "Wall", &current_col, 1 ) ) {
@@ -301,16 +349,16 @@ void A1::guiLogic()
 		setEntityColour(current_col, colourFromGUI);
 		ImGui::PopID();
 
-		// Scaling (scroll)
+		// Scaling (scroll) TODO
 
 		// Growing Bars (space/backspace)
 		ImGui::Text("Wall height: "); ImGui::SameLine();
 		ImGui::SliderInt("##Wall Height", &m_wallHeight, c_minWallHeight, c_maxWallHeight);
 
 	    // List other controls:
-		// - arrow keys to move
-		// - shift arrow keys to break walls
-		// - rotation
+		// - TODO arrow keys to move
+		// - TODO shift arrow keys to break walls
+		// - TODO rotation
 
 /*
 		// For convenience, you can uncomment this to show ImGui's massive
@@ -344,6 +392,10 @@ void A1::draw()
 	// Wall Transform matrix
 	mat4 wallTransform = glm::scale(W, getWallScaleVec());
 
+	// Floor Transform matrix
+	mat4 floorTransform = glm::scale(W, getFloorScaleVec());
+
+	mat4 avatarTransform;
 	m_shader.enable();
 		glEnable( GL_DEPTH_TEST );
 
@@ -351,18 +403,24 @@ void A1::draw()
 		glUniformMatrix4fv( V_uni, 1, GL_FALSE, value_ptr( view ) );
 		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( W ) );
 
-		// drawing the grid
+		// Draw the grid
 		glBindVertexArray( m_grid_vao );
 		glUniform3f( col_uni, 1, 1, 1 );
 		glDrawArrays( GL_LINES, 0, (3+DIM)*4 );
 
-		// draw the walls
+		// Draw the floor
+		glUniform3f( col_uni, m_floorColour[0], m_floorColour[1], m_floorColour[2] );
+		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( floorTransform ) );
+		glBindVertexArray(m_floor_vao);
+		glDrawArrays(GL_TRIANGLES, 0, m_floorCount);
+
+		// Draw the walls
 		glUniform3f( col_uni, m_wallColour[0], m_wallColour[1], m_wallColour[2] );
 
 		for(int i = 0; i < DIM; i++) {
 			for(int j = 0; j < DIM; j++) {
-				if (m_maze.getValue(i, j) == 1) {
-					mat4 wallTranslate = glm::translate(wallTransform, vec3(float(i), 0, float(j))); // translate the wall to the right position
+				if (getWallState(j, i) == 1) {
+					mat4 wallTranslate = glm::translate(wallTransform, vec3(float(j), 0, float(i))); // translate the wall to the right position
 					glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( wallTranslate ) );
 					glBindVertexArray(m_wall_vao);
 					glDrawElements(GL_TRIANGLES, m_wallBlockCount, GL_UNSIGNED_INT, 0);
@@ -371,12 +429,14 @@ void A1::draw()
 		}
 
 		// Draw the avatar
+		avatarTransform = glm::translate(W, getAvatarPosition()); // TODO update on avatar position update for efficiency
+		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( avatarTransform ) );
 		glUniform3f( col_uni, m_avatarColour[0], m_avatarColour[1], m_avatarColour[2] );
 
 		glBindVertexArray(m_avatar_vao);
 		glDrawElements(GL_TRIANGLES, m_avatarCount, GL_UNSIGNED_INT, 0);
 
-		// Draw the cubes
+
 		// Highlight the active square.
 
 	m_shader.disable();
@@ -476,6 +536,15 @@ bool A1::keyInputEvent(int key, int action, int mods) {
 	// Fill in with event handling code...
 	if( action == GLFW_PRESS ) {
 		// Respond to some key events.
+		// dig maze
+		if (key == GLFW_KEY_Q) {
+			glfwSetWindowShouldClose(m_window, GL_TRUE);
+		}
+
+		// dig maze
+		if (key == GLFW_KEY_D) {
+			digMaze();
+		}
 
 		// scaling walls
 		if (key == GLFW_KEY_SPACE) {
@@ -484,6 +553,8 @@ bool A1::keyInputEvent(int key, int action, int mods) {
 		if (key == GLFW_KEY_BACKSPACE) {
 			downsizeWalls();
 		}
+
+
 	}
 	return eventHandled;
 }

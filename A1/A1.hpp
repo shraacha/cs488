@@ -35,12 +35,18 @@ private:
 	void initGrid();
 	void initWalls();
 	void initAvatar();
+	void initFloor();
 
 	// helpers
 	void setEntityColour(int entity, const std::array<float, 3> & colour);
-	inline glm::vec3 getWallScaleVec();
+	inline bool getWallState(const int & x, const int & z) const;
+	inline glm::vec3 getWallScaleVec() const;
+	inline glm::vec3 getFloorScaleVec() const;
+	inline glm::vec3 getAvatarPosition() const;
 	void downsizeWalls();
 	void upsizeWalls();
+	inline void digMaze();
+	inline void digWall(const int & x, const int & y);
 
 	Maze m_maze;
 
@@ -61,6 +67,11 @@ private:
 	GLuint m_wall_ebo; // Element Buffer Object
 	size_t m_wallBlockCount; // # of indices
 
+	// floor geometry
+	GLuint m_floor_vao;
+	GLuint m_floor_vbo;
+	size_t m_floorCount;
+
 	// Fields related to the avatar geometry
 	GLuint m_avatar_vao; // Vertex Array Object
 	GLuint m_avatar_vbo; // Vertex Buffer Object
@@ -72,7 +83,7 @@ private:
 	glm::mat4 view;
 
 	// colours
-	std::array<float, 3> m_groundColour;
+	std::array<float, 3> m_floorColour;
 	std::array<float, 3> m_wallColour;
 	std::array<float, 3> m_avatarColour;
 	std::array<float, 3> colourFromGUI;

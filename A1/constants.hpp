@@ -7,7 +7,7 @@ const int c_maxWallHeight = 10;
 const int c_defaultWallHeight = 1;
 const int c_wallHeightStepSize = 1;
 
-const std::array<float, 3> c_defaultGroundColour = {0,  0, 1};
+const std::array<float, 3> c_defaultFloorColour = {0,  0, 1};
 const std::array<float, 3> c_defaultWallColour = {1,  0, 0};
 const std::array<float, 3> c_defaultAvatarColour = {0,  1, 0};
 
@@ -19,7 +19,7 @@ const std::array<float, 24> c_unitCubeVertices = {
     1, 0, 0,
     1, 0, 1,
     1, 1, 0,
-    1, 1, 1,
+    1, 1, 1
 };
 
 // 0-indexed
@@ -41,5 +41,14 @@ const std::array<unsigned int, 36> c_unitCubeIndices = {
     7, 6, 2,
     // bottom
     1, 0, 4,
-    4, 5, 1,
+    4, 5, 1
+};
+
+const std::array<float, 24> c_unitSquareVertices = {
+    0, 0, 1,
+    0, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 1,
+    0, 0, 1
 };
