@@ -511,6 +511,9 @@ void A1::draw()
 {
 	m_shader.enable();
 		glEnable( GL_DEPTH_TEST );
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+
 
 		glUniformMatrix4fv( P_uni, 1, GL_FALSE, value_ptr( proj ) );
 		glUniformMatrix4fv( V_uni, 1, GL_FALSE, value_ptr( view ) );
@@ -537,6 +540,7 @@ void A1::draw()
 	    mat4 individualWallTransform;
 		glUniform3f( col_uni, m_wallColour[0], m_wallColour[1], m_wallColour[2] );
 
+		// draw the individual wall blocks
 		for(int i = 0; i < DIM; i++) {
 			for(int j = 0; j < DIM; j++) {
 				if (getWallState(j, i) == 1) {
