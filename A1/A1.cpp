@@ -330,10 +330,13 @@ void A1::upsizeWalls() {
 void A1::digMaze() {
 	m_maze.digMaze();
 	m_maze.movePlayerToStart();
+	m_maze.printMaze();
 }
 
 void A1::digWall(const int& x, const int& y) {
-	m_maze.setValue(x, y, 0);
+	if (m_maze.isInBounds(x, y)) {
+		m_maze.setValue(x, y, 0);
+	}
 }
 
 void A1::moveAvatarRight() {
@@ -343,12 +346,10 @@ void A1::moveAvatarLeft() {
 	m_maze.movePlayerLeft();
 }
 void A1::moveAvatarDown() {
-    // switching just so relative movement makes sense in the starting setup
-	m_maze.movePlayerUp();
+	m_maze.movePlayerDown();
 }
 void A1::moveAvatarUp() {
-    // switching just so relative movement makes sense in the starting setup
-	m_maze.movePlayerDown();
+	m_maze.movePlayerUp();
 }
 
 void A1::moveCameraIn() {

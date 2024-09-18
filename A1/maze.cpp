@@ -104,10 +104,10 @@ void Maze::movePlayerLeft() {
 	movePlayerTo(m_playerPos.first - 1, m_playerPos.second);
 }
 void Maze::movePlayerDown()  {
-	movePlayerTo(m_playerPos.first, m_playerPos.second - 1);
+	movePlayerTo(m_playerPos.first, m_playerPos.second + 1);
 }
 void Maze::movePlayerUp() {
-	movePlayerTo(m_playerPos.first, m_playerPos.second + 1);
+	movePlayerTo(m_playerPos.first, m_playerPos.second - 1);
 }
 
 void Maze::movePlayerTo(const int & x, const int & y) {
@@ -230,7 +230,7 @@ std::pair<int, int> Maze::getStartPos() const {
 }
 
 inline bool Maze::isInBounds(const int &x, const int &y) {
-	return (x >= 0 && x < m_dim && y >= 0 && y < m_dim);
+	return (x >= 0 && x < getDim() && y >= 0 && y < getDim());
 }
 
 inline bool Maze::isOccupied(const int &x, const int &y) {

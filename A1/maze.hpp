@@ -31,8 +31,9 @@ public:
 	void movePlayerDown();
 	void movePlayerUp();
 
+	inline bool isInBounds(const int & x, const int & y);
 private:
-	void movePlayerTo(const int & x, const int & y);
+	inline void movePlayerTo(const int & x, const int & y);
 	void resetPlayerPos();
 
 	std::pair<int, int> m_playerPos;
@@ -41,6 +42,5 @@ private:
 	void recDigMaze(int r, int c);
 	int numNeighbors(int r, int c);
 	inline std::pair<int, int> getStartPos() const;
-	inline bool isInBounds(const int & x, const int & y);
 	inline bool isOccupied(const int & x, const int & y);
 };

@@ -9,3 +9,9 @@ $ ./A0
 
 # Manual
 There were no extra features nor significant assumptions made for this assignment.
+
+## Assumptions
+
+## Extra Commands/Features
+
+## Additional data files
