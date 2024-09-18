@@ -527,9 +527,9 @@ void A1::draw()
 
 		// Draw the floor
 	    // Floor Transform matrix
-	    mat4 floorTransform = glm::scale(m_worldTranslation, getFloorScaleVec());
+	    mat4 floorTransform = glm::scale(glm::mat4(), getFloorScaleVec());
+		floorTransform = m_worldRotation * m_worldTranslation * floorTransform;
 		glUniform3f( col_uni, m_floorColour[0], m_floorColour[1], m_floorColour[2] );
-		floorTransform = m_worldRotation * floorTransform;
 		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( floorTransform ) );
 		glBindVertexArray(m_floor_vao);
 		glDrawArrays(GL_TRIANGLES, 0, m_floorCount);
