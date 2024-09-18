@@ -445,8 +445,8 @@ void A1::guiLogic()
 		ImGui::Separator();
 	    // List other controls:
 		ImGui::Text( "Controls:");
-		ImGui::Text( "- Use the arrow keys to move.");
-		ImGui::Text( "- Click with LMB and drag to rotate the maze.");
+		ImGui::Text( "- Use the arrow keys to move the avatar.");
+		ImGui::Text( "- Click with LMB and drag left/right to rotate the maze.");
 		ImGui::Text( "- Release LMB while dragging to spin freely.");
 		ImGui::Text( "- Scroll up/down to scale the model up/down.");
 
