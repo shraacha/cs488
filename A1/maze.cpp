@@ -116,6 +116,29 @@ void Maze::movePlayerTo(const int & x, const int & y) {
 	}
 }
 
+void Maze::digWallAndMovePlayerTo(const int & x, const int & y) {
+	if (isInBounds(x, y)) {
+		setValue(x, y, 0);
+		m_playerPos = {x, y};
+	}
+}
+
+void Maze::digAndMovePlayerRight() {
+	digWallAndMovePlayerTo(m_playerPos.first + 1, m_playerPos.second);
+}
+
+void Maze::digAndMovePlayerLeft() {
+	digWallAndMovePlayerTo(m_playerPos.first - 1, m_playerPos.second);
+}
+
+void Maze::digAndMovePlayerDown()  {
+	digWallAndMovePlayerTo(m_playerPos.first, m_playerPos.second + 1);
+}
+
+void Maze::digAndMovePlayerUp() {
+	digWallAndMovePlayerTo(m_playerPos.first, m_playerPos.second - 1);
+}
+
 void Maze::movePlayerToStart() {
 	m_playerPos = getStartPos();
 }

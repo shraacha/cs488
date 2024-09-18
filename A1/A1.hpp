@@ -38,6 +38,8 @@ private:
 	void initFloor();
 
 	// helpers
+	void reset();
+
 	void updateMouseData();
 
 	inline void setEntityColour(const int & entity, const std::array<float, 3> & colour);
@@ -50,18 +52,38 @@ private:
 
 	void downsizeWalls();
 	void upsizeWalls();
+
 	inline void digMaze();
-	inline void digWall(const int & x, const int & y);
 
 	inline void moveAvatarRight();
 	inline void moveAvatarLeft();
 	inline void moveAvatarDown();
 	inline void moveAvatarUp();
 
+	inline void digAndMoveAvatarRight();
+	inline void digAndMoveAvatarLeft();
+	inline void digAndMoveAvatarDown();
+	inline void digAndMoveAvatarUp();
+
 	inline void moveCameraIn();
 	inline void moveCameraOut();
 
+	// member vars
 	Maze m_maze;
+	int m_wallHeight;
+
+	// colours
+	std::array<float, 3> m_floorColour;
+	std::array<float, 3> m_wallColour;
+	std::array<float, 3> m_avatarColour;
+	std::array<float, 3> colourFromGUI;
+	int m_currentColEntity;
+
+	// keyboard data
+	double m_mouseXPrevPos;
+	bool m_mouseLeftPressed;
+	double m_mouseXDiffWhenPressed;
+	bool m_isShiftPressed;
 
 	// Fields related to the shader and uniforms.
 	ShaderProgram m_shader;
@@ -99,19 +121,4 @@ private:
 
 	glm::vec3 m_cameraPos;
 	glm::vec3 m_cameraTarget;
-
-	// rotation data
-	double m_mouseXPrevPos;
-	bool m_mouseLeftPressed;
-	double m_mouseXDiffWhenPressed;
-
-	// colours
-	std::array<float, 3> m_floorColour;
-	std::array<float, 3> m_wallColour;
-	std::array<float, 3> m_avatarColour;
-	std::array<float, 3> colourFromGUI;
-	int m_currentColEntity;
-
-	// other
-	int m_wallHeight;
 };

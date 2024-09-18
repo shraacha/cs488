@@ -256,6 +256,22 @@ void A1::initFloor() {
 
 //----------------------------------------------------------------------------------------
 // helpers
+
+void A1::reset() {
+	m_currentColEntity =  0;
+	colourFromGUI = c_defaultFloorColour;
+	m_floorColour = c_defaultFloorColour;
+	m_wallColour = c_defaultWallColour;
+	m_avatarColour = c_defaultAvatarColour;
+	m_wallHeight = c_defaultWallHeight;
+	m_worldTranslation = translateMatrixToModelCenter(glm::mat4());
+	m_worldRotation = glm::mat4();
+	m_cameraPos = getDefaultCameraPos();
+	m_cameraTarget = getDefaultCameraTarget();
+	m_maze.reset();
+	m_mouseXDiffWhenPressed = 0;
+}
+
 void A1::updateMouseData() {
 	if (!ImGui::IsMouseHoveringAnyWindow()) {
 		double xPos, yPos;
@@ -330,13 +346,8 @@ void A1::upsizeWalls() {
 void A1::digMaze() {
 	m_maze.digMaze();
 	m_maze.movePlayerToStart();
-	m_maze.printMaze();
-}
-
-void A1::digWall(const int& x, const int& y) {
-	if (m_maze.isInBounds(x, y)) {
-		m_maze.setValue(x, y, 0);
-	}
+	// std::cout << "The current maze: " << std::endl;
+	// m_maze.printMaze();
 }
 
 void A1::moveAvatarRight() {
@@ -350,6 +361,19 @@ void A1::moveAvatarDown() {
 }
 void A1::moveAvatarUp() {
 	m_maze.movePlayerUp();
+}
+
+void A1::digAndMoveAvatarRight() {
+	m_maze.digAndMovePlayerRight();
+}
+void A1::digAndMoveAvatarLeft() {
+	m_maze.digAndMovePlayerLeft();
+}
+void A1::digAndMoveAvatarDown() {
+	m_maze.digAndMovePlayerDown();
+}
+void A1::digAndMoveAvatarUp() {
+	m_maze.digAndMovePlayerUp();
 }
 
 void A1::moveCameraIn() {
@@ -400,23 +424,27 @@ void A1::guiLogic()
 	ImGui::Begin("Debug Window", &showDebugWindow, ImVec2(100,100), opacity, windowFlags);
 
 
+	    // ~~~~~~~~~~~~~~~~~~~
 		ImGui::Separator();
-	    // Quit (Q)
 		if( ImGui::Button( "Quit Application (Q)" ) ) {
 			glfwSetWindowShouldClose(m_window, GL_TRUE);
 		}
 		ImGui::SameLine();
 
-		// Reset (R) TODO
-		// if( ImGui::Button( "Reset (R)" ) ) {
-		// 	// TODO
-		// }
+		if( ImGui::Button( "Reset Application (R)" ) ) {
+			reset();
+		}
+		ImGui::SameLine();
 
-		// Dig (D)
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(2 / 7.0f, 0.6f, 0.6f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(2 / 7.0f, 0.7f, 0.7f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(2 / 7.0f, 0.8f, 0.8f));
 		if( ImGui::Button( "Dig Maze (D)" ) ) {
 			digMaze();
 		}
+		ImGui::PopStyleColor(3);
 
+	    // ~~~~~~~~~~~~~~~~~~~
 		ImGui::Separator();
 		ImGui::Text( "Settings:");
 		// Eventually you'll create multiple colour widgets with
@@ -443,6 +471,7 @@ void A1::guiLogic()
 		ImGui::Text("Wall height: "); ImGui::SameLine();
 		ImGui::SliderInt("##Wall Height", &m_wallHeight, c_minWallHeight, c_maxWallHeight);
 
+	    // ~~~~~~~~~~~~~~~~~~~
 		ImGui::Separator();
 	    // List other controls:
 		ImGui::Text( "Controls:");
@@ -450,8 +479,7 @@ void A1::guiLogic()
 		ImGui::Text( "- Click with LMB and drag left/right to rotate the maze.");
 		ImGui::Text( "- Release LMB while dragging to spin freely.");
 		ImGui::Text( "- Scroll up/down to scale the model up/down.");
-
-		// - TODO shift arrow keys to break walls
+		ImGui::Text( "- Press left/right shift while walking into a wall to destroy and move into it.");
 
 /*
 		// For convenience, you can uncomment this to show ImGui's massive
@@ -462,6 +490,7 @@ void A1::guiLogic()
 			showTestWindow = !showTestWindow;
 		}
 */
+	    // ~~~~~~~~~~~~~~~~~~~
 		ImGui::Separator();
 		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 		ImGui::Text( "Camera distance from target: %f units", glm::length(m_cameraPos - m_cameraTarget));
@@ -647,9 +676,14 @@ bool A1::keyInputEvent(int key, int action, int mods) {
 	// Fill in with event handling code...
 	if( action == GLFW_PRESS ) {
 		// Respond to some key events.
-		// dig maze
+		// quit
 		if (key == GLFW_KEY_Q) {
 			glfwSetWindowShouldClose(m_window, GL_TRUE);
+		}
+
+		// reset
+		if (key == GLFW_KEY_R) {
+			reset();
 		}
 
 		// dig maze
@@ -667,16 +701,26 @@ bool A1::keyInputEvent(int key, int action, int mods) {
 
 		// movement
 		if (key == GLFW_KEY_RIGHT) {
-			moveAvatarRight();
+			m_isShiftPressed ? digAndMoveAvatarRight() : moveAvatarRight();
 		}
 		if (key == GLFW_KEY_LEFT) {
-			moveAvatarLeft();
+			m_isShiftPressed ? digAndMoveAvatarLeft() : moveAvatarLeft();;
 		}
 		if (key == GLFW_KEY_DOWN) {
-			moveAvatarDown();
+			m_isShiftPressed ? digAndMoveAvatarDown() : moveAvatarDown();;
 		}
 		if (key == GLFW_KEY_UP) {
-			moveAvatarUp();
+			m_isShiftPressed ? digAndMoveAvatarUp() : moveAvatarUp();;
+		}
+
+		// directional digging
+		if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+			m_isShiftPressed = true;
+		}
+	} else if (action == GLFW_RELEASE) {
+		// directional digging
+		if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+			m_isShiftPressed = false;
 		}
 	}
 	return eventHandled;

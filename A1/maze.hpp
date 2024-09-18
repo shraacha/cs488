@@ -31,9 +31,16 @@ public:
 	void movePlayerDown();
 	void movePlayerUp();
 
+	void digAndMovePlayerRight();
+	void digAndMovePlayerLeft();
+	void digAndMovePlayerDown();
+	void digAndMovePlayerUp();
+
 	inline bool isInBounds(const int & x, const int & y);
 private:
 	inline void movePlayerTo(const int & x, const int & y);
+	inline void digWallAndMovePlayerTo(const int & x, const int & y);
+
 	void resetPlayerPos();
 
 	std::pair<int, int> m_playerPos;
