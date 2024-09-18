@@ -545,7 +545,7 @@ void A1::draw()
 			for(int j = 0; j < DIM; j++) {
 				if (getWallState(j, i) == 1) {
 					mat4 individualWallTranslate = glm::translate(glm::mat4(), vec3(float(j), 0, float(i))); // translate the wall to the right position
-					individualWallTransform = m_worldRotation * individualWallTranslate * m_worldTranslation * wallTransform ;
+					individualWallTransform = m_worldRotation * individualWallTranslate * m_worldTranslation * wallTransform;
 					glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( individualWallTransform ) );
 					glBindVertexArray(m_wall_vao);
 					glDrawElements(GL_TRIANGLES, m_wallBlockCount, GL_UNSIGNED_INT, 0);
