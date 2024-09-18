@@ -468,8 +468,9 @@ void A1::guiLogic()
 		ImGui::PopID();
 
 		// Growing Bars (space/backspace)
-		ImGui::Text("Wall height: "); ImGui::SameLine();
-		ImGui::SliderInt("##Wall Height", &m_wallHeight, c_minWallHeight, c_maxWallHeight);
+		ImGui::Text("Wall height: (BACKSPACE)"); ImGui::SameLine();
+		ImGui::SliderInt("##Wall Height", &m_wallHeight, c_minWallHeight, c_maxWallHeight); ImGui::SameLine();
+		ImGui::Text("(SPACE)");
 
 	    // ~~~~~~~~~~~~~~~~~~~
 		ImGui::Separator();
@@ -493,7 +494,7 @@ void A1::guiLogic()
 	    // ~~~~~~~~~~~~~~~~~~~
 		ImGui::Separator();
 		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
-		ImGui::Text( "Camera distance from target: %f units", glm::length(m_cameraPos - m_cameraTarget));
+		// ImGui::Text( "Camera distance from target: %f units", glm::length(m_cameraPos - m_cameraTarget));
 
 	ImGui::End();
 
