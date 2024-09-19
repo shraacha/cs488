@@ -5,7 +5,6 @@
 
 // numLayers should be >= 2, numSegments should be >= 1
 
-
 // generates the vertices and the indices for a sphere centered at the origin
 std::pair<std::vector<float>, std::vector<unsigned int> >
 generateLayeredSphereVerticesAndIndices(const float &radius,

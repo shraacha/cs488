@@ -31,7 +31,7 @@ generateLayeredSphereVertices(const float &radius,
                               const unsigned int &numSegments) {
     std::vector<float> vertices;
     float layerStep = M_PI / numLayers;
-    float segmentStep = -2.0 * M_PI / numSegments;
+    float segmentStep = -2.0 * M_PI / numSegments; // taking the negative to have the layers built counter-clockwise around y
 
     // layers start at the top and go downwards
     //
@@ -41,12 +41,6 @@ generateLayeredSphereVertices(const float &radius,
         float lambda = M_PI_2 - currentLayerNum * layerStep;
         for (unsigned int currentSegmentNum = 0; currentSegmentNum <= numSegments; currentSegmentNum++) {
             float theta = currentSegmentNum * segmentStep;
-
-            float x = (radius * cosf(lambda) * cosf(theta)); // x
-            float y = (radius * sinf(lambda));                  // y
-            float z = (radius * cosf(lambda) * sinf(theta)); // z
-
-            // std::cout<< "(" << x << ", " << y << ", " << z << ")" << std::endl; // TESTING
 
             vertices.emplace_back(radius * cosf(lambda) * cosf(theta)); // x
             vertices.emplace_back(radius * sinf(lambda));                  // y

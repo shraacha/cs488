@@ -8,9 +8,9 @@ const int c_defaultWallHeight = 1;
 const int c_wallHeightStepSize = 1;
 const double c_distanceToAngleScale = 0.0025;
 
-const std::array<float, 3> c_defaultFloorColour = {46.0/255.0, 53/255.0, 50/255.0};
-const std::array<float, 3> c_defaultWallColour = {140/255.0, 186/255.0, 128/255.0};
-const std::array<float, 3> c_defaultAvatarColour = {148/255.0, 132/255.0, 155/255.0};
+const std::array<float, 3> c_defaultFloorColour = {16/255.0, 11/255.0, 0/255.0};
+const std::array<float, 3> c_defaultWallColour = {255/255.0, 224/255.0, 181/255.0};
+const std::array<float, 3> c_defaultAvatarColour =  {202/255.0, 46/255.0, 85/255.0};
 const std::array<float, 3> c_blackColour = {0,  0, 0};
 
 const float c_worldScaleStep = 1;
