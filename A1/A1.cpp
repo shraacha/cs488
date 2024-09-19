@@ -15,6 +15,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "constants.hpp"
+#include "sphere.hpp"
 
 using namespace glm;
 using namespace std;
@@ -46,6 +47,10 @@ static inline glm::mat4 getViewMatrix(const glm::vec3 & camPosition, const glm::
 // moves pos distance * units towards target, returns new pos
 static inline glm::vec3 moveTowardsTarget(const glm::vec3 & position, const glm::vec3 & target, const float & distance) {
 	return position - glm::normalize(position - target) * distance;
+}
+
+static inline glm::mat4 getTranslationMatrixToCenterOfTile() {
+	return glm::translate(glm::mat4(), vec3(0.5, 0.5, 0.5));
 }
 
 //----------------------------------------------------------------------------------------
@@ -168,6 +173,7 @@ void A1::initGrid()
 
 void A1::initAvatar()
 {
+	/*
 	// TODO for now, avatar is a cube. Set as sphere later.
 	// Record buffer assignments in the vertex array
 	glGenVertexArrays(1, &m_avatar_vao);
@@ -188,6 +194,34 @@ void A1::initAvatar()
 	GLint posAttrib = m_shader.getAttribLocation( "position" );
 	glEnableVertexAttribArray(posAttrib);
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	*/
+
+	// Record buffer assignments in the vertex array
+	std::pair<std::vector<float>, std::vector<unsigned int> >
+		sphereVerticesAndIndices = generateLayeredSphereVerticesAndIndices(0.5, 16, 16);
+
+	glGenVertexArrays(1, &m_avatar_vao);
+	glBindVertexArray(m_avatar_vao);
+
+	// creating the vertex buffer
+	glGenBuffers(1, &m_avatar_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, m_avatar_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sphereVerticesAndIndices.first.size() * sizeof(float), sphereVerticesAndIndices.first.data(), GL_DYNAMIC_DRAW);
+
+	// creating the element buffer
+	glGenBuffers(1, &m_avatar_ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_avatar_ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphereVerticesAndIndices.second.size() * sizeof(unsigned int), sphereVerticesAndIndices.second.data(), GL_DYNAMIC_DRAW);
+
+	// number of indices for drawing later
+	m_avatarCount = sphereVerticesAndIndices.second.size();
+
+	// Specify the means of extracting the position values properly.
+	GLint posAttrib = m_shader.getAttribLocation( "position" );
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	m_avatarTileCenteringTranslation = getTranslationMatrixToCenterOfTile();
 
 	// Reset state to prevent rogue code from messing with *my*
 	// stuff!
@@ -555,11 +589,13 @@ void A1::draw()
 
 		// Draw the avatar
 		mat4 avatarTranslate = glm::translate(glm::mat4(), getAvatarPosition()); // TODO update on avatar position change for efficiency
-		mat4 avatarTransform = m_worldRotation * avatarTranslate * m_worldTranslation;
+		mat4 avatarTransform = m_worldRotation * avatarTranslate * m_worldTranslation * m_avatarTileCenteringTranslation;
 		glUniformMatrix4fv( M_uni, 1, GL_FALSE, value_ptr( avatarTransform ) );
+
 		glUniform3f( col_uni, m_avatarColour[0], m_avatarColour[1], m_avatarColour[2] );
 
 		glBindVertexArray(m_avatar_vao);
+		// glDrawArrays(GL_POINTS, 0, m_avatarCount);
 		glDrawElements(GL_TRIANGLES, m_avatarCount, GL_UNSIGNED_INT, 0);
 
 

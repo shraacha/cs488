@@ -112,6 +112,7 @@ private:
 	GLuint m_avatar_vbo; // Vertex Buffer Object
 	GLuint m_avatar_ebo; // Element Buffer Object
 	size_t m_avatarCount; // # of indices
+	glm::mat4 m_avatarTileCenteringTranslation;
 
 	// Matrices controlling the camera and projection.
 	glm::mat4 proj;
