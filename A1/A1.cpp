@@ -329,7 +329,11 @@ bool A1::getWallState(const int & x, const int & z) const {
 }
 
 glm::vec3 A1::getWallScaleVec() const {
-	return glm::vec3(1.0f, float(m_wallHeight), 1.0f);
+	if (m_wallHeight == 0) {
+		return glm::vec3(1.0f, 0.1f, 1.0f);
+	} else {
+		return glm::vec3(1.0f, float(m_wallHeight), 1.0f);
+	}
 }
 
 glm::vec3 A1::getFloorScaleVec() const {
