@@ -7,7 +7,15 @@ $ make
 $ ./A1
 ```
 
+The program was tested on machine `gl38`.
+
 # Manual
+## Comments / Known Issues
+### Persistence at Higher FPS
+The persistence feature seems to not function as smoothly on systems allowing for higher FPS, you have to *really* move the mouse to get it to spin. My guess as to why this is occuring is because my mouse `delta x` calculation is done on each frame, and not based on the mouse movement handler. On my home system, which runs at 75 fps, I believe that the system is able to pick up a difference in mouse movement, but since the higher fps system is polling the mouse much quicker rate, it is not catching the difference in mouse x.
+
+I did not have time to fix this bug, but I would add a "buffer" of `n` frames, based on the FPS rate of the system, after which I would poll the position of the mouse to get a `delta x`.
+
 ## Assumptions
 ### Persistence
 The A1 specification mentioned:
