@@ -173,29 +173,6 @@ void A1::initGrid()
 
 void A1::initAvatar()
 {
-	/*
-	// TODO for now, avatar is a cube. Set as sphere later.
-	// Record buffer assignments in the vertex array
-	glGenVertexArrays(1, &m_avatar_vao);
-	glBindVertexArray(m_avatar_vao);
-
-	// creating the vertex buffer
-	glGenBuffers(1, &m_avatar_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, m_avatar_vbo);
-	glBufferData(GL_ARRAY_BUFFER, c_unitCubeVertices.size() * sizeof(float), c_unitCubeVertices.data(), GL_DYNAMIC_DRAW);
-
-	// creating the element buffer
-	glGenBuffers(1, &m_avatar_ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_avatar_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, c_unitCubeIndices.size() * sizeof(unsigned int), c_unitCubeIndices.data(), GL_DYNAMIC_DRAW);
-	m_avatarCount =  c_unitCubeIndices.size();
-
-	// Specify the means of extracting the position values properly.
-	GLint posAttrib = m_shader.getAttribLocation( "position" );
-	glEnableVertexAttribArray(posAttrib);
-	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-	*/
-
 	// Record buffer assignments in the vertex array
 	std::pair<std::vector<float>, std::vector<unsigned int> >
 		sphereVerticesAndIndices = generateLayeredSphereVerticesAndIndices(0.5, 16, 16);
@@ -456,8 +433,6 @@ void A1::guiLogic()
 	float opacity(0.5f);
 
 	ImGui::Begin("Debug Window", &showDebugWindow, ImVec2(100,100), opacity, windowFlags);
-
-
 	    // ~~~~~~~~~~~~~~~~~~~
 		ImGui::Separator();
 		if( ImGui::Button( "Quit Application (Q)" ) ) {
@@ -529,7 +504,6 @@ void A1::guiLogic()
 		ImGui::Separator();
 		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 		// ImGui::Text( "Camera distance from target: %f units", glm::length(m_cameraPos - m_cameraTarget));
-
 	ImGui::End();
 
 	if( showTestWindow ) {
@@ -597,9 +571,6 @@ void A1::draw()
 		glBindVertexArray(m_avatar_vao);
 		// glDrawArrays(GL_POINTS, 0, m_avatarCount);
 		glDrawElements(GL_TRIANGLES, m_avatarCount, GL_UNSIGNED_INT, 0);
-
-
-		// Highlight the active square. TODO
 
 	m_shader.disable();
 
