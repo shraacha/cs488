@@ -68,7 +68,7 @@ void A2::init()
 	// (1.0f, -1.0f, 1.0f)
 	// (1.0f, 1.0f, -1.0f)
 	// (1.0f, 1.0f, 1.0f)
-	std::vector<line> m_modelCubeLines = {
+	std::vector<line3> m_modelCubeLines = {
 	    // bottom face
 		{(-1.0f, -1.0f, -1.0f), (-1.0f, -1.0f, 1.0f)},
 		{(-1.0f, -1.0f, 1.0f), (1.0f, -1.0f, 1.0f)},
