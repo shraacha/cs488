@@ -64,7 +64,8 @@ protected:
             const glm::vec2 & v1
     );
 
-    void drawLines (const std::vector<line3> & vertLIst);
+    void drawLines (const std::vector<line4> & lineList);
+    void drawGnomon(const std::vector<line4> &lineList, const std::vector<colour> & colours);
 
     ShaderProgram m_shader;
 
@@ -76,6 +77,19 @@ protected:
 
     glm::vec3 m_currentLineColour;
 
-    // cube lines
-    std::vector<line3> m_modelCubeLines;
+    // model lines
+    std::vector<line4> m_modelCubeLines;
+    std::vector<line4> m_modelGnomonLines;
+    // world
+    std::vector<line4> m_worldGnomonLines;
+    // viewport
+    std::vector<line4> m_viewportLines;
+
+    // transformations
+    glm::mat4 m_modelRotAndTrn;
+    glm::mat4 m_modelScl;
+
+    glm::mat4 m_viewRotAndTrn;
+
+    glm::mat4 m_perspective;
 };

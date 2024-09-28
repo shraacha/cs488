@@ -1,6 +1,7 @@
 // Termm--Fall 2024
 
 #include "A2.hpp"
+#include "constants.hpp"
 #include "cs488-framework/GlErrorCheck.hpp"
 
 #include <iostream>
@@ -12,6 +13,94 @@ using namespace std;
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/io.hpp>
 using namespace glm;
+
+//--------- helpers ----------
+static inline line4 transformLine(const glm::mat4 & transformation, const line4 & line) {
+    return {transformation * line.first, transformation * line.second};
+}
+
+static inline std::vector<line4>
+transformLines(const glm::mat4 &transformation,
+               const std::vector<line4> &lines) {
+    std::vector<line4> newLines;
+    for(auto it = lines.begin(); it < lines.end(); it++) {
+        // TODO use cpp17 for emplace back
+        newLines.push_back(transformLine(transformation, *it));
+    }
+    return newLines;
+}
+
+// Params:
+//  - translatioVector[0] - translation in the x dir, relative to to current frame
+//  - translatioVector[1] - ... y dir ...
+//  - translatioVector[2] - ... z dir ...
+static inline glm::mat4 getTranslationMatrix(const glm::vec3 & translationVector) {
+    glm::mat4 translationMatrix = glm::mat4();
+    for(int i = 0; i < 3; i ++) {
+        // glm::mat4 is column major - i.e. columns are indexed first
+        translationMatrix[3][i] = translationVector[i];
+    }
+
+    return translationMatrix;
+}
+
+// Description:
+//  - creates a rotation matrix relative to the current frame. When right
+//  multiplied by a matrix, the z-axis rotation is applied first, then y, then x.
+// Params:
+//  - translatioVector[0] - radians to rotate counterclockwise around the x-axis, relative to to
+//  current frame
+//  - translatioVector[1] - ... y-axis ...
+//  - translatioVector[2] - ... z-axis ...
+static inline glm::mat4 getRotationMatrix(const glm::vec3 &translationVector) {
+    // glm::mat4 is column major - i.e. columns are indexed first
+
+    glm::mat4 xAxisRotation = glm::mat4();
+    glm::mat4 yAxisRotation = glm::mat4();
+    glm::mat4 zAxisRotation = glm::mat4();
+
+    // x
+    /*
+     *     1      0       0      0
+     *     0    cos(t) -sin(t)   0
+     *     0    sin(t)  cos(t)   0
+     *     0      0       0      1
+     */
+    xAxisRotation[1][1] = cosf(translationVector[0]);
+    xAxisRotation[1][2] = sinf(translationVector[0]);
+    xAxisRotation[2][1] = -sinf(translationVector[0]);
+    xAxisRotation[2][2] = cosf(translationVector[0]);
+
+    // y
+    /*
+     * with z up, x to the right, y faces forward, not towards us.
+     * This means that we need to flip t when compared to a rotation wrt x & y.
+     * sin is an odd f'n, cos is an even f'n
+     *
+     *   cos(t)   0   sin(t)  0
+     *     0      1     0     0
+     *  -sin(t)   0   cos(t)  0
+     *     0      0     0     1
+     */
+    yAxisRotation[0][0] = cosf(translationVector[1]);
+    yAxisRotation[0][2] = -sinf(translationVector[1]);
+    yAxisRotation[2][0] = sinf(translationVector[1]);
+    yAxisRotation[2][2] = cosf(translationVector[1]);
+
+    // z
+    /*
+     * cos(t)   -sin(t)   0   0
+     * sin(t)   cos(t)    0   0
+     *   0         0      1   0
+     *   0         0      0   1
+     */
+    zAxisRotation[0][0] = cosf(translationVector[2]);
+    zAxisRotation[0][1] = sinf(translationVector[2]);
+    zAxisRotation[1][0] = -sinf(translationVector[2]);
+    zAxisRotation[1][1] = cosf(translationVector[2]);
+
+    return xAxisRotation * yAxisRotation * zAxisRotation;
+}
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -27,7 +116,10 @@ VertexData::VertexData()
 //----------------------------------------------------------------------------------------
 // Constructor
 A2::A2()
-    : m_currentLineColour(vec3(0.0f))
+    : m_currentLineColour(vec3(0.0f)),
+      m_modelCubeLines{c_cubeLines},
+      m_modelGnomonLines{c_unitGnomonLines},
+      m_worldGnomonLines{c_unitGnomonLines}
 {
 
 }
@@ -57,32 +149,6 @@ void A2::init()
     generateVertexBuffers();
 
     mapVboDataToVertexAttributeLocation();
-
-    // init cube
-    // The vertices of the cube are at:
-    // (-1.0f, -1.0f, -1.0f)
-    // (-1.0f, -1.0f, 1.0f)
-    // (-1.0f, 1.0f, -1.0f)
-    // (-1.0f, 1.0f, 1.0f)
-    // (1.0f, -1.0f, -1.0f)
-    // (1.0f, -1.0f, 1.0f)
-    // (1.0f, 1.0f, -1.0f)
-    // (1.0f, 1.0f, 1.0f)
-    m_modelCubeLines = {// bottom face
-                        {{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, 1.0f}},
-                        {{-1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
-                        {{1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, -1.0f}},
-                        {{1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f}},
-                        // top face
-                        {{-1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, 1.0f}},
-                        {{-1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
-                        {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}},
-                        {{1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, -1.0f}},
-                        // middle layer
-                        {{-1.0f, 1.0f, -1.0f}, {-1.0f, -1.0f, 1.0f}},
-                        {{-1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}},
-                        {{1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
-                        {{1.0f, 1.0f, -1.0f}, {1.0f, -1.0f, -1.0f}}};
 }
 
 //----------------------------------------------------------------------------------------
@@ -207,10 +273,19 @@ void A2::drawLine(
 }
 
 //---------------------------------------------------------------------------------------
-void A2::drawLines(const std::vector<line3> & vertList) {
-	for(auto it = vertList.begin(); it != vertList.end(); it++) {
-		drawLine(glm::vec2(it->first), glm::vec2(it->second));
-	}
+void A2::drawLines(const std::vector<line4> &lineList) {
+    for (auto it = lineList.begin(); it != lineList.end(); it++) {
+        drawLine(glm::vec2(it->first), glm::vec2(it->second));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+void A2::drawGnomon(const std::vector<line4> &lineList, const std::vector<colour> & colours) {
+    auto itColour = colours.begin();
+    for(auto it = lineList.begin(); it != lineList.end(); it++, itColour++) {
+        setLineColour(*itColour);
+        drawLine(glm::vec2(it->first), glm::vec2(it->second));
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -224,23 +299,28 @@ void A2::appLogic()
     // Call at the beginning of frame, before drawing lines:
     initLineData();
 
-    // Draw outer square:
-    setLineColour(vec3(1.0f, 0.7f, 0.8f));
-    drawLine(vec2(-0.5f, -0.5f), vec2(0.5f, -0.5f));
-    drawLine(vec2(0.5f, -0.5f), vec2(0.5f, 0.5f));
-    drawLine(vec2(0.5f, 0.5f), vec2(-0.5f, 0.5f));
-    drawLine(vec2(-0.5f, 0.5f), vec2(-0.5f, -0.5f));
+    // transform lines
+    std::vector<line4> transformedModelCubeLines =
+        transformLines(m_perspective * m_viewRotAndTrn * m_modelRotAndTrn, m_modelCubeLines);
+    std::vector<line4> transformedModelGnomonLines =
+        transformLines(m_perspective * m_viewRotAndTrn * m_modelRotAndTrn, m_modelGnomonLines);
+    std::vector<line4> transformedWorldGnomonLines =
+        transformLines(m_perspective * m_viewRotAndTrn * m_modelRotAndTrn, m_modelGnomonLines);
 
-    // Draw inner square:
-    setLineColour(vec3(0.2f, 1.0f, 1.0f));
-    drawLine(vec2(-0.25f, -0.25f), vec2(0.25f, -0.25f));
-    drawLine(vec2(0.25f, -0.25f), vec2(0.25f, 0.25f));
-    drawLine(vec2(0.25f, 0.25f), vec2(-0.25f, 0.25f));
-    drawLine(vec2(-0.25f, 0.25f), vec2(-0.25f, -0.25f));
+    // clip to near and far planes
+    // (-1.0, 1.0, if mapping z)
 
-	// draw cube
-    setLineColour(vec3(1.0f, 1.0f, 1.0f));
-	drawLines(m_modelCubeLines);
+    // homogenize
+
+    // clip to window
+
+    // viewport transformation
+
+    // draw lines
+    setLineColour(c_white);
+    drawLines(transformedModelCubeLines);
+    drawGnomon(transformedModelGnomonLines, {c_red, c_green, c_blue});
+    //drawGnomon(m_worldGnomonLines, {c_cyan, c_magenta, c_yellow});
 }
 
 //----------------------------------------------------------------------------------------
