@@ -10,6 +10,8 @@
 
 #include <vector>
 
+#include "constants.hpp"
+
 // Set a global maximum number of vertices in order to pre-allocate VBO data
 // in one shot, rather than reallocating each frame.
 const GLsizei kMaxVertices = 1000;
@@ -62,6 +64,8 @@ protected:
             const glm::vec2 & v1
     );
 
+    void drawLines (const std::vector<line3> & vertLIst);
+
     ShaderProgram m_shader;
 
     GLuint m_vao;            // Vertex Array Object
@@ -72,4 +76,6 @@ protected:
 
     glm::vec3 m_currentLineColour;
 
+	// cube lines
+	std::vector<line> m_modelCubeLines;
 };

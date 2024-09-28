@@ -57,6 +57,34 @@ void A2::init()
     generateVertexBuffers();
 
     mapVboDataToVertexAttributeLocation();
+
+	// init cube
+	// The vertices of the cube are at:
+	// (-1.0f, -1.0f, -1.0f)
+	// (-1.0f, -1.0f, 1.0f)
+	// (-1.0f, 1.0f, -1.0f)
+	// (-1.0f, 1.0f, 1.0f)
+	// (1.0f, -1.0f, -1.0f)
+	// (1.0f, -1.0f, 1.0f)
+	// (1.0f, 1.0f, -1.0f)
+	// (1.0f, 1.0f, 1.0f)
+	std::vector<line> m_modelCubeLines = {
+	    // bottom face
+		{(-1.0f, -1.0f, -1.0f), (-1.0f, -1.0f, 1.0f)},
+		{(-1.0f, -1.0f, 1.0f), (1.0f, -1.0f, 1.0f)},
+		{(1.0f, -1.0f, 1.0f), (1.0f, -1.0f, -1.0f)},
+		{(1.0f, -1.0f, -1.0f), (-1.0f, -1.0f, -1.0f)},
+		// top face
+		{(-1.0f, 1.0f, -1.0f), (-1.0f, 1.0f, 1.0f)},
+		{(-1.0f, 1.0f, 1.0f), (1.0f, 1.0f, 1.0f)},
+		{(1.0f, 1.0f, 1.0f), (1.0f, 1.0f, -1.0f)},
+		{(1.0f, 1.0f, -1.0f), (-1.0f, 1.0f, -1.0f)},
+		// middle layer
+		{(-1.0f, 1.0f, -1.0f), (-1.0f, -1.0f, 1.0f)},
+		{(-1.0f, 1.0f, 1.0f), (-1.0f, -1.0f, 1.0f)},
+		{(1.0f, 1.0f, 1.0f), (1.0f, -1.0f, 1.0f)},
+		{(1.0f, 1.0f, -1.0f), (1.0f, -1.0f, -1.0f)},
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -180,6 +208,13 @@ void A2::drawLine(
     m_vertexData.numVertices += 2;
 }
 
+//---------------------------------------------------------------------------------------
+void A2::drawLines(const std::vector<line3> & vertList) {
+	for(auto it = vertlist.begin(); it != vertList.end(); it++) {
+		drawLine(glm::vec2(it->first), glm::vec2(it->second));
+	}
+}
+
 //----------------------------------------------------------------------------------------
 /*
  * Called once per frame, before guiLogic().
@@ -198,13 +233,15 @@ void A2::appLogic()
     drawLine(vec2(0.5f, 0.5f), vec2(-0.5f, 0.5f));
     drawLine(vec2(-0.5f, 0.5f), vec2(-0.5f, -0.5f));
 
-
     // Draw inner square:
     setLineColour(vec3(0.2f, 1.0f, 1.0f));
     drawLine(vec2(-0.25f, -0.25f), vec2(0.25f, -0.25f));
     drawLine(vec2(0.25f, -0.25f), vec2(0.25f, 0.25f));
     drawLine(vec2(0.25f, 0.25f), vec2(-0.25f, 0.25f));
     drawLine(vec2(-0.25f, 0.25f), vec2(-0.25f, -0.25f));
+
+	// draw cube
+	drawLines(m_modelCubeLines);
 }
 
 //----------------------------------------------------------------------------------------
