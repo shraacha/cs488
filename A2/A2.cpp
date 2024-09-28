@@ -68,7 +68,7 @@ void A2::init()
 	// (1.0f, -1.0f, 1.0f)
 	// (1.0f, 1.0f, -1.0f)
 	// (1.0f, 1.0f, 1.0f)
-	std::vector<line3> m_modelCubeLines = {
+	m_modelCubeLines = {
 	    // bottom face
 		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, 1.0f}},
 		{{-1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
@@ -242,7 +242,6 @@ void A2::appLogic()
 
 	// draw cube
     setLineColour(vec3(1.0f, 1.0f, 1.0f));
-    drawLine(vec2(1.0f, -0.25f), vec2(0.25f, -0.25f)); // TESTING
 	drawLines(m_modelCubeLines);
 }
 
