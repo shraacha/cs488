@@ -76,6 +76,6 @@ protected:
 
     glm::vec3 m_currentLineColour;
 
-	// cube lines
-	std::vector<line3> m_modelCubeLines;
+    // cube lines
+    std::vector<line3> m_modelCubeLines;
 };
