@@ -34,11 +34,11 @@ transformLines(const glm::mat4 &transformation,
 //  - translatioVector[0] - translation in the x dir, relative to to current frame
 //  - translatioVector[1] - ... y dir ...
 //  - translatioVector[2] - ... z dir ...
-static inline glm::mat4 getTranslationMatrix(const glm::vec3 & translationVector) {
+static inline glm::mat4 getTranslationMatrix(const glm::vec3 & inputVec) {
     glm::mat4 translationMatrix = glm::mat4();
     for(int i = 0; i < 3; i ++) {
         // glm::mat4 is column major - i.e. columns are indexed first
-        translationMatrix[3][i] = translationVector[i];
+        translationMatrix[3][i] = inputVec[i];
     }
 
     return translationMatrix;
@@ -48,13 +48,12 @@ static inline glm::mat4 getTranslationMatrix(const glm::vec3 & translationVector
 //  - creates a rotation matrix relative to the current frame. When right
 //  multiplied by a matrix, the z-axis rotation is applied first, then y, then x.
 // Params:
-//  - translatioVector[0] - radians to rotate counterclockwise around the x-axis, relative to to
+//  - inputVec[0] - radians to rotate counterclockwise around the x-axis, relative to to
 //  current frame
-//  - translatioVector[1] - ... y-axis ...
-//  - translatioVector[2] - ... z-axis ...
-static inline glm::mat4 getRotationMatrix(const glm::vec3 &translationVector) {
+//  - inputVec[1] - ... y-axis ...
+//  - inputVec[2] - ... z-axis ...
+static inline glm::mat4 getRotationMatrix(const glm::vec3 &inputVec) {
     // glm::mat4 is column major - i.e. columns are indexed first
-
     glm::mat4 xAxisRotation = glm::mat4();
     glm::mat4 yAxisRotation = glm::mat4();
     glm::mat4 zAxisRotation = glm::mat4();
@@ -66,10 +65,10 @@ static inline glm::mat4 getRotationMatrix(const glm::vec3 &translationVector) {
      *     0    sin(t)  cos(t)   0
      *     0      0       0      1
      */
-    xAxisRotation[1][1] = cosf(translationVector[0]);
-    xAxisRotation[1][2] = sinf(translationVector[0]);
-    xAxisRotation[2][1] = -sinf(translationVector[0]);
-    xAxisRotation[2][2] = cosf(translationVector[0]);
+    xAxisRotation[1][1] = cosf(inputVec[0]);
+    xAxisRotation[1][2] = sinf(inputVec[0]);
+    xAxisRotation[2][1] = -sinf(inputVec[0]);
+    xAxisRotation[2][2] = cosf(inputVec[0]);
 
     // y
     /*
@@ -82,10 +81,10 @@ static inline glm::mat4 getRotationMatrix(const glm::vec3 &translationVector) {
      *  -sin(t)   0   cos(t)  0
      *     0      0     0     1
      */
-    yAxisRotation[0][0] = cosf(translationVector[1]);
-    yAxisRotation[0][2] = -sinf(translationVector[1]);
-    yAxisRotation[2][0] = sinf(translationVector[1]);
-    yAxisRotation[2][2] = cosf(translationVector[1]);
+    yAxisRotation[0][0] = cosf(inputVec[1]);
+    yAxisRotation[0][2] = -sinf(inputVec[1]);
+    yAxisRotation[2][0] = sinf(inputVec[1]);
+    yAxisRotation[2][2] = cosf(inputVec[1]);
 
     // z
     /*
@@ -94,12 +93,29 @@ static inline glm::mat4 getRotationMatrix(const glm::vec3 &translationVector) {
      *   0         0      1   0
      *   0         0      0   1
      */
-    zAxisRotation[0][0] = cosf(translationVector[2]);
-    zAxisRotation[0][1] = sinf(translationVector[2]);
-    zAxisRotation[1][0] = -sinf(translationVector[2]);
-    zAxisRotation[1][1] = cosf(translationVector[2]);
+    zAxisRotation[0][0] = cosf(inputVec[2]);
+    zAxisRotation[0][1] = sinf(inputVec[2]);
+    zAxisRotation[1][0] = -sinf(inputVec[2]);
+    zAxisRotation[1][1] = cosf(inputVec[2]);
 
     return xAxisRotation * yAxisRotation * zAxisRotation;
+}
+
+//  Description:
+//  - creates a scaling matrix relative to the current frame.
+// Params:
+//  - inputVec[0] - factor to scale in the x-axis
+//  - inputVec[1] - ... y-axis ...
+//  - inputVec[2] - ... z-axis ...
+static inline glm::mat4 getScaleMatrix(const glm::vec3 &inputVec) {
+    glm::mat4 scaleMatrix = glm::mat4();
+
+    // glm::mat4 is column major - i.e. columns are indexed first
+    scaleMatrix[0][0] = inputVec[0];
+    scaleMatrix[1][1] = inputVec[1];
+    scaleMatrix[2][2] = inputVec[2];
+
+    return scaleMatrix;
 }
 
 //----------------------------------------------------------------------------------------
@@ -301,7 +317,7 @@ void A2::appLogic()
 
     // transform lines
     std::vector<line4> transformedModelCubeLines =
-        transformLines(m_perspective * m_viewRotAndTrn * m_modelRotAndTrn, m_modelCubeLines);
+        transformLines(m_perspective * m_viewRotAndTrn * m_modelScl * m_modelRotAndTrn, m_modelCubeLines);
     std::vector<line4> transformedModelGnomonLines =
         transformLines(m_perspective * m_viewRotAndTrn * m_modelRotAndTrn, m_modelGnomonLines);
     std::vector<line4> transformedWorldGnomonLines =
