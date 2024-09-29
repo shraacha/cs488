@@ -136,8 +136,7 @@ A2::A2()
       m_modelCubeLines{c_cubeLines},
       m_modelGnomonLines{c_unitGnomonLines},
       m_worldGnomonLines{c_unitGnomonLines},
-      m_viewRotAndTsl{glm::inverse(getRotationMatrix(c_initalCameraRot) *
-                                   getTranslationMatrix(c_initalCameraTsl))}
+      m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_cameraToWorldMatrix))}
 {
 }
 
