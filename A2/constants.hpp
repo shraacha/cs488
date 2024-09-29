@@ -18,9 +18,11 @@ const colour c_cyan = {0.0f, 1.0f, 1.0f};
 const colour c_magenta = {1.0f, 0.0f, 1.0f};
 const colour c_yellow = {1.0f, 1.0f, 0.0f};
 
+// points
+const glm::vec3 c_initalCameraTsl = {0.0f, 0.0f, 7.0f};
+const glm::vec3 c_initalCameraRot = {-M_PI/4, M_PI/4, 0.0f};
 
 // lines
-
 
 // The vertices of the cube are at:
 // (-1.0f, -1.0f, -1.0f)

@@ -135,9 +135,10 @@ A2::A2()
     : m_currentLineColour(vec3(0.0f)),
       m_modelCubeLines{c_cubeLines},
       m_modelGnomonLines{c_unitGnomonLines},
-      m_worldGnomonLines{c_unitGnomonLines}
+      m_worldGnomonLines{c_unitGnomonLines},
+      m_viewRotAndTsl{glm::inverse(getRotationMatrix(c_initalCameraRot) *
+                                   getTranslationMatrix(c_initalCameraTsl))}
 {
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -317,11 +318,11 @@ void A2::appLogic()
 
     // transform lines
     std::vector<line4> transformedModelCubeLines =
-        transformLines(m_perspective * m_viewRotAndTrn * m_modelScl * m_modelRotAndTrn, m_modelCubeLines);
+        transformLines(m_perspective * m_viewRotAndTsl * m_modelScl * m_modelRotAndTsl, m_modelCubeLines);
     std::vector<line4> transformedModelGnomonLines =
-        transformLines(m_perspective * m_viewRotAndTrn * m_modelRotAndTrn, m_modelGnomonLines);
+        transformLines(m_perspective * m_viewRotAndTsl * m_modelRotAndTsl, m_modelGnomonLines);
     std::vector<line4> transformedWorldGnomonLines =
-        transformLines(m_perspective * m_viewRotAndTrn * m_modelRotAndTrn, m_modelGnomonLines);
+        transformLines(m_perspective * m_viewRotAndTsl * m_modelRotAndTsl, m_modelGnomonLines);
 
     // clip to near and far planes
     // (-1.0, 1.0, if mapping z)

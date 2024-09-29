@@ -86,10 +86,10 @@ protected:
     std::vector<line4> m_viewportLines;
 
     // transformations
-    glm::mat4 m_modelRotAndTrn;
+    glm::mat4 m_modelRotAndTsl;
     glm::mat4 m_modelScl;
 
-    glm::mat4 m_viewRotAndTrn;
+    glm::mat4 m_viewRotAndTsl;
 
     glm::mat4 m_perspective;
 };
