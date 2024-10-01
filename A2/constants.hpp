@@ -67,7 +67,20 @@ const std::vector<line4> c_cubeLines = {
     {{1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f, 1.0f}},
     {{1.0f, 1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, -1.0f, 1.0f}}};
 
+const line4 c_unitLineX = {{0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}};
+const line4 c_unitLineY = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}};
+const line4 c_unitLineZ = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
 
-const line4 c_standardBasisX = {{0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}};
-const line4 c_standardBasisY = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}};
-const line4 c_standardBasisZ = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
+const glm::vec4 c_standardBasisX = {1.0f, 0.0f, 0.0f, 0.0f};
+const glm::vec4 c_standardBasisY = {0.0f, 1.0f, 0.0f, 0.0f};
+const glm::vec4 c_standardBasisZ = {0.0f, 0.0f, 1.0f, 0.0f};
+
+const float c_defaultNearDistance = 5;
+const float c_defaultFarDistance = 60;
+
+const float c_minNearDistance = 2;
+const float c_maxFarDistance= 200;
+
+const float c_defaultFOV = M_PI / 3.0;
+const float c_minFOV = 0.0f;
+const float c_maxFOV = M_PI / 1.2;

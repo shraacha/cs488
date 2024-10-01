@@ -113,6 +113,76 @@ static inline glm::mat4 getScaleMatrix(const glm::vec3 &inputVec) {
     return scaleMatrix;
 }
 
+// TODO add z mapping
+static inline glm::mat4 getPerspectiveMatrix(const float & fov) {
+    glm::mat4 perspectiveMatrix = glm::mat4();
+
+    // scale x and y based on the FOV. This controls what gets mapped to 1.
+    perspectiveMatrix[0][0] = cosf(fov / 2);
+    perspectiveMatrix[1][1] = cosf(fov / 2);
+
+    return perspectiveMatrix;
+}
+
+//  Description
+//  - returns (Q - P) * n, where P is a point on the line,
+//  n is normal to the line, and Q is the point being tested.
+static inline float implicitLineEquation(const glm::vec4 & Q, const glm::vec4 & P, const glm::vec4 & n) {
+    return glm::dot((Q - P), n);
+}
+
+static inline glm::vec4 parametricLineEquation(const glm::vec4 & A, const glm::vec4 & B, const float & t) {
+    return (1.0f - t) * A + t * B;
+}
+
+// the line must not be a point
+static inline std::optional<line4> clipLine(const line4 & line, const glm::vec4 & P, const glm::vec4 & n) {
+    float testA = implicitLineEquation(line.first, P, n);
+    float testB = implicitLineEquation(line.second, P, n);
+
+    if ((testA - testB == 0) || testA < 0 && testB < 0) {
+        return std::nullopt;
+    } else if (testA >= 0 && testB >= 0) {
+        return line;
+    } else {
+        glm::vec4 intersectionPoint = parametricLineEquation(line.first, line.second, testA / (testA - testB));
+
+        if (testA >= 0) {
+            return std::make_pair(line.first, intersectionPoint);
+        } else {
+            return std::make_pair(line.second, intersectionPoint);
+        }
+    }
+}
+
+static inline std::vector<std::optional<line4>>
+convertLinesToOptionalLines(const std::vector<line4> &inputLines) {
+    std::vector<std::optional<line4>> optionalLines;
+
+    std::transform(inputLines.begin(), inputLines.end(),
+                  std::back_inserter(optionalLines),
+                  [](const line4 & line){return line;});
+
+    return optionalLines;
+}
+
+// TODO write this in a more concise way
+static inline void
+homogenizeInPlace(std::optional<line4> & inputLine) {
+    if (inputLine.has_value()) {
+        float z1 = - (inputLine->first)[2]; // camera is looking down -z, so we flip
+        float z2 = - (inputLine->second)[2];
+
+        (inputLine->first)[0] /= z1;
+        (inputLine->first)[1] /= z1;
+        (inputLine->first)[2] /= z1;
+
+        (inputLine->second)[0] /= z2;
+        (inputLine->second)[1] /= z2;
+        (inputLine->second)[2] /= z2;
+    }
+}
+
 //----------------------------------------------------------------------------------------
 // Constructor
 VertexData::VertexData()
@@ -128,11 +198,15 @@ VertexData::VertexData()
 // Constructor
 A2::A2()
     : m_currentLineColour(vec3(0.0f)),
-      m_modelCubeLines{c_cubeLines},
-      m_modelGnomonLines{{c_standardBasisX, c_standardBasisY, c_standardBasisZ}},
-      m_worldGnomonLines{{c_standardBasisX, c_standardBasisY, c_standardBasisZ}},
-      m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_cameraToWorldMatrix))}
+      m_modelCubeLines{},
+      m_modelGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
+      m_worldGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
+      m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_cameraToWorldMatrix))},
+      m_perspective{getPerspectiveMatrix(c_defaultFOV)},
+      m_nearPoint{zClipPlaneDistToPoint(c_defaultNearDistance)},
+      m_farPoint{zClipPlaneDistToPoint(c_defaultFarDistance)}
 {
+    m_modelCubeLines = convertLinesToOptionalLines(c_cubeLines);
 }
 
 //----------------------------------------------------------------------------------------
@@ -290,6 +364,14 @@ void A2::drawLines(const std::vector<line4> &lineList) {
     }
 }
 
+void A2::drawLines(const std::vector<std::optional<line4>> &lineList) {
+    for (const auto & line : lineList) {
+        if (line.has_value()) {
+            drawLine(glm::vec2(line->first), glm::vec2(line->second));
+        }
+    }
+}
+
 void A2::drawLines(const std::vector<std::optional<line4>> &lineList,
                    const std::vector<colour> &colours) {
     auto itColour = colours.begin();
@@ -300,6 +382,12 @@ void A2::drawLines(const std::vector<std::optional<line4>> &lineList,
             drawLine(glm::vec2((*it)->first), glm::vec2((*it)->second));
         }
     }
+}
+
+
+//----------------------------------------------------------------------------------------
+glm::vec4 A2::zClipPlaneDistToPoint(const float & dist) {
+    return -dist * c_standardBasisZ;
 }
 
 //----------------------------------------------------------------------------------------
@@ -318,14 +406,14 @@ void A2::appLogic()
                        return transformLine(transformation, *line);
                    };
 
-    std::vector<line4> transformedModelCubeLines;
+    std::vector<std::optional<line4>> transformedModelCubeLines;
     std::vector<std::optional<line4>> transformedModelGnomonLines;
     std::vector<std::optional<line4>> transformedWorldGnomonLines;
 
     // transform lines by V * M
     std::transform(m_modelCubeLines.begin(), m_modelCubeLines.end(),
                    std::back_inserter(transformedModelCubeLines),
-                   std::bind(&transformLine,
+                   std::bind(transformOptionalLine,
                              m_perspective * m_viewRotAndTsl * m_modelScl *
                                  m_modelRotAndTsl,
                              std::placeholders::_1));
@@ -341,9 +429,36 @@ void A2::appLogic()
                              std::placeholders::_1));
 
     // clip to near and far planes
+    std::for_each(
+        transformedModelCubeLines.begin(), transformedModelCubeLines.end(),
+        [&](std::optional<line4> &line) {
+            line = clipLine(*clipLine(*line, m_nearPoint, -c_standardBasisZ),
+                            m_farPoint, c_standardBasisZ);
+        });
+    std::for_each(
+        transformedModelGnomonLines.begin(), transformedModelGnomonLines.end(),
+        [&](std::optional<line4> &line) {
+            line = clipLine(*clipLine(*line, m_nearPoint, -c_standardBasisZ),
+                            m_farPoint, c_standardBasisZ);
+        });
+    std::for_each(
+        transformedWorldGnomonLines.begin(), transformedWorldGnomonLines.end(),
+        [&](std::optional<line4> &line) {
+            line = clipLine(*clipLine(*line, m_nearPoint, -c_standardBasisZ),
+                            m_farPoint, c_standardBasisZ);
+        });
 
     // homogenize
-
+    // TODO scale for FOV
+    std::for_each(transformedModelCubeLines.begin(),
+                  transformedModelCubeLines.end(),
+                  [&](std::optional<line4> &line) { homogenizeInPlace(line); });
+    std::for_each(transformedModelGnomonLines.begin(),
+                  transformedModelGnomonLines.end(),
+                  [&](std::optional<line4> &line) { homogenizeInPlace(line); });
+    std::for_each(transformedWorldGnomonLines.begin(),
+                  transformedWorldGnomonLines.end(),
+                  [&](std::optional<line4> &line) { homogenizeInPlace(line); });
     // clip to window
 
     // viewport transformation

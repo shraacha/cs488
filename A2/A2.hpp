@@ -64,10 +64,12 @@ protected:
             const glm::vec2 & v0,
             const glm::vec2 & v1
     );
-
     void drawLines(const std::vector<line4> &lineList);
+    void drawLines(const std::vector<std::optional<line4>> &lineList);
     void drawLines(const std::vector<std::optional<line4>> &lineList,
                    const std::vector<colour> &colours);
+
+    static glm::vec4 zClipPlaneDistToPoint(const float & dist);
 
     ShaderProgram m_shader;
 
@@ -80,7 +82,7 @@ protected:
     glm::vec3 m_currentLineColour;
 
     // model lines
-    std::vector<line4> m_modelCubeLines;
+    std::vector<std::optional<line4>> m_modelCubeLines;
     std::vector<std::optional<line4>> m_modelGnomonLines;
     // world
     std::vector<std::optional<line4>> m_worldGnomonLines;
@@ -93,5 +95,10 @@ protected:
 
     glm::mat4 m_viewRotAndTsl;
 
+    float m_fov;
     glm::mat4 m_perspective;
+
+    // clipping
+    glm::vec4 m_nearPoint;
+    glm::vec4 m_farPoint;
 };
