@@ -405,11 +405,34 @@ void A2::appLogic()
     // Call at the beginning of frame, before drawing lines:
     initLineData();
 
-    auto transformOptionalLine =
-                   [&](const glm::mat4 & transformation, const std::optional<line4> & line) {
-                       return transformLine(transformation, *line);
-                   };
+    auto transformOptionalLine = [&](const glm::mat4 &transformation,
+                                     const std::optional<line4> &line) {
+        return transformLine(transformation, *line);
+    };
 
+    auto clipNearFar = [&](std::optional<line4> &line) {
+        line = clipLine(*line, m_nearPoint, -c_standardBasisZ);
+
+        if (line.has_value()) {
+            line = clipLine(*line, m_farPoint, c_standardBasisZ);
+        }
+    };
+
+    auto clipNDC = [&](std::optional<line4> &line) {
+        line = clipLine(*line, {1.0f, 0.0f, 0.0f, 0.0f}, -c_standardBasisX);
+
+        if (line.has_value()) {
+            line = clipLine(*line, {-1.0f, 0.0f, 0.0f, 0.0f}, c_standardBasisX);
+            if (line.has_value()) {
+                line = clipLine(*line, {0.0f, 1.0f, 0.0f, 0.0f},
+                                -c_standardBasisY);
+                if (line.has_value()) {
+                    line = clipLine(*line, {0.0f, -1.0f, 0.0f, 0.0f},
+                                    c_standardBasisY);
+                }
+            }
+        }
+    };
     std::vector<std::optional<line4>> transformedModelCubeLines;
     std::vector<std::optional<line4>> transformedModelGnomonLines;
     std::vector<std::optional<line4>> transformedWorldGnomonLines;
@@ -433,24 +456,15 @@ void A2::appLogic()
                              std::placeholders::_1));
 
     // clip to near and far planes
-    std::for_each(
-        transformedModelCubeLines.begin(), transformedModelCubeLines.end(),
-        [&](std::optional<line4> &line) {
-            line = clipLine(*clipLine(*line, m_nearPoint, -c_standardBasisZ),
-                            m_farPoint, c_standardBasisZ);
-        });
-    std::for_each(
-        transformedModelGnomonLines.begin(), transformedModelGnomonLines.end(),
-        [&](std::optional<line4> &line) {
-            line = clipLine(*clipLine(*line, m_nearPoint, -c_standardBasisZ),
-                            m_farPoint, c_standardBasisZ);
-        });
-    std::for_each(
-        transformedWorldGnomonLines.begin(), transformedWorldGnomonLines.end(),
-        [&](std::optional<line4> &line) {
-            line = clipLine(*clipLine(*line, m_nearPoint, -c_standardBasisZ),
-                            m_farPoint, c_standardBasisZ);
-        });
+    std::for_each(transformedModelCubeLines.begin(),
+                  transformedModelCubeLines.end(),
+                  clipNearFar);
+    std::for_each(transformedModelGnomonLines.begin(),
+                  transformedModelGnomonLines.end(),
+                  clipNearFar);
+    std::for_each(transformedWorldGnomonLines.begin(),
+                  transformedWorldGnomonLines.end(),
+                  clipNearFar);
 
     // homogenize
     std::for_each(transformedModelCubeLines.begin(),
