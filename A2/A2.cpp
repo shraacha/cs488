@@ -7,6 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iterator>
+#include <optional>
 #include <tuple>
 #include <functional>
 
@@ -21,8 +22,23 @@ using namespace glm;
 
 
 //--------- helpers ----------
-static inline line4 transformLine(const glm::mat4 & transformation, const line4 & line) {
+static inline line4 transformLine(const line4 &line,
+                                  const glm::mat4 &transformation) {
     return {transformation * line.first, transformation * line.second};
+}
+
+static inline std::vector<std::optional<line4>>
+transformLines(const std::vector<std::optional<line4>> &lines,
+               const glm::mat4 &transformation) {
+    std::vector<std::optional<line4>> transformedLines;
+
+    std::transform(lines.begin(), lines.end(),
+                   std::back_inserter(transformedLines),
+                   [&](const std::optional<line4> &line) {
+                       return transformLine(*line, transformation);
+                   });
+
+    return transformedLines;
 }
 
 // Params:
@@ -113,13 +129,18 @@ static inline glm::mat4 getScaleMatrix(const glm::vec3 &inputVec) {
     return scaleMatrix;
 }
 
-// TODO add z mapping
 static inline glm::mat4 getPerspectiveMatrix(const float & fov) {
     glm::mat4 perspectiveMatrix = glm::mat4();
 
     // scale x and y based on the FOV. This controls what gets mapped to 1.
     perspectiveMatrix[0][0] = cosf(fov / 2);
     perspectiveMatrix[1][1] = cosf(fov / 2);
+
+    // currently not mapping z
+    // TODO add z mapping
+
+    // replace w with z
+    perspectiveMatrix[2][3] = -1; // camera is looking down -z, so we flip it
 
     return perspectiveMatrix;
 }
@@ -159,6 +180,31 @@ static inline std::optional<line4> clipLine(const line4 & line, const glm::vec4 
     }
 }
 
+static inline std::optional<line4>
+clipLine(std::optional<line4> && line,
+         const std::vector<pointAndNormal> &walls)
+{
+    for (const auto &wall : walls) {
+        line = clipLine(*line, wall.first, wall.second);
+        if(!line.has_value()) return line;
+    }
+    return line;
+}
+
+static inline std::vector<std::optional<line4>>
+clipLines(std::vector<std::optional<line4>> &&lines,
+          const std::vector<pointAndNormal> &walls)
+{
+    std::for_each(lines.begin(),
+                  lines.end(),
+                  [&](std::optional<line4> & line) -> void
+                  {
+                      line = clipLine(std::move(line), walls);
+                  });
+
+    return lines;
+}
+
 static inline std::vector<std::optional<line4>>
 convertLinesToOptionalLines(const std::vector<line4> &inputLines) {
     std::vector<std::optional<line4>> optionalLines;
@@ -170,21 +216,25 @@ convertLinesToOptionalLines(const std::vector<line4> &inputLines) {
     return optionalLines;
 }
 
-// TODO write this in a more concise way
-static inline void
-homogenizeInPlace(std::optional<line4> & inputLine) {
-    if (inputLine.has_value()) {
-        float z1 = - (inputLine->first)[2]; // camera is looking down -z, so we flip
-        float z2 = - (inputLine->second)[2];
 
-        (inputLine->first)[0] /= z1;
-        (inputLine->first)[1] /= z1;
-        (inputLine->first)[2] /= z1;
+// We assume that we /can/ homogenize, i.e. no points with w = 0
+static inline glm::vec4
+homogenize(const glm::vec4 & point) {
+    return point * 1.0f/point[3];
+}
 
-        (inputLine->second)[0] /= z2;
-        (inputLine->second)[1] /= z2;
-        (inputLine->second)[2] /= z2;
-    }
+static inline std::vector<std::optional<line4>>
+homogenize(std::vector<std::optional<line4>> &&lines)
+{
+    std::for_each(lines.begin(), lines.end(),
+                  [](std::optional<line4> &line) -> void {
+                      // We assume that we can homogenize, no points with w = 0
+                      if (line.has_value()) {
+                          line->first = homogenize(line->first);
+                          line->second = homogenize(line->second);
+                      }
+                  });
+    return lines;
 }
 
 //----------------------------------------------------------------------------------------
@@ -207,8 +257,8 @@ A2::A2()
       m_worldGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
       m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_defaultCameraToWorldMatrix))},
       m_perspective{getPerspectiveMatrix(c_defaultFOV)},
-      m_nearPoint{zClipPlaneDistToPoint(c_defaultNearDistance)},
-      m_farPoint{zClipPlaneDistToPoint(c_defaultFarDistance)}
+      m_nearDist{c_defaultNearDistance},
+      m_farDist{c_defaultFarDistance}
 {
     m_modelCubeLines = convertLinesToOptionalLines(c_cubeLines);
 }
@@ -368,7 +418,8 @@ void A2::drawLines(const std::vector<line4> &lineList) {
     }
 }
 
-void A2::drawLines(const std::vector<std::optional<line4>> &lineList) {
+void A2::drawLines(const std::vector<std::optional<line4>> &lineList, const colour & colour) {
+    setLineColour(colour);
     for (const auto & line : lineList) {
         if (line.has_value()) {
             drawLine(glm::vec2(line->first), glm::vec2(line->second));
@@ -391,7 +442,15 @@ void A2::drawLines(const std::vector<std::optional<line4>> &lineList,
 
 //----------------------------------------------------------------------------------------
 glm::vec4 A2::zClipPlaneDistToPoint(const float & dist) {
-    return -dist * c_standardBasisZ;
+    return -dist * c_unitZ;
+}
+
+glm::vec4 A2::getNearPlaneNormal() {
+    return -c_standardBasisZ;
+}
+
+glm::vec4 A2::getFarPlaneNormal() {
+    return c_standardBasisZ;
 }
 
 //----------------------------------------------------------------------------------------
@@ -400,36 +459,6 @@ glm::vec4 A2::zClipPlaneDistToPoint(const float & dist) {
  */
 void A2::appLogic()
 {
-    // helper lambdas
-    auto transformOptionalLine = [&](const glm::mat4 &transformation,
-                                     const std::optional<line4> &line) {
-        return transformLine(transformation, *line);
-    };
-
-    auto clipNearFar = [&](std::optional<line4> &line) {
-        line = clipLine(*line, m_nearPoint, -c_standardBasisZ);
-
-        if (line.has_value()) {
-            line = clipLine(*line, m_farPoint, c_standardBasisZ);
-        }
-    };
-
-    auto clipNDC = [&](std::optional<line4> &line) {
-        line = clipLine(*line, {1.0f, 0.0f, 0.0f, 0.0f}, -c_standardBasisX);
-
-        if (line.has_value()) {
-            line = clipLine(*line, {-1.0f, 0.0f, 0.0f, 0.0f}, c_standardBasisX);
-            if (line.has_value()) {
-                line = clipLine(*line, {0.0f, 1.0f, 0.0f, 0.0f},
-                                -c_standardBasisY);
-                if (line.has_value()) {
-                    line = clipLine(*line, {0.0f, -1.0f, 0.0f, 0.0f},
-                                    c_standardBasisY);
-                }
-            }
-        }
-    };
-
     // data
     std::vector<std::optional<line4>> transformedModelCubeLines;
     std::vector<std::optional<line4>> transformedModelGnomonLines;
@@ -439,54 +468,49 @@ void A2::appLogic()
     initLineData();
 
     // transform lines by V * M
-    std::transform(m_modelCubeLines.begin(), m_modelCubeLines.end(),
-                   std::back_inserter(transformedModelCubeLines),
-                   std::bind(transformOptionalLine,
-                             m_perspective * m_viewRotAndTsl * m_modelScl *
-                                 m_modelRotAndTsl,
-                             std::placeholders::_1));
-    std::transform(m_modelGnomonLines.begin(), m_modelGnomonLines.end(),
-                   std::back_inserter(transformedModelGnomonLines),
-                   std::bind(transformOptionalLine,
-                             m_perspective * m_viewRotAndTsl * m_modelRotAndTsl,
-                             std::placeholders::_1));
-    std::transform(m_worldGnomonLines.begin(), m_worldGnomonLines.end(),
-                   std::back_inserter(transformedWorldGnomonLines),
-                   std::bind(transformOptionalLine,
-                             m_perspective * m_viewRotAndTsl,
-                             std::placeholders::_1));
+    transformedModelCubeLines = transformLines(m_modelCubeLines, m_perspective * m_viewRotAndTsl * m_modelScl * m_modelRotAndTsl);
+    transformedModelGnomonLines = transformLines(m_modelGnomonLines, m_perspective * m_viewRotAndTsl * m_modelRotAndTsl);
+    transformedWorldGnomonLines = transformLines(m_worldGnomonLines, m_perspective * m_viewRotAndTsl);
 
     // clip to near and far planes
-    std::for_each(transformedModelCubeLines.begin(),
-                  transformedModelCubeLines.end(),
-                  clipNearFar);
-    std::for_each(transformedModelGnomonLines.begin(),
-                  transformedModelGnomonLines.end(),
-                  clipNearFar);
-    std::for_each(transformedWorldGnomonLines.begin(),
-                  transformedWorldGnomonLines.end(),
-                  clipNearFar);
+    std::vector<pointAndNormal> nearAndFarPlane = {
+        {zClipPlaneDistToPoint(m_nearDist), getNearPlaneNormal()},
+        {zClipPlaneDistToPoint(m_farDist), getFarPlaneNormal()},
+    };
+
+    transformedModelCubeLines = clipLines(std::move(transformedModelCubeLines), nearAndFarPlane);
+    transformedModelGnomonLines = clipLines(std::move(transformedModelGnomonLines), nearAndFarPlane);
+    transformedWorldGnomonLines = clipLines(std::move(transformedWorldGnomonLines), nearAndFarPlane);
 
     // homogenize
-    std::for_each(transformedModelCubeLines.begin(),
-                  transformedModelCubeLines.end(),
-                  [&](std::optional<line4> &line) { homogenizeInPlace(line); });
-    std::for_each(transformedModelGnomonLines.begin(),
-                  transformedModelGnomonLines.end(),
-                  [&](std::optional<line4> &line) { homogenizeInPlace(line); });
-    std::for_each(transformedWorldGnomonLines.begin(),
-                  transformedWorldGnomonLines.end(),
-                  [&](std::optional<line4> &line) { homogenizeInPlace(line); });
+    transformedModelCubeLines = homogenize(std::move(transformedModelCubeLines));
+    transformedModelGnomonLines = homogenize(std::move(transformedModelGnomonLines));
+    transformedWorldGnomonLines = homogenize(std::move(transformedWorldGnomonLines));
 
     // clip to window
+
+    // auto clipNDC = [&](std::optional<line4> &line) {
+    //     line = clipLine(*line, {1.0f, 0.0f, 0.0f, 0.0f}, -c_standardBasisX);
+
+    //     if (line.has_value()) {
+    //         line = clipLine(*line, {-1.0f, 0.0f, 0.0f, 0.0f}, c_standardBasisX);
+    //         if (line.has_value()) {
+    //             line = clipLine(*line, {0.0f, 1.0f, 0.0f, 0.0f},
+    //                             -c_standardBasisY);
+    //             if (line.has_value()) {
+    //                 line = clipLine(*line, {0.0f, -1.0f, 0.0f, 0.0f},
+    //                                 c_standardBasisY);
+    //             }
+    //         }
+    //     }
+    // };
 
     // viewport transformation
 
     // draw lines
-    setLineColour(c_white);
-    drawLines(transformedModelCubeLines);
-    drawLines(transformedModelGnomonLines, {c_red, c_green, c_blue});
-    drawLines(transformedWorldGnomonLines, {c_cyan, c_magenta, c_yellow});
+    drawLines(transformedModelCubeLines, c_white);
+    drawLines(transformedModelGnomonLines, std::vector<colour>{c_red, c_green, c_blue});
+    drawLines(transformedWorldGnomonLines, std::vector<colour>{c_cyan, c_magenta, c_yellow});
 }
 
 //----------------------------------------------------------------------------------------

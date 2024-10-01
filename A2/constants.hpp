@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+typedef std::pair<glm::vec4, glm::vec4> pointAndNormal;
 typedef std::pair<glm::vec4, glm::vec4> line4;
 typedef std::pair<glm::vec2, glm::vec2> line2;
 typedef glm::vec3 colour;
@@ -43,7 +44,7 @@ const float c_simpleCameraToWorldMatrix[16] =
 {1, 0, 0, 0,
  0, 1, 0, 0,
  0, 0, 1, 0,
-0, 0, 8, 1
+0, 0, 6, 1
 };
 
 // lines
@@ -81,6 +82,10 @@ const line4 c_unitLineZ = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
 const glm::vec4 c_standardBasisX = {1.0f, 0.0f, 0.0f, 0.0f};
 const glm::vec4 c_standardBasisY = {0.0f, 1.0f, 0.0f, 0.0f};
 const glm::vec4 c_standardBasisZ = {0.0f, 0.0f, 1.0f, 0.0f};
+
+const glm::vec4 c_unitX = {1.0f, 0.0f, 0.0f, 1.0f};
+const glm::vec4 c_unitY = {0.0f, 1.0f, 0.0f, 1.0f};
+const glm::vec4 c_unitZ = {0.0f, 0.0f, 1.0f, 1.0f};
 
 const float c_defaultNearDistance = 2;
 const float c_defaultFarDistance = 60;

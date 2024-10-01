@@ -65,11 +65,14 @@ protected:
             const glm::vec2 & v1
     );
     void drawLines(const std::vector<line4> &lineList);
-    void drawLines(const std::vector<std::optional<line4>> &lineList);
+    void drawLines(const std::vector<std::optional<line4>> &lineList,
+                   const colour &colour);
     void drawLines(const std::vector<std::optional<line4>> &lineList,
                    const std::vector<colour> &colours);
 
     static glm::vec4 zClipPlaneDistToPoint(const float & dist);
+    static glm::vec4 getNearPlaneNormal();
+    static glm::vec4 getFarPlaneNormal();
 
     ShaderProgram m_shader;
 
@@ -99,6 +102,6 @@ protected:
     glm::mat4 m_perspective;
 
     // clipping
-    glm::vec4 m_nearPoint;
-    glm::vec4 m_farPoint;
+    float m_nearDist;
+    float m_farDist;
 };
