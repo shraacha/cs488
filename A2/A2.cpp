@@ -400,11 +400,7 @@ glm::vec4 A2::zClipPlaneDistToPoint(const float & dist) {
  */
 void A2::appLogic()
 {
-    // Place per frame, application logic here ...
-
-    // Call at the beginning of frame, before drawing lines:
-    initLineData();
-
+    // helper lambdas
     auto transformOptionalLine = [&](const glm::mat4 &transformation,
                                      const std::optional<line4> &line) {
         return transformLine(transformation, *line);
@@ -433,9 +429,14 @@ void A2::appLogic()
             }
         }
     };
+
+    // data
     std::vector<std::optional<line4>> transformedModelCubeLines;
     std::vector<std::optional<line4>> transformedModelGnomonLines;
     std::vector<std::optional<line4>> transformedWorldGnomonLines;
+
+    // Call at the beginning of frame, before drawing lines:
+    initLineData();
 
     // transform lines by V * M
     std::transform(m_modelCubeLines.begin(), m_modelCubeLines.end(),
