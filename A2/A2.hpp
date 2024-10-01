@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 
 #include <vector>
+#include <optional>
 
 #include "constants.hpp"
 
@@ -64,8 +65,9 @@ protected:
             const glm::vec2 & v1
     );
 
-    void drawLines (const std::vector<line4> & lineList);
-    void drawGnomon(const std::vector<line4> &lineList, const std::vector<colour> & colours);
+    void drawLines(const std::vector<line4> &lineList);
+    void drawLines(const std::vector<std::optional<line4>> &lineList,
+                   const std::vector<colour> &colours);
 
     ShaderProgram m_shader;
 
@@ -79,9 +81,9 @@ protected:
 
     // model lines
     std::vector<line4> m_modelCubeLines;
-    std::vector<line4> m_modelGnomonLines;
+    std::vector<std::optional<line4>> m_modelGnomonLines;
     // world
-    std::vector<line4> m_worldGnomonLines;
+    std::vector<std::optional<line4>> m_worldGnomonLines;
     // viewport
     std::vector<line4> m_viewportLines;
 

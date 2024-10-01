@@ -5,6 +5,11 @@
 #include "cs488-framework/GlErrorCheck.hpp"
 
 #include <iostream>
+#include <algorithm>
+#include <iterator>
+#include <tuple>
+#include <functional>
+
 using namespace std;
 
 #include <imgui/imgui.h>
@@ -14,20 +19,10 @@ using namespace std;
 #include <glm/gtx/io.hpp>
 using namespace glm;
 
+
 //--------- helpers ----------
 static inline line4 transformLine(const glm::mat4 & transformation, const line4 & line) {
     return {transformation * line.first, transformation * line.second};
-}
-
-static inline std::vector<line4>
-transformLines(const glm::mat4 &transformation,
-               const std::vector<line4> &lines) {
-    std::vector<line4> newLines;
-    for(auto it = lines.begin(); it < lines.end(); it++) {
-        // TODO use cpp17 for emplace back
-        newLines.push_back(transformLine(transformation, *it));
-    }
-    return newLines;
 }
 
 // Params:
@@ -134,8 +129,8 @@ VertexData::VertexData()
 A2::A2()
     : m_currentLineColour(vec3(0.0f)),
       m_modelCubeLines{c_cubeLines},
-      m_modelGnomonLines{c_unitGnomonLines},
-      m_worldGnomonLines{c_unitGnomonLines},
+      m_modelGnomonLines{{c_standardBasisX, c_standardBasisY, c_standardBasisZ}},
+      m_worldGnomonLines{{c_standardBasisX, c_standardBasisY, c_standardBasisZ}},
       m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_cameraToWorldMatrix))}
 {
 }
@@ -290,17 +285,20 @@ void A2::drawLine(
 
 //---------------------------------------------------------------------------------------
 void A2::drawLines(const std::vector<line4> &lineList) {
-    for (auto it = lineList.begin(); it != lineList.end(); it++) {
-        drawLine(glm::vec2(it->first), glm::vec2(it->second));
+    for (const auto & line : lineList) {
+        drawLine(glm::vec2(line.first), glm::vec2(line.second));
     }
 }
 
-//---------------------------------------------------------------------------------------
-void A2::drawGnomon(const std::vector<line4> &lineList, const std::vector<colour> & colours) {
+void A2::drawLines(const std::vector<std::optional<line4>> &lineList,
+                   const std::vector<colour> &colours) {
     auto itColour = colours.begin();
-    for(auto it = lineList.begin(); it != lineList.end(); it++, itColour++) {
-        setLineColour(*itColour);
-        drawLine(glm::vec2(it->first), glm::vec2(it->second));
+    for (auto it = lineList.begin();
+         it != lineList.end() && itColour != colours.end(); it++, itColour++) {
+        if (it->has_value()) {
+            setLineColour(*itColour);
+            drawLine(glm::vec2((*it)->first), glm::vec2((*it)->second));
+        }
     }
 }
 
@@ -315,16 +313,34 @@ void A2::appLogic()
     // Call at the beginning of frame, before drawing lines:
     initLineData();
 
-    // transform lines
-    std::vector<line4> transformedModelCubeLines =
-        transformLines(m_perspective * m_viewRotAndTsl * m_modelScl * m_modelRotAndTsl, m_modelCubeLines);
-    std::vector<line4> transformedModelGnomonLines =
-        transformLines(m_perspective * m_viewRotAndTsl * m_modelRotAndTsl, m_modelGnomonLines);
-    std::vector<line4> transformedWorldGnomonLines =
-        transformLines(m_perspective * m_viewRotAndTsl * m_modelRotAndTsl, m_modelGnomonLines);
+    auto transformOptionalLine =
+                   [&](const glm::mat4 & transformation, const std::optional<line4> & line) {
+                       return transformLine(transformation, *line);
+                   };
+
+    std::vector<line4> transformedModelCubeLines;
+    std::vector<std::optional<line4>> transformedModelGnomonLines;
+    std::vector<std::optional<line4>> transformedWorldGnomonLines;
+
+    // transform lines by V * M
+    std::transform(m_modelCubeLines.begin(), m_modelCubeLines.end(),
+                   std::back_inserter(transformedModelCubeLines),
+                   std::bind(&transformLine,
+                             m_perspective * m_viewRotAndTsl * m_modelScl *
+                                 m_modelRotAndTsl,
+                             std::placeholders::_1));
+    std::transform(m_modelGnomonLines.begin(), m_modelGnomonLines.end(),
+                   std::back_inserter(transformedModelGnomonLines),
+                   std::bind(transformOptionalLine,
+                             m_perspective * m_viewRotAndTsl * m_modelRotAndTsl,
+                             std::placeholders::_1));
+    std::transform(m_worldGnomonLines.begin(), m_worldGnomonLines.end(),
+                   std::back_inserter(transformedWorldGnomonLines),
+                   std::bind(transformOptionalLine,
+                             m_perspective * m_viewRotAndTsl,
+                             std::placeholders::_1));
 
     // clip to near and far planes
-    // (-1.0, 1.0, if mapping z)
 
     // homogenize
 
@@ -335,8 +351,8 @@ void A2::appLogic()
     // draw lines
     setLineColour(c_white);
     drawLines(transformedModelCubeLines);
-    drawGnomon(transformedModelGnomonLines, {c_red, c_green, c_blue});
-    //drawGnomon(m_worldGnomonLines, {c_cyan, c_magenta, c_yellow});
+    drawLines(transformedModelGnomonLines, {c_red, c_green, c_blue});
+    drawLines(transformedWorldGnomonLines, {c_cyan, c_magenta, c_yellow});
 }
 
 //----------------------------------------------------------------------------------------
