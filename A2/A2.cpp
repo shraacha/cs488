@@ -136,16 +136,20 @@ static inline glm::vec4 parametricLineEquation(const glm::vec4 & A, const glm::v
 }
 
 // the line must not be a point
+// TODO clean up this spagetti code
 static inline std::optional<line4> clipLine(const line4 & line, const glm::vec4 & P, const glm::vec4 & n) {
     float testA = implicitLineEquation(line.first, P, n);
     float testB = implicitLineEquation(line.second, P, n);
 
-    if ((testA - testB == 0) || testA < 0 && testB < 0) {
+    if (testA < 0 && testB < 0) {
         return std::nullopt;
     } else if (testA >= 0 && testB >= 0) {
         return line;
+    } else if (testA - testB == 0) {
+        return std::nullopt; // to prevent a divide by 0 in the next step
     } else {
-        glm::vec4 intersectionPoint = parametricLineEquation(line.first, line.second, testA / (testA - testB));
+        glm::vec4 intersectionPoint = parametricLineEquation(
+            line.first, line.second, testA / (testA - testB));
 
         if (testA >= 0) {
             return std::make_pair(line.first, intersectionPoint);
@@ -201,7 +205,7 @@ A2::A2()
       m_modelCubeLines{},
       m_modelGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
       m_worldGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
-      m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_cameraToWorldMatrix))},
+      m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_defaultCameraToWorldMatrix))},
       m_perspective{getPerspectiveMatrix(c_defaultFOV)},
       m_nearPoint{zClipPlaneDistToPoint(c_defaultNearDistance)},
       m_farPoint{zClipPlaneDistToPoint(c_defaultFarDistance)}
@@ -449,7 +453,6 @@ void A2::appLogic()
         });
 
     // homogenize
-    // TODO scale for FOV
     std::for_each(transformedModelCubeLines.begin(),
                   transformedModelCubeLines.end(),
                   [&](std::optional<line4> &line) { homogenizeInPlace(line); });
@@ -459,6 +462,7 @@ void A2::appLogic()
     std::for_each(transformedWorldGnomonLines.begin(),
                   transformedWorldGnomonLines.end(),
                   [&](std::optional<line4> &line) { homogenizeInPlace(line); });
+
     // clip to window
 
     // viewport transformation

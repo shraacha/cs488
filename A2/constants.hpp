@@ -32,11 +32,18 @@ const glm::vec3 c_initalCameraRot = {-M_PI/4, M_PI/4, 0.0f};
 //
 //  - the camera is placed at [4, 4, 4]
 // column-wise
-const float c_cameraToWorldMatrix[16] =
+const float c_defaultCameraToWorldMatrix[16] =
 {M_SQRT1_2f, 0, -M_SQRT1_2f, 0,
 - M_SQRT1_2f * SQRT1_3 , M_SQRT2f * SQRT1_3 , - M_SQRT1_2f * SQRT1_3, 0,
 SQRT1_3 , SQRT1_3, SQRT1_3, 0,
 4, 4, 4, 1
+};
+
+const float c_simpleCameraToWorldMatrix[16] =
+{1, 0, 0, 0,
+ 0, 1, 0, 0,
+ 0, 0, 1, 0,
+0, 0, 8, 1
 };
 
 // lines
@@ -75,7 +82,7 @@ const glm::vec4 c_standardBasisX = {1.0f, 0.0f, 0.0f, 0.0f};
 const glm::vec4 c_standardBasisY = {0.0f, 1.0f, 0.0f, 0.0f};
 const glm::vec4 c_standardBasisZ = {0.0f, 0.0f, 1.0f, 0.0f};
 
-const float c_defaultNearDistance = 5;
+const float c_defaultNearDistance = 2;
 const float c_defaultFarDistance = 60;
 
 const float c_minNearDistance = 2;
