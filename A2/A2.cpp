@@ -158,7 +158,7 @@ static inline glm::vec4 parametricLineEquation(const glm::vec4 & A, const glm::v
 
 // the line must not be a point
 // TODO clean up this spagetti code
-static inline std::optional<line4> clipLine(const line4 & line, const glm::vec4 & P, const glm::vec4 & n) {
+static inline std::optional<line4> clip(const line4 & line, const glm::vec4 & P, const glm::vec4 & n) {
     float testA = implicitLineEquation(line.first, P, n);
     float testB = implicitLineEquation(line.second, P, n);
 
@@ -181,25 +181,25 @@ static inline std::optional<line4> clipLine(const line4 & line, const glm::vec4 
 }
 
 static inline std::optional<line4>
-clipLine(std::optional<line4> && line,
+clip(std::optional<line4> && line,
          const std::vector<pointAndNormal> &walls)
 {
     for (const auto &wall : walls) {
-        line = clipLine(*line, wall.first, wall.second);
+        line = clip(*line, wall.first, wall.second);
         if(!line.has_value()) return line;
     }
     return line;
 }
 
 static inline std::vector<std::optional<line4>>
-clipLines(std::vector<std::optional<line4>> &&lines,
+clip(std::vector<std::optional<line4>> &&lines,
           const std::vector<pointAndNormal> &walls)
 {
     std::for_each(lines.begin(),
                   lines.end(),
                   [&](std::optional<line4> & line) -> void
                   {
-                      line = clipLine(std::move(line), walls);
+                      line = clip(std::move(line), walls);
                   });
 
     return lines;
@@ -478,9 +478,9 @@ void A2::appLogic()
         {zClipPlaneDistToPoint(m_farDist), getFarPlaneNormal()},
     };
 
-    transformedModelCubeLines = clipLines(std::move(transformedModelCubeLines), nearAndFarPlane);
-    transformedModelGnomonLines = clipLines(std::move(transformedModelGnomonLines), nearAndFarPlane);
-    transformedWorldGnomonLines = clipLines(std::move(transformedWorldGnomonLines), nearAndFarPlane);
+    transformedModelCubeLines = clip(std::move(transformedModelCubeLines), nearAndFarPlane);
+    transformedModelGnomonLines = clip(std::move(transformedModelGnomonLines), nearAndFarPlane);
+    transformedWorldGnomonLines = clip(std::move(transformedWorldGnomonLines), nearAndFarPlane);
 
     // homogenize
     transformedModelCubeLines = homogenize(std::move(transformedModelCubeLines));
