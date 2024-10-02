@@ -14,6 +14,7 @@ typedef glm::vec3 colour;
 const float SQRT1_3 = 0.57735026919f;
 
 // colours
+const colour c_black = {0.0f, 0.0f, 0.0f};
 const colour c_white = {1.0f, 1.0f, 1.0f};
 const colour c_red = {1.0f, 0.0f, 0.0f};
 const colour c_green = {0.0f, 1.0f, 0.0f};
@@ -37,14 +38,14 @@ const float c_defaultCameraToWorldMatrix[16] =
 {M_SQRT1_2f, 0, -M_SQRT1_2f, 0,
 - M_SQRT1_2f * SQRT1_3 , M_SQRT2f * SQRT1_3 , - M_SQRT1_2f * SQRT1_3, 0,
 SQRT1_3 , SQRT1_3, SQRT1_3, 0,
-4, 4, 4, 1
+3, 3, 3, 1
 };
 
 const float c_simpleCameraToWorldMatrix[16] =
 {1, 0, 0, 0,
  0, 1, 0, 0,
  0, 0, 1, 0,
-0, 0, 6, 1
+4, 0, 4, 1
 };
 
 // lines
@@ -79,13 +80,13 @@ const line4 c_unitLineX = {{0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}};
 const line4 c_unitLineY = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}};
 const line4 c_unitLineZ = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
 
-const glm::vec4 c_standardBasisX = {1.0f, 0.0f, 0.0f, 0.0f};
-const glm::vec4 c_standardBasisY = {0.0f, 1.0f, 0.0f, 0.0f};
-const glm::vec4 c_standardBasisZ = {0.0f, 0.0f, 1.0f, 0.0f};
-
 const glm::vec4 c_unitX = {1.0f, 0.0f, 0.0f, 1.0f};
 const glm::vec4 c_unitY = {0.0f, 1.0f, 0.0f, 1.0f};
 const glm::vec4 c_unitZ = {0.0f, 0.0f, 1.0f, 1.0f};
+
+const glm::vec4 c_standardBasisX = {1.0f, 0.0f, 0.0f, 0.0f};
+const glm::vec4 c_standardBasisY = {0.0f, 1.0f, 0.0f, 0.0f};
+const glm::vec4 c_standardBasisZ = {0.0f, 0.0f, 1.0f, 0.0f};
 
 const float c_defaultNearDistance = 2;
 const float c_defaultFarDistance = 60;
@@ -96,3 +97,5 @@ const float c_maxFarDistance= 200;
 const float c_defaultFOV = M_PI / 3.0;
 const float c_minFOV = 0.0f;
 const float c_maxFOV = M_PI / 1.2;
+
+const float c_defaultViewPortion = 0.9;

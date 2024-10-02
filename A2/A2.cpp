@@ -2,6 +2,7 @@
 
 #include "A2.hpp"
 #include "cs488-framework/GlErrorCheck.hpp"
+#include "viewport.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -21,6 +22,7 @@ using namespace glm;
 
 #include "constants.hpp"
 #include "matrixHelpers.hpp"
+#include "viewport.hpp"
 
 
 //--------- helpers ----------
@@ -41,6 +43,19 @@ transformLines(const std::vector<std::optional<line4>> &lines,
                    });
 
     return transformedLines;
+}
+
+static std::vector<std::optional<line4>>
+transformLines(std::vector<std::optional<line4>> &&lines,
+               const glm::mat4 &transformation) {
+    std::for_each(lines.begin(), lines.end(),
+                  [&](std::optional<line4> &line) -> void {
+                      if (line.has_value()) {
+                          line = transformLine(*line, transformation);
+                      }
+                  });
+
+    return lines;
 }
 
 //  Description
@@ -104,7 +119,7 @@ clip(std::vector<std::optional<line4>> &&lines,
 }
 
 static std::vector<std::optional<line4>>
-convertLinesToOptionalLines(const std::vector<line4> &inputLines) {
+convertToOptionalLines(const std::vector<line4> &inputLines) {
     std::vector<std::optional<line4>> optionalLines;
 
     std::transform(inputLines.begin(), inputLines.end(),
@@ -150,13 +165,14 @@ VertexData::VertexData()
 // Constructor
 A2::A2()
     : m_currentLineColour(vec3(0.0f)),
-      m_modelCubeLines{convertLinesToOptionalLines(c_cubeLines)},
+      m_modelCubeLines{convertToOptionalLines(c_cubeLines)},
       m_modelGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
       m_worldGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
       m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_defaultCameraToWorldMatrix))},
       m_perspective{makePerspectiveMatrix(c_defaultFOV)},
       m_nearDist{c_defaultNearDistance},
-      m_farDist{c_defaultFarDistance}
+      m_farDist{c_defaultFarDistance},
+      m_NDCViewport{getNDCViewport()}
 {
 }
 
@@ -185,6 +201,23 @@ void A2::init()
     generateVertexBuffers();
 
     mapVboDataToVertexAttributeLocation();
+
+    // A2 impl things
+
+    // initializing viewports
+    resetViewportData();
+}
+
+void A2::resetViewportData()
+{
+    m_NDCSubViewport = makeNDCViewportFromCorners(
+        transformLine(makeDeviceViewportCornersFromPortion(
+                          m_deviceWidth, m_deviceHeight, c_defaultViewPortion),
+                      m_deviceToNDC));
+    m_NDCSubViewportLines =
+        convertToOptionalLines(getViewportExplicitEdges(m_NDCSubViewport));
+    m_NDCSubViewportWalls = getViewportImplicitEdges(m_NDCSubViewport);
+    m_NDCToNDCSub = makeViewportTransformationMatrix(m_NDCViewport, m_NDCSubViewport);
 }
 
 //----------------------------------------------------------------------------------------
@@ -384,30 +417,21 @@ void A2::appLogic()
     transformedModelGnomonLines = homogenize(std::move(transformedModelGnomonLines));
     transformedWorldGnomonLines = homogenize(std::move(transformedWorldGnomonLines));
 
-    // clip to window
-
-    // auto clipNDC = [&](std::optional<line4> &line) {
-    //     line = clipLine(*line, {1.0f, 0.0f, 0.0f, 0.0f}, -c_standardBasisX);
-
-    //     if (line.has_value()) {
-    //         line = clipLine(*line, {-1.0f, 0.0f, 0.0f, 0.0f}, c_standardBasisX);
-    //         if (line.has_value()) {
-    //             line = clipLine(*line, {0.0f, 1.0f, 0.0f, 0.0f},
-    //                             -c_standardBasisY);
-    //             if (line.has_value()) {
-    //                 line = clipLine(*line, {0.0f, -1.0f, 0.0f, 0.0f},
-    //                                 c_standardBasisY);
-    //             }
-    //         }
-    //     }
-    // };
-
     // viewport transformation
+    transformedModelCubeLines = transformLines(std::move(transformedModelCubeLines), m_NDCToNDCSub);
+    transformedModelGnomonLines = transformLines(std::move(transformedModelGnomonLines), m_NDCToNDCSub);
+    transformedWorldGnomonLines = transformLines(std::move(transformedWorldGnomonLines), m_NDCToNDCSub);
+
+    // clip to window
+    transformedModelCubeLines = clip(std::move(transformedModelCubeLines), m_NDCSubViewportWalls);
+    transformedModelGnomonLines = clip(std::move(transformedModelGnomonLines), m_NDCSubViewportWalls);
+    transformedWorldGnomonLines = clip(std::move(transformedWorldGnomonLines), m_NDCSubViewportWalls);
 
     // draw lines
     drawLines(transformedModelCubeLines, c_white);
     drawLines(transformedModelGnomonLines, std::vector<colour>{c_red, c_green, c_blue});
     drawLines(transformedWorldGnomonLines, std::vector<colour>{c_cyan, c_magenta, c_yellow});
+    drawLines(m_NDCSubViewportLines, c_black);
 }
 
 //----------------------------------------------------------------------------------------
@@ -567,7 +591,13 @@ bool A2::windowResizeEvent (
     bool eventHandled(false);
 
     // Fill in with event handling code...
+    m_deviceWidth = width;
+    m_deviceHeight = height;
 
+    m_deviceToNDC = makeViewportTransformationMatrix(
+        makeDeviceViewport((float)width, (float)height), m_NDCViewport);
+
+    eventHandled = true;
     return eventHandled;
 }
 

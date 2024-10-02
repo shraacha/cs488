@@ -6,7 +6,8 @@
 //  - translatioVector[0] - translation in the x dir, relative to to current frame
 //  - translatioVector[1] - ... y dir ...
 //  - translatioVector[2] - ... z dir ...
-inline glm::mat4 makeTranslationMatrix(const glm::vec3 & inputVec) {
+inline glm::mat4 makeTranslationMatrix(const glm::vec3 & inputVec)
+{
     glm::mat4 translationMatrix = glm::mat4();
     for(int i = 0; i < 3; i ++) {
         // glm::mat4 is column major - i.e. columns are indexed first
@@ -24,7 +25,8 @@ inline glm::mat4 makeTranslationMatrix(const glm::vec3 & inputVec) {
 //  current frame
 //  - inputVec[1] - ... y-axis ...
 //  - inputVec[2] - ... z-axis ...
-inline glm::mat4 makeRotationMatrix(const glm::vec3 &inputVec) {
+inline glm::mat4 makeRotationMatrix(const glm::vec3 &inputVec)
+{
     // glm::mat4 is column major - i.e. columns are indexed first
     glm::mat4 xAxisRotation = glm::mat4();
     glm::mat4 yAxisRotation = glm::mat4();
@@ -79,7 +81,8 @@ inline glm::mat4 makeRotationMatrix(const glm::vec3 &inputVec) {
 //  - inputVec[0] - factor to scale in the x-axis
 //  - inputVec[1] - ... y-axis ...
 //  - inputVec[2] - ... z-axis ...
-inline glm::mat4 makeScaleMatrix(const glm::vec3 &inputVec) {
+inline glm::mat4 makeScaleMatrix(const glm::vec3 &inputVec)
+{
     glm::mat4 scaleMatrix = glm::mat4();
 
     // glm::mat4 is column major - i.e. columns are indexed first
@@ -90,7 +93,8 @@ inline glm::mat4 makeScaleMatrix(const glm::vec3 &inputVec) {
     return scaleMatrix;
 }
 
-inline glm::mat4 makePerspectiveMatrix(const float & fov) {
+inline glm::mat4 makePerspectiveMatrix(const float & fov)
+{
     glm::mat4 perspectiveMatrix = glm::mat4();
 
     // scale x and y based on the FOV. This controls what gets mapped to 1.
@@ -103,5 +107,15 @@ inline glm::mat4 makePerspectiveMatrix(const float & fov) {
     // replace w with z
     perspectiveMatrix[2][3] = -1; // camera is looking down -z, so we flip it
 
+    perspectiveMatrix[3][3] = 0;
     return perspectiveMatrix;
+}
+
+inline glm::mat4 makeOrthographicMatrix()
+{
+    glm::mat4 orthographicMatrix = glm::mat4();
+    orthographicMatrix[2][3] = -1;
+    orthographicMatrix[3][3] = 0;
+
+    return orthographicMatrix;
 }

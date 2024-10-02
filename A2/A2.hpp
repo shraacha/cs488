@@ -12,6 +12,7 @@
 #include <optional>
 
 #include "constants.hpp"
+#include "viewport.hpp"
 
 // Set a global maximum number of vertices in order to pre-allocate VBO data
 // in one shot, rather than reallocating each frame.
@@ -64,15 +65,6 @@ protected:
             const glm::vec2 & v0,
             const glm::vec2 & v1
     );
-    void drawLines(const std::vector<line4> &lineList);
-    void drawLines(const std::vector<std::optional<line4>> &lineList,
-                   const colour &colour);
-    void drawLines(const std::vector<std::optional<line4>> &lineList,
-                   const std::vector<colour> &colours);
-
-    static glm::vec4 zClipPlaneDistToPoint(const float & dist);
-    static glm::vec4 getNearPlaneNormal();
-    static glm::vec4 getFarPlaneNormal();
 
     ShaderProgram m_shader;
 
@@ -84,13 +76,24 @@ protected:
 
     glm::vec3 m_currentLineColour;
 
+    // additions
+    void resetViewportData();
+
+    void drawLines(const std::vector<line4> &lineList);
+    void drawLines(const std::vector<std::optional<line4>> &lineList,
+                   const colour &colour);
+    void drawLines(const std::vector<std::optional<line4>> &lineList,
+                   const std::vector<colour> &colours);
+
+    static glm::vec4 zClipPlaneDistToPoint(const float & dist);
+    static glm::vec4 getNearPlaneNormal();
+    static glm::vec4 getFarPlaneNormal();
+
     // model lines
     std::vector<std::optional<line4>> m_modelCubeLines;
     std::vector<std::optional<line4>> m_modelGnomonLines;
     // world
     std::vector<std::optional<line4>> m_worldGnomonLines;
-    // viewport
-    std::vector<line4> m_viewportLines;
 
     // transformations
     glm::mat4 m_modelRotAndTsl;
@@ -101,7 +104,20 @@ protected:
     float m_fov;
     glm::mat4 m_perspective;
 
+    glm::mat4 m_deviceToNDC;
+    glm::mat4 m_NDCToNDCSub;
+
     // clipping
     float m_nearDist;
     float m_farDist;
+
+    // viewports
+    float m_deviceWidth;
+    float m_deviceHeight;
+
+    const Viewport m_NDCViewport;
+    Viewport m_NDCSubViewport;
+
+    std::vector<std::optional<line4>> m_NDCSubViewportLines;
+    std::vector<pointAndNormal> m_NDCSubViewportWalls;
 };

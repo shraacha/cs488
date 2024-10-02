@@ -7,7 +7,7 @@ $ make
 $ ./A2
 ```
 
-Note that the code uses C++17 features (this is reflected in the A2 premake). The graphics lab machines seemed to support this.
+Note that the code uses C++17 features (this is reflected in the A2 premake file). The graphics lab machines seemed to support this.
 
 # Manual
 ## Comments / Known Issues
