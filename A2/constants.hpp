@@ -45,7 +45,7 @@ const float c_simpleCameraToWorldMatrix[16] =
 {1, 0, 0, 0,
  0, 1, 0, 0,
  0, 0, 1, 0,
-4, 0, 4, 1
+1, 0, 4, 1
 };
 
 // lines
