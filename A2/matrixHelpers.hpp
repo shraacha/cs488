@@ -98,8 +98,8 @@ inline glm::mat4 makePerspectiveMatrix(const float & fov)
     glm::mat4 perspectiveMatrix = glm::mat4();
 
     // scale x and y based on the FOV. This controls what gets mapped to 1.
-    perspectiveMatrix[0][0] = cosf(fov / 2);
-    perspectiveMatrix[1][1] = cosf(fov / 2);
+    perspectiveMatrix[0][0] = cosf(fov / 2)/sin(fov / 2);
+    perspectiveMatrix[1][1] = cosf(fov / 2)/sin(fov / 2);
 
     // currently not mapping z
     // TODO add z mapping
