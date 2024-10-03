@@ -18,62 +18,73 @@ inline glm::mat4 makeTranslationMatrix(const glm::vec3 & inputVec)
 }
 
 // Description:
-//  - creates a rotation matrix relative to the current frame. When right
-//  multiplied by a matrix, the z-axis rotation is applied first, then y, then x.
-// Params:
-//  - inputVec[0] - radians to rotate counterclockwise around the x-axis, relative to to
-//  current frame
-//  - inputVec[1] - ... y-axis ...
-//  - inputVec[2] - ... z-axis ...
-inline glm::mat4 makeRotationMatrix(const glm::vec3 &inputVec)
+//  - creates a rotation matrix around the x axis relative to the current frame. When right
+inline glm::mat4 makeRotationXMatrix(const float & theta)
 {
     // glm::mat4 is column major - i.e. columns are indexed first
     glm::mat4 xAxisRotation = glm::mat4();
-    glm::mat4 yAxisRotation = glm::mat4();
-    glm::mat4 zAxisRotation = glm::mat4();
 
-    // x
     /*
      *     1      0       0      0
      *     0    cos(t) -sin(t)   0
      *     0    sin(t)  cos(t)   0
      *     0      0       0      1
      */
-    xAxisRotation[1][1] = cosf(inputVec[0]);
-    xAxisRotation[1][2] = sinf(inputVec[0]);
-    xAxisRotation[2][1] = -sinf(inputVec[0]);
-    xAxisRotation[2][2] = cosf(inputVec[0]);
+    xAxisRotation[1][1] = cosf(theta);
+    xAxisRotation[1][2] = sinf(theta);
+    xAxisRotation[2][1] = -sinf(theta);
+    xAxisRotation[2][2] = cosf(theta);
 
-    // y
+    return xAxisRotation;
+}
+
+// Description:
+//  - creates a rotation matrix around the y axis relative to the current frame. When right
+inline glm::mat4 makeRotationYMatrix(const float & theta)
+{
+    // glm::mat4 is column major - i.e. columns are indexed first
+    glm::mat4 yAxisRotation = glm::mat4();
+
     /*
-     * with z up, x to the right, y faces forward, not towards us.
-     * This means that we need to flip t when compared to a rotation wrt x & y.
-     * sin is an odd f'n, cos is an even f'n
+     * with y towards us, z faces right, x faces up.
+     * This means that we need to flip t to perform a ccw rotation, when compared to a rotation on the xy plane.
+     *
+     * sin is an odd f'n, cos is an even f'n, i.e. sin(-t) = -sin(t), cos(-t) = cos(t);
      *
      *   cos(t)   0   sin(t)  0
      *     0      1     0     0
      *  -sin(t)   0   cos(t)  0
      *     0      0     0     1
      */
-    yAxisRotation[0][0] = cosf(inputVec[1]);
-    yAxisRotation[0][2] = -sinf(inputVec[1]);
-    yAxisRotation[2][0] = sinf(inputVec[1]);
-    yAxisRotation[2][2] = cosf(inputVec[1]);
+    yAxisRotation[0][0] = cosf(theta);
+    yAxisRotation[0][2] = -sinf(theta);
+    yAxisRotation[2][0] = sinf(theta);
+    yAxisRotation[2][2] = cosf(theta);
 
-    // z
+    return yAxisRotation;
+}
+
+// Description:
+//  - creates a rotation matrix around the z axis relative to the current frame. When right
+inline glm::mat4 makeRotationZMatrix(const float & theta)
+{
+    // glm::mat4 is column major - i.e. columns are indexed first
+    glm::mat4 zAxisRotation = glm::mat4();
+
     /*
      * cos(t)   -sin(t)   0   0
      * sin(t)   cos(t)    0   0
      *   0         0      1   0
      *   0         0      0   1
      */
-    zAxisRotation[0][0] = cosf(inputVec[2]);
-    zAxisRotation[0][1] = sinf(inputVec[2]);
-    zAxisRotation[1][0] = -sinf(inputVec[2]);
-    zAxisRotation[1][1] = cosf(inputVec[2]);
+    zAxisRotation[0][0] = cosf(theta);
+    zAxisRotation[0][1] = sinf(theta);
+    zAxisRotation[1][0] = -sinf(theta);
+    zAxisRotation[1][1] = cosf(theta);
 
-    return xAxisRotation * yAxisRotation * zAxisRotation;
+    return zAxisRotation;
 }
+
 
 //  Description:
 //  - creates a scaling matrix relative to the current frame.

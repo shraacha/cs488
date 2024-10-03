@@ -96,10 +96,10 @@ protected:
     std::vector<std::optional<line4>> m_worldGnomonLines;
 
     // transformations
-    glm::mat4 m_modelRotAndTsl;
-    glm::mat4 m_modelScl;
+    glm::mat4 m_modelScale;
+    glm::mat4 m_modelToWorld;
 
-    glm::mat4 m_viewRotAndTsl;
+    glm::mat4 m_worldToView;
 
     float m_fov;
     glm::mat4 m_perspective;

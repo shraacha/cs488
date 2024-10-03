@@ -168,7 +168,7 @@ A2::A2()
       m_modelCubeLines{convertToOptionalLines(c_cubeLines)},
       m_modelGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
       m_worldGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
-      m_viewRotAndTsl{glm::inverse(glm::make_mat4(c_defaultCameraToWorldMatrix))},
+      m_worldToView{glm::inverse(glm::make_mat4(c_defaultCameraToWorldMatrix))},
       m_perspective{makePerspectiveMatrix(c_defaultFOV)},
       m_nearDist{c_defaultNearDistance},
       m_farDist{c_defaultFarDistance},
@@ -398,9 +398,9 @@ void A2::appLogic()
     initLineData();
 
     // transform lines by V * M
-    transformedModelCubeLines = transformLines(m_modelCubeLines, m_perspective * m_viewRotAndTsl * m_modelScl * m_modelRotAndTsl);
-    transformedModelGnomonLines = transformLines(m_modelGnomonLines, m_perspective * m_viewRotAndTsl * m_modelRotAndTsl);
-    transformedWorldGnomonLines = transformLines(m_worldGnomonLines, m_perspective * m_viewRotAndTsl);
+    transformedModelCubeLines = transformLines(m_modelCubeLines, m_perspective * m_worldToView * m_modelToWorld * m_modelScale);
+    transformedModelGnomonLines = transformLines(m_modelGnomonLines, m_perspective * m_worldToView * m_modelToWorld);
+    transformedWorldGnomonLines = transformLines(m_worldGnomonLines, m_perspective * m_worldToView);
 
     // clip to near and far planes
     std::vector<pointAndNormal> nearAndFarPlane = {
