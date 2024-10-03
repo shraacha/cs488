@@ -248,7 +248,7 @@ void A2::reset()
     m_modelScale = c_defaultModelScale;
     m_modelToWorld = c_defaultModelToWorldMatrix;
 
-    m_worldToView = glm::inverse(glm::make_mat4(c_defaultCameraToWorldMatrix));
+    m_worldToView = glm::inverse(glm::make_mat4(c_simpleCameraToWorldMatrix));
 
     m_fov = c_defaultFOV;
 
@@ -540,7 +540,7 @@ void A2::guiLogic()
         ImGui::PushID( 0 );
         ImGui::RadioButton( "Rotate View (O)", (int *)&m_interactionMode, 0 );
         ImGui::RadioButton( "Translate View (E)", (int *)&m_interactionMode, 1 );
-        ImGui::RadioButton( "Perspective (C)", (int *)&m_interactionMode, 2 );
+        ImGui::RadioButton( "Perspective (P)", (int *)&m_interactionMode, 2 );
         ImGui::RadioButton( "Rotate Model (R)", (int *)&m_interactionMode, 3 );
         ImGui::RadioButton( "Translate Model (T)", (int *)&m_interactionMode, 4 );
         ImGui::RadioButton( "Scale Model (S)", (int *)&m_interactionMode, 5 );
@@ -550,7 +550,8 @@ void A2::guiLogic()
         ImGui::Separator();
         // ~~~~~~~~~~~~~~~~~~~
 
-        ImGui::Text( "Near: %.1f, Far: %.1f", m_nearDist, m_farDist );
+        ImGui::Text( "FOV (rad): %.1f", m_fov);
+        ImGui::Text( "Near distance: %.1f, Far distance: %.1f", m_nearDist, m_farDist );
         ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 
     ImGui::End();
@@ -690,10 +691,10 @@ bool A2::mouseMoveEvent (
         }
         if (m_MMB) {
             // TODO should I have min max for each
-            m_nearDist = clampValue(m_nearDist + delta, m_farDist, c_minNearDistance);
+            m_nearDist = clampValue(m_nearDist + delta, c_maxNearFarDistance, c_minNearFarDistance);
         }
         if (m_RMB) {
-            m_farDist = clampValue(m_farDist + delta, c_maxFarDistance, m_nearDist);
+            m_farDist = clampValue(m_farDist + delta, c_maxNearFarDistance, c_minNearFarDistance);
         }
         break;
     case InteractionMode::RotateModel:
@@ -733,9 +734,8 @@ bool A2::mouseMoveEvent (
             inputVec[2] = delta;
         }
 
-        if (m_LMB || m_MMB || m_RMB) {
-            m_modelScale = clampValue(m_modelScale + inputVec, c_maxScale, c_minScale);
-        }
+        m_modelScale =
+            clampValue(m_modelScale + inputVec, c_maxScale, c_minScale);
         break;
     case InteractionMode::ViewportMode:
         if (m_LMB) {
@@ -884,7 +884,7 @@ bool A2::keyInputEvent (
         if (key == GLFW_KEY_E) {
             m_interactionMode = InteractionMode::TranslateView;
         }
-        if (key == GLFW_KEY_C) {
+        if (key == GLFW_KEY_P) {
             m_interactionMode = InteractionMode::Perspective;
         }
         if (key == GLFW_KEY_R) {
@@ -902,5 +902,7 @@ bool A2::keyInputEvent (
     }
 
     resetMouseButtons();
+
+    eventHandled = true;
     return eventHandled;
 }
