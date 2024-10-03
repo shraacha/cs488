@@ -747,6 +747,7 @@ bool A2::mouseMoveEvent (
 
     prevXPos = xPos;
     prevYPos = yPos;
+    eventHandled = true;
     return eventHandled;
 }
 
@@ -787,6 +788,7 @@ bool A2::mouseButtonInputEvent (
             }
 
             m_startInput = true;
+            eventHandled = true;
         } else {
             if (button == GLFW_MOUSE_BUTTON_LEFT) {
                 m_LMB = false;
@@ -799,10 +801,10 @@ bool A2::mouseButtonInputEvent (
             if (button == GLFW_MOUSE_BUTTON_RIGHT) {
                 m_RMB = false;
             }
+            eventHandled = true;
         }
     }
 
-    eventHandled = true;
     return eventHandled;
 }
 
@@ -870,39 +872,47 @@ bool A2::keyInputEvent (
         // quit
         if (key == GLFW_KEY_Q) {
             glfwSetWindowShouldClose(m_window, GL_TRUE);
+            eventHandled = true;
         }
 
         // reset
         if (key == GLFW_KEY_A) {
             reset();
+            eventHandled = true;
         }
 
         // interaction modes
         if (key == GLFW_KEY_O) {
             m_interactionMode = InteractionMode::RotateView;
+            eventHandled = true;
         }
         if (key == GLFW_KEY_E) {
             m_interactionMode = InteractionMode::TranslateView;
+            eventHandled = true;
         }
         if (key == GLFW_KEY_P) {
             m_interactionMode = InteractionMode::Perspective;
+            eventHandled = true;
         }
         if (key == GLFW_KEY_R) {
             m_interactionMode = InteractionMode::RotateModel;
+            eventHandled = true;
         }
         if (key == GLFW_KEY_T) {
             m_interactionMode = InteractionMode::TranslateModel;
+            eventHandled = true;
         }
         if (key == GLFW_KEY_S) {
             m_interactionMode = InteractionMode::ScaleModel;
+            eventHandled = true;
         }
         if (key == GLFW_KEY_V) {
             m_interactionMode = InteractionMode::ViewportMode;
+            eventHandled = true;
         }
     }
 
     resetMouseButtons();
 
-    eventHandled = true;
     return eventHandled;
 }
