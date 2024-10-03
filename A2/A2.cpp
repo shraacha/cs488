@@ -550,7 +550,7 @@ void A2::guiLogic()
         ImGui::Separator();
         // ~~~~~~~~~~~~~~~~~~~
 
-        ImGui::Text( "FOV (rad): %.1f", m_fov);
+        ImGui::Text( "FOV (rad): %.1f", m_fov );
         ImGui::Text( "Near distance: %.1f, Far distance: %.1f", m_nearDist, m_farDist );
         ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 
