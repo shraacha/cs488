@@ -6,12 +6,14 @@
 #include "cs488-framework/OpenGLImport.hpp"
 #include "cs488-framework/ShaderProgram.hpp"
 
+#include <functional>
 #include <glm/glm.hpp>
 
 #include <vector>
 #include <optional>
 
 #include "constants.hpp"
+#include "customTypes.hpp"
 #include "viewport.hpp"
 
 // Set a global maximum number of vertices in order to pre-allocate VBO data
@@ -77,7 +79,12 @@ protected:
     glm::vec3 m_currentLineColour;
 
     // additions
+    void reset();
+
     void resetViewportData();
+    void updateViewportData();
+
+    inline void resetMouseButtons();
 
     void drawLines(const std::vector<line4> &lineList);
     void drawLines(const std::vector<std::optional<line4>> &lineList,
@@ -89,6 +96,8 @@ protected:
     static glm::vec4 getNearPlaneNormal();
     static glm::vec4 getFarPlaneNormal();
 
+    void testClip();
+
     // model lines
     std::vector<std::optional<line4>> m_modelCubeLines;
     std::vector<std::optional<line4>> m_modelGnomonLines;
@@ -96,7 +105,8 @@ protected:
     std::vector<std::optional<line4>> m_worldGnomonLines;
 
     // transformations
-    glm::mat4 m_modelScale;
+    glm::vec3 m_modelScale;
+    glm::mat4 m_modelScaleMatrix; // not updated directly
     glm::mat4 m_modelToWorld;
 
     glm::mat4 m_worldToView;
@@ -117,7 +127,15 @@ protected:
 
     const Viewport m_NDCViewport;
     Viewport m_NDCSubViewport;
+    line4 m_deviceViewportCorners;
 
     std::vector<std::optional<line4>> m_NDCSubViewportLines;
     std::vector<pointAndNormal> m_NDCSubViewportWalls;
+
+    // mouse things
+    bool m_startInput;
+    InteractionMode m_interactionMode;
+    bool m_LMB;
+    bool m_RMB;
+    bool m_MMB;
 };

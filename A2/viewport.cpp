@@ -6,8 +6,13 @@ glm::mat4 makeViewportTransformationMatrix(const Viewport & V, const Viewport & 
 {
     glm::mat4 transformation = glm::mat4(); // start with identity matrix
 
-    float LRatio = W.L / V.L;
-    float HRatio = W.H / V.H;
+    // avoiding div by 0
+    //
+    // This is kinda wrong, but we'll roll with it, just don't transform from a
+    // 0 width/height viewport.
+
+    float LRatio = (V.L == 0.0f) ? 0.0f : W.L / V.L;
+    float HRatio = (V.H == 0.0f) ? 0.0f : W.H / V.H;
 
     transformation[0][0] = LRatio;
     transformation[1][1] = HRatio;
@@ -73,8 +78,8 @@ Viewport makeNDCViewportFromCorners(const line4 & corners)
     float x, y, L, H;
 
     float x1 = corners.first[0];
-    float x2 = corners.first[1];
-    float y1 = corners.second[0];
+    float x2 = corners.second[0];
+    float y1 = corners.first[1];
     float y2 = corners.second[1];
 
     if (x1 <= x2) {

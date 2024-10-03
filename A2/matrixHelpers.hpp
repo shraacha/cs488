@@ -19,7 +19,7 @@ inline glm::mat4 makeTranslationMatrix(const glm::vec3 & inputVec)
 
 // Description:
 //  - creates a rotation matrix around the x axis relative to the current frame. When right
-inline glm::mat4 makeRotationXMatrix(const float & theta)
+inline glm::mat4 makeRotationMatrixX(const float & theta)
 {
     // glm::mat4 is column major - i.e. columns are indexed first
     glm::mat4 xAxisRotation = glm::mat4();
@@ -40,7 +40,7 @@ inline glm::mat4 makeRotationXMatrix(const float & theta)
 
 // Description:
 //  - creates a rotation matrix around the y axis relative to the current frame. When right
-inline glm::mat4 makeRotationYMatrix(const float & theta)
+inline glm::mat4 makeRotationMatrixY(const float & theta)
 {
     // glm::mat4 is column major - i.e. columns are indexed first
     glm::mat4 yAxisRotation = glm::mat4();
@@ -66,7 +66,7 @@ inline glm::mat4 makeRotationYMatrix(const float & theta)
 
 // Description:
 //  - creates a rotation matrix around the z axis relative to the current frame. When right
-inline glm::mat4 makeRotationZMatrix(const float & theta)
+inline glm::mat4 makeRotationMatrixZ(const float & theta)
 {
     // glm::mat4 is column major - i.e. columns are indexed first
     glm::mat4 zAxisRotation = glm::mat4();
@@ -83,6 +83,15 @@ inline glm::mat4 makeRotationZMatrix(const float & theta)
     zAxisRotation[1][1] = cosf(theta);
 
     return zAxisRotation;
+}
+
+// returns Rx * Ry * Rz
+inline glm::mat4 makeRotationMatrixXYZ(const glm::vec3 &inputVec){
+    return  makeRotationMatrixX(inputVec[0]) * makeRotationMatrixY(inputVec[1]) * makeRotationMatrixZ(inputVec[2]);
+}
+// returns Rz * Ry * Rx
+inline glm::mat4 makeRotationMatrixZYX(const glm::vec3 &inputVec){
+    return makeRotationMatrixZ(inputVec[2]) * makeRotationMatrixY(inputVec[1]) * makeRotationMatrixX(inputVec[0]) ;
 }
 
 
@@ -106,7 +115,7 @@ inline glm::mat4 makeScaleMatrix(const glm::vec3 &inputVec)
 
 inline glm::mat4 makePerspectiveMatrix(const float & fov)
 {
-    glm::mat4 perspectiveMatrix = glm::mat4();
+    glm::mat4 perspectiveMatrix = glm::mat4(0.0f);
 
     // scale x and y based on the FOV. This controls what gets mapped to 1.
     perspectiveMatrix[0][0] = cosf(fov / 2)/sin(fov / 2);
@@ -114,6 +123,7 @@ inline glm::mat4 makePerspectiveMatrix(const float & fov)
 
     // currently not mapping z
     // TODO add z mapping
+    perspectiveMatrix[2][2] = 1;
 
     // replace w with z
     perspectiveMatrix[2][3] = -1; // camera is looking down -z, so we flip it

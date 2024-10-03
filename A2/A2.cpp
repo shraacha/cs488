@@ -2,6 +2,7 @@
 
 #include "A2.hpp"
 #include "cs488-framework/GlErrorCheck.hpp"
+#include "customTypes.hpp"
 #include "viewport.hpp"
 
 #include <iostream>
@@ -18,6 +19,7 @@ using namespace std;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/io.hpp>
+#include <glm/ext.hpp>
 using namespace glm;
 
 #include "constants.hpp"
@@ -26,8 +28,44 @@ using namespace glm;
 
 
 //--------- helpers ----------
+
+void printOptionalLine(const std::optional<line4> & line)
+{
+    if (line.has_value())
+    {
+        std::cout << line->first << " " << line->second << std::endl;
+    } else {
+
+        std::cout << "nullopt" << std::endl;
+    }
+}
+
+static inline float clampValue(const float & value, const float & upper, const float & lower)
+{
+    return (value <= upper) ? ((value >= lower) ? value : lower) : upper;
+}
+
+static inline glm::vec3 clampValue(const glm::vec3 &value, const float &upper,
+                                   const float &lower) {
+    return {clampValue(value[0], upper, lower),
+            clampValue(value[1], upper, lower),
+            clampValue(value[2], upper, lower)};
+}
+
+static inline glm::vec4 deviceCoordToPoint(const float &x, const float &y,
+                                           const float &clampX,
+                                           const float &clampY) {
+    glm::vec4 point = {0.0f, 0.0f, 0.0f, 1.0f};
+
+    point[0] = (x <= clampX) ? ((x > 0.0f) ? x : 0.0f) : clampX;
+    point[1] = (y <= clampY) ? ((y > 0.0f) ? y : 0.0f) : clampY;
+
+    return point;
+}
+
 static inline line4 transformLine(const line4 &line,
-                                  const glm::mat4 &transformation) {
+                                  const glm::mat4 &transformation)
+{
     return {transformation * line.first, transformation * line.second};
 }
 
@@ -62,7 +100,7 @@ transformLines(std::vector<std::optional<line4>> &&lines,
 //  - returns (Q - P) * n, where P is a point on the line,
 //  n is normal to the line, and Q is the point being tested.
 static inline float implicitLineEquation(const glm::vec4 & Q, const glm::vec4 & P, const glm::vec4 & n) {
-    return glm::dot((Q - P), n);
+    return glm::dot(Q - P, n);
 }
 
 static inline glm::vec4 parametricLineEquation(const glm::vec4 & A, const glm::vec4 & B, const float & t) {
@@ -70,16 +108,16 @@ static inline glm::vec4 parametricLineEquation(const glm::vec4 & A, const glm::v
 }
 
 // the line must not be a point
-// TODO clean up this spagetti code
+// TODO clean up this spaghetti code
 static std::optional<line4> clip(const line4 & line, const glm::vec4 & P, const glm::vec4 & n) {
     float testA = implicitLineEquation(line.first, P, n);
     float testB = implicitLineEquation(line.second, P, n);
 
-    if (testA < 0 && testB < 0) {
+    if (testA <= 0.0f && testB <= 0.0f) {
         return std::nullopt;
-    } else if (testA >= 0 && testB >= 0) {
+    } else if (testA > 0.0f && testB > 0.0f) {
         return line;
-    } else if (testA - testB == 0) {
+    } else if (testA - testB == 0.0f) {
         return std::nullopt; // to prevent a divide by 0 in the next step
     } else {
         glm::vec4 intersectionPoint = parametricLineEquation(
@@ -88,7 +126,7 @@ static std::optional<line4> clip(const line4 & line, const glm::vec4 & P, const 
         if (testA >= 0) {
             return std::make_pair(line.first, intersectionPoint);
         } else {
-            return std::make_pair(line.second, intersectionPoint);
+            return std::make_pair(intersectionPoint, line.second);
         }
     }
 }
@@ -98,8 +136,8 @@ clip(std::optional<line4> && line,
          const std::vector<pointAndNormal> &walls)
 {
     for (const auto &wall : walls) {
-        line = clip(*line, wall.first, wall.second);
         if(!line.has_value()) return line;
+        line = clip(*line, wall.first, wall.second);
     }
     return line;
 }
@@ -165,13 +203,6 @@ VertexData::VertexData()
 // Constructor
 A2::A2()
     : m_currentLineColour(vec3(0.0f)),
-      m_modelCubeLines{convertToOptionalLines(c_cubeLines)},
-      m_modelGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
-      m_worldGnomonLines{{c_unitLineX, c_unitLineY, c_unitLineZ}},
-      m_worldToView{glm::inverse(glm::make_mat4(c_defaultCameraToWorldMatrix))},
-      m_perspective{makePerspectiveMatrix(c_defaultFOV)},
-      m_nearDist{c_defaultNearDistance},
-      m_farDist{c_defaultFarDistance},
       m_NDCViewport{getNDCViewport()}
 {
 }
@@ -204,20 +235,51 @@ void A2::init()
 
     // A2 impl things
 
-    // initializing viewports
+    // initializing data
+    reset();
+}
+
+void A2::reset()
+{
+    m_modelCubeLines = convertToOptionalLines(c_cubeLines);
+    m_modelGnomonLines = {c_unitLineX, c_unitLineY, c_unitLineZ};
+    m_worldGnomonLines = {c_unitLineX, c_unitLineY, c_unitLineZ};
+
+    m_modelScale = c_defaultModelScale;
+    m_modelToWorld = c_defaultModelToWorldMatrix;
+
+    m_worldToView = glm::inverse(glm::make_mat4(c_defaultCameraToWorldMatrix));
+
+    m_fov = c_defaultFOV;
+
+    m_nearDist = c_defaultNearDistance;
+    m_farDist = c_defaultFarDistance;
+
     resetViewportData();
+
+    m_interactionMode = c_defaultInteractionMode;
+    resetMouseButtons();
 }
 
 void A2::resetViewportData()
 {
+    m_deviceViewportCorners = makeDeviceViewportCornersFromPortion(
+        m_deviceWidth, m_deviceHeight, c_defaultViewPortion);
+    updateViewportData();
+}
+
+void A2::updateViewportData() {
     m_NDCSubViewport = makeNDCViewportFromCorners(
-        transformLine(makeDeviceViewportCornersFromPortion(
-                          m_deviceWidth, m_deviceHeight, c_defaultViewPortion),
-                      m_deviceToNDC));
+        transformLine(m_deviceViewportCorners, m_deviceToNDC));
     m_NDCSubViewportLines =
         convertToOptionalLines(getViewportExplicitEdges(m_NDCSubViewport));
     m_NDCSubViewportWalls = getViewportImplicitEdges(m_NDCSubViewport);
     m_NDCToNDCSub = makeViewportTransformationMatrix(m_NDCViewport, m_NDCSubViewport);
+}
+
+inline void A2::resetMouseButtons()
+{
+    m_LMB = m_MMB = m_RMB = false;
 }
 
 //----------------------------------------------------------------------------------------
@@ -373,7 +435,7 @@ void A2::drawLines(const std::vector<std::optional<line4>> &lineList,
 //----------------------------------------------------------------------------------------
 glm::vec4 A2::zClipPlaneDistToPoint(const float & dist) {
     // convention is that -z is in front
-    return {0.0f, 0.0f, -dist, 0.0f};
+    return {0.0f, 0.0f, -dist, 1.0f};
 }
 
 glm::vec4 A2::getNearPlaneNormal() {
@@ -390,28 +452,35 @@ glm::vec4 A2::getFarPlaneNormal() {
  */
 void A2::appLogic()
 {
-    // data
+    m_perspective = makePerspectiveMatrix(m_fov);
+    m_modelScaleMatrix = makeScaleMatrix(m_modelScale);
+
     std::vector<std::optional<line4>> transformedModelCubeLines;
     std::vector<std::optional<line4>> transformedModelGnomonLines;
     std::vector<std::optional<line4>> transformedWorldGnomonLines;
 
-    // Call at the beginning of frame, before drawing lines:
-    initLineData();
-
-    // transform lines by V * M
-    transformedModelCubeLines = transformLines(m_modelCubeLines, m_perspective * m_worldToView * m_modelToWorld * m_modelScale);
-    transformedModelGnomonLines = transformLines(m_modelGnomonLines, m_perspective * m_worldToView * m_modelToWorld);
-    transformedWorldGnomonLines = transformLines(m_worldGnomonLines, m_perspective * m_worldToView);
-
-    // clip to near and far planes
     std::vector<pointAndNormal> nearAndFarPlane = {
         {zClipPlaneDistToPoint(m_nearDist), getNearPlaneNormal()},
         {zClipPlaneDistToPoint(m_farDist), getFarPlaneNormal()},
     };
 
+    // Call at the beginning of frame, before drawing lines:
+    initLineData();
+
+    // transform lines by V * M
+    transformedModelCubeLines = transformLines(m_modelCubeLines, m_worldToView * m_modelToWorld * m_modelScaleMatrix);
+    transformedModelGnomonLines = transformLines(m_modelGnomonLines, m_worldToView * m_modelToWorld);
+    transformedWorldGnomonLines = transformLines(m_worldGnomonLines, m_worldToView);
+
+    // clip to near and far planes
     transformedModelCubeLines = clip(std::move(transformedModelCubeLines), nearAndFarPlane);
     transformedModelGnomonLines = clip(std::move(transformedModelGnomonLines), nearAndFarPlane);
     transformedWorldGnomonLines = clip(std::move(transformedWorldGnomonLines), nearAndFarPlane);
+
+    // perspective correction
+    transformedModelCubeLines = transformLines(std::move(transformedModelCubeLines), m_perspective);
+    transformedModelGnomonLines = transformLines(std::move(transformedModelGnomonLines), m_perspective);
+    transformedWorldGnomonLines = transformLines(std::move(transformedWorldGnomonLines), m_perspective);
 
     // homogenize
     transformedModelCubeLines = homogenize(std::move(transformedModelCubeLines));
@@ -453,16 +522,35 @@ void A2::guiLogic()
 
     ImGui::Begin("Properties", &showDebugWindow, ImVec2(100,100), opacity,
             windowFlags);
-
-
         // Add more gui elements here here ...
 
+        // the important buttons
 
-        // Create Button, and check if it was clicked:
-        if( ImGui::Button( "Quit Application" ) ) {
+        if( ImGui::Button( "Quit Application (Q)" ) ) {
             glfwSetWindowShouldClose(m_window, GL_TRUE);
         }
+        ImGui::SameLine();
+        if( ImGui::Button( "Reset Application (A)" ) ) {
+            reset();
+        }
 
+        ImGui::Separator();
+        // ~~~~~~~~~~~~~~~~~~~
+
+        ImGui::PushID( 0 );
+        ImGui::RadioButton( "Rotate View (O)", (int *)&m_interactionMode, 0 );
+        ImGui::RadioButton( "Translate View (E)", (int *)&m_interactionMode, 1 );
+        ImGui::RadioButton( "Perspective (C)", (int *)&m_interactionMode, 2 );
+        ImGui::RadioButton( "Rotate Model (R)", (int *)&m_interactionMode, 3 );
+        ImGui::RadioButton( "Translate Model (T)", (int *)&m_interactionMode, 4 );
+        ImGui::RadioButton( "Scale Model (S)", (int *)&m_interactionMode, 5 );
+        ImGui::RadioButton( "Viewport (V)", (int *)&m_interactionMode, 6 );
+        ImGui::PopID();
+
+        ImGui::Separator();
+        // ~~~~~~~~~~~~~~~~~~~
+
+        ImGui::Text( "Near: %.1f, Far: %.1f", m_nearDist, m_farDist );
         ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 
     ImGui::End();
@@ -545,8 +633,120 @@ bool A2::mouseMoveEvent (
 ) {
     bool eventHandled(false);
 
+    static double prevXPos;
+    static double prevYPos;
+
+    if(m_startInput) {
+        prevXPos = xPos;
+        prevYPos = yPos;
+        m_startInput = false;
+    }
+
+    double dX = xPos - prevXPos;
+    float theta = (dX * c_fullWindowRotation) / m_deviceWidth;
+    float delta = (dX * m_NDCViewport.L) / m_deviceWidth;
+    float deltaScaled = (dX / m_deviceWidth) * 0.5;
+    float fovDelta = ((dX * c_maxFOV) / m_deviceWidth);
+    glm::vec3 inputVec;
+
     // Fill in with event handling code...
 
+    switch (m_interactionMode) {
+    case InteractionMode::RotateView:
+        // -theta to inverse the movement
+        if (m_LMB) {
+            inputVec[0] = -theta;
+        }
+        if (m_MMB) {
+            inputVec[1] = -theta;
+        }
+        if (m_RMB) {
+            inputVec[2] = -theta;
+        }
+
+        // must re-order the matrices since
+        // (X Y Z) ^-1 = (Z^-1 Y^-1 X^-1)
+        m_worldToView = makeRotationMatrixZYX(inputVec) * m_worldToView;
+        break;
+    case InteractionMode::TranslateView:
+        // -theta to inverse the movement
+        if (m_LMB) {
+            inputVec[0] = -delta;
+        }
+        if (m_MMB) {
+            inputVec[1] = -delta;
+        }
+        if (m_RMB) {
+            inputVec[2] = -delta;
+        }
+
+        m_worldToView = makeTranslationMatrix(inputVec) * m_worldToView;
+
+        break;
+    case InteractionMode::Perspective:
+        // -theta to inverse the movement
+        if (m_LMB) {
+            m_fov = clampValue(m_fov + fovDelta, c_maxFOV, c_minFOV);
+        }
+        if (m_MMB) {
+            // TODO should I have min max for each
+            m_nearDist = clampValue(m_nearDist + delta, m_farDist, c_minNearDistance);
+        }
+        if (m_RMB) {
+            m_farDist = clampValue(m_farDist + delta, c_maxFarDistance, m_nearDist);
+        }
+        break;
+    case InteractionMode::RotateModel:
+        if (m_LMB) {
+            inputVec[0] = theta;
+        }
+        if (m_MMB) {
+            inputVec[1] = theta;
+        }
+        if (m_RMB) {
+            inputVec[2] = theta;
+        }
+
+        m_modelToWorld = m_modelToWorld * makeRotationMatrixXYZ(inputVec);
+        break;
+    case InteractionMode::TranslateModel:
+        if (m_LMB) {
+            inputVec[0] = delta;
+        }
+        if (m_MMB) {
+            inputVec[1] = delta;
+        }
+        if (m_RMB) {
+            inputVec[2] = delta;
+        }
+
+        m_modelToWorld = m_modelToWorld * makeTranslationMatrix(inputVec);
+        break;
+    case InteractionMode::ScaleModel:
+        if (m_LMB) {
+            inputVec[0] = delta;
+        }
+        if (m_MMB) {
+            inputVec[1] = delta;
+        }
+        if (m_RMB) {
+            inputVec[2] = delta;
+        }
+
+        if (m_LMB || m_MMB || m_RMB) {
+            m_modelScale = clampValue(m_modelScale + inputVec, c_maxScale, c_minScale);
+        }
+        break;
+    case InteractionMode::ViewportMode:
+        if (m_LMB) {
+            m_deviceViewportCorners.second = deviceCoordToPoint(xPos, yPos, m_deviceWidth, m_deviceHeight);
+        }
+        updateViewportData();
+        break;
+    }
+
+    prevXPos = xPos;
+    prevYPos = yPos;
     return eventHandled;
 }
 
@@ -561,8 +761,48 @@ bool A2::mouseButtonInputEvent (
 ) {
     bool eventHandled(false);
 
-    // Fill in with event handling code...
+    double xPos, yPos;
+    glfwGetCursorPos( m_window, &xPos, &yPos );
 
+    // Fill in with event handling code...
+    if (!ImGui::IsMouseHoveringAnyWindow()) {
+        // The user clicked in the window.  If it's the left
+        // mouse button, initiate a rotation.
+
+        if (actions == GLFW_PRESS) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT) {
+                m_LMB = true;
+
+                if (m_interactionMode == InteractionMode::ViewportMode) {
+                    m_deviceViewportCorners.first = deviceCoordToPoint(xPos, yPos, m_deviceWidth, m_deviceHeight);
+                }
+            }
+
+            if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+                m_MMB = true;
+            }
+
+            if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                m_RMB = true;
+            }
+
+            m_startInput = true;
+        } else {
+            if (button == GLFW_MOUSE_BUTTON_LEFT) {
+                m_LMB = false;
+            }
+
+            if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+                m_MMB = false;
+            }
+
+            if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                m_RMB = false;
+            }
+        }
+    }
+
+    eventHandled = true;
     return eventHandled;
 }
 
@@ -592,11 +832,21 @@ bool A2::windowResizeEvent (
     bool eventHandled(false);
 
     // Fill in with event handling code...
+
+    // scale the old viewport corners with the glfw window
+    m_deviceViewportCorners =
+        transformLine(m_deviceViewportCorners,
+                      makeViewportTransformationMatrix(
+                          makeDeviceViewport(m_deviceWidth, m_deviceHeight),
+                          makeDeviceViewport((float)width, (float)height)));
+
     m_deviceWidth = width;
     m_deviceHeight = height;
 
     m_deviceToNDC = makeViewportTransformationMatrix(
         makeDeviceViewport((float)width, (float)height), m_NDCViewport);
+
+    updateViewportData();
 
     eventHandled = true;
     return eventHandled;
@@ -614,6 +864,43 @@ bool A2::keyInputEvent (
     bool eventHandled(false);
 
     // Fill in with event handling code...
+    if (action == GLFW_PRESS) {
+        // Respond to some key events.
 
+        // quit
+        if (key == GLFW_KEY_Q) {
+            glfwSetWindowShouldClose(m_window, GL_TRUE);
+        }
+
+        // reset
+        if (key == GLFW_KEY_A) {
+            reset();
+        }
+
+        // interaction modes
+        if (key == GLFW_KEY_O) {
+            m_interactionMode = InteractionMode::RotateView;
+        }
+        if (key == GLFW_KEY_E) {
+            m_interactionMode = InteractionMode::TranslateView;
+        }
+        if (key == GLFW_KEY_C) {
+            m_interactionMode = InteractionMode::Perspective;
+        }
+        if (key == GLFW_KEY_R) {
+            m_interactionMode = InteractionMode::RotateModel;
+        }
+        if (key == GLFW_KEY_T) {
+            m_interactionMode = InteractionMode::TranslateModel;
+        }
+        if (key == GLFW_KEY_S) {
+            m_interactionMode = InteractionMode::ScaleModel;
+        }
+        if (key == GLFW_KEY_V) {
+            m_interactionMode = InteractionMode::ViewportMode;
+        }
+    }
+
+    resetMouseButtons();
     return eventHandled;
 }
