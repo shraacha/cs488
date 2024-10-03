@@ -372,7 +372,8 @@ void A2::drawLines(const std::vector<std::optional<line4>> &lineList,
 
 //----------------------------------------------------------------------------------------
 glm::vec4 A2::zClipPlaneDistToPoint(const float & dist) {
-    return -dist * c_unitZ;
+    // convention is that -z is in front
+    return {0.0f, 0.0f, -dist, 0.0f};
 }
 
 glm::vec4 A2::getNearPlaneNormal() {

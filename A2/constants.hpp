@@ -89,10 +89,10 @@ const glm::vec4 c_standardBasisY = {0.0f, 1.0f, 0.0f, 0.0f};
 const glm::vec4 c_standardBasisZ = {0.0f, 0.0f, 1.0f, 0.0f};
 
 const float c_defaultNearDistance = 2;
-const float c_defaultFarDistance = 60;
+const float c_defaultFarDistance = 10;
 
 const float c_minNearDistance = 2;
-const float c_maxFarDistance= 200;
+const float c_maxFarDistance= 80;
 
 const float c_defaultFOV = M_PI / 3.0;
 const float c_minFOV = 0.0f;
