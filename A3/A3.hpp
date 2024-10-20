@@ -8,6 +8,7 @@
 #include "cs488-framework/MeshConsolidator.hpp"
 
 #include "SceneNode.hpp"
+#include "Scene.hpp"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -49,7 +50,7 @@ protected:
 
 	void initPerspectiveMatrix();
 	void uploadCommonSceneUniforms();
-	void renderSceneGraph(const SceneNode &node);
+	void renderScene(Scene &scene);
 	void renderArcCircle();
 
 	glm::mat4 m_perpsective;
@@ -78,5 +79,5 @@ protected:
 
 	std::string m_luaSceneFile;
 
-	std::shared_ptr<SceneNode> m_rootNode;
+	Scene m_scene;
 };
