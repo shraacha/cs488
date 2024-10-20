@@ -10,6 +10,8 @@
 #include <string>
 #include <iostream>
 
+using NodeID = unsigned int;
+
 enum class NodeType {
 	SceneNode,
 	GeometryNode,
@@ -53,10 +55,9 @@ public:
 
 	NodeType m_nodeType;
 	std::string m_name;
-	unsigned int m_nodeId;
+	NodeID m_nodeId;
 
-
-private:
+    private:
 	// The number of SceneNode instances.
 	static unsigned int nodeInstanceCount;
 };
