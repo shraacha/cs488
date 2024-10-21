@@ -88,4 +88,8 @@ protected:
 	bool m_cullFront;
 	bool m_cullBack;
 	bool m_zBuffer;
+
+	//-- device info
+	double deviceWidth;
+	double deviceHeight;
 };

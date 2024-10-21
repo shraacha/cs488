@@ -104,14 +104,16 @@ static inline glm::vec3 circleToSphereMapping(float r, std::pair<float, float> c
 	return circleToSphereMapping(r, coord.first, coord.second);
 }
 
-static inline glm::mat4 getArcballRotation (glm::vec3 v1, glm::vec3 v2)
+static inline glm::vec3 getArcballRotationAxis (glm::vec3 v1, glm::vec3 v2)
 {
-	glm::vec3 axis = glm::cross(v1, v2);
-	float theta = acos(glm::dot(v1, v2));
-
-	return glm::rotate(glm::mat4(), theta, axis);
+	return glm::cross(v1, v2);
 }
 
+// in radians
+static inline double getArcballRotationAngle (glm::vec3 v1, glm::vec3 v2)
+{
+	return acos(glm::dot(v1, v2));
+}
 //----------------------------------------------------------------------------------------
 // Constructor
 A3::A3(const std::string & luaSceneFile)
@@ -201,8 +203,8 @@ void A3::processLuaSceneFile(const std::string & filename) {
 
 	// This version of the code treats the main program argument
 	// as a straightforward pathname.
-	m_scene = {import_lua(filename)};
-	if (m_scene.isEmpty()) {
+	bool importResult = m_scene.importSceneGraph(import_lua(filename));
+	if (!importResult) {
 		std::cerr << "Could Not Open " << filename << std::endl;
 	}
 }
