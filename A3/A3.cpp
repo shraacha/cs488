@@ -80,7 +80,7 @@ topLeftOriginToCenteredOrigin(float viewportWidth, float viewportHeight,
 static inline float getTrackballRadius(float deviceWidth, float deviceHeight,
 										float portionOfSmallest = 0.5)
 {
-	return portionOfSmallest * (deviceWidth < deviceHeight) ? deviceWidth : deviceHeight;
+	return portionOfSmallest * (((deviceWidth < deviceHeight) ? deviceWidth : deviceHeight) / 2);
 }
 
 // centered at the origin
@@ -90,13 +90,13 @@ static inline glm::vec3 circleToSphereMapping(float r, float x, float y)
 	glm::vec3 vertex;
 	// if outside of the trackball, send vertex to the edge of the trackball
 	if ((x * x + y * y) >= r * r) {
-		vertex = glm::normalize(glm::vec3(x, y, 0)) * r;
+		vertex = glm::normalize(glm::vec3(x, y, 0));
 	}
 	else {
 		vertex = glm::vec3(x, y, sqrt(r * r - (x * x + y * y)));
 	}
 
-	return vertex;
+	return glm::normalize(vertex);
 }
 
 static inline glm::vec3 circleToSphereMapping(float r, std::pair<float, float> coord)
@@ -106,12 +106,21 @@ static inline glm::vec3 circleToSphereMapping(float r, std::pair<float, float> c
 
 static inline glm::vec3 getArcballRotationAxis (glm::vec3 v1, glm::vec3 v2)
 {
-	return glm::cross(v1, v2);
+	glm::vec3 result = glm::cross(v1, v2);
+
+	if (glm::length(result) == 0)
+	{
+		return result;
+	} else
+	{
+		return glm::normalize(result);
+	}
 }
 
 // in radians
 static inline double getArcballRotationAngle (glm::vec3 v1, glm::vec3 v2)
 {
+	// printf("dot value: %f\n", glm::dot(v1, v2)); // TODO wrap in debug macro
 	return acos(glm::dot(v1, v2));
 }
 //----------------------------------------------------------------------------------------
@@ -207,6 +216,7 @@ void A3::processLuaSceneFile(const std::string & filename) {
 	if (!importResult) {
 		std::cerr << "Could Not Open " << filename << std::endl;
 	}
+	// m_scene.translate({-2.75, 0.0, -10.0}); // TODO remove after tesing
 }
 
 //----------------------------------------------------------------------------------------
@@ -577,6 +587,35 @@ void A3::renderArcCircle() {
 }
 
 //----------------------------------------------------------------------------------------
+void A3::performTrackballRotation(float x1, float y1, float x2, float y2)
+{
+	if (x1 == x2 && y2 == y2)
+	{
+		return;
+	}
+
+	float trackballRadius = getTrackballRadius(
+		static_cast<float>(m_windowWidth), static_cast<float>(m_windowHeight));
+	glm::vec3 v1 = circleToSphereMapping(
+		trackballRadius, topLeftOriginToCenteredOrigin(
+							 static_cast<float>(m_windowWidth),
+							 static_cast<float>(m_windowHeight), x1, y1));
+	glm::vec3 v2 = circleToSphereMapping(
+		trackballRadius, topLeftOriginToCenteredOrigin(
+							 static_cast<float> (m_windowWidth),
+							 static_cast<float> (m_windowHeight), x2, y2));
+
+	// TODO remove after testing
+	// std::cout << "v1: " << v1;
+	// std::cout << "v2: " << v2;
+	// std::cout << "axis: " << getArcballRotationAxis(v1, v2);
+	// std::cout << "angle: " << getArcballRotationAngle(v1, v2) << std::endl;
+
+	m_scene.rotate(getArcballRotationAxis(v1, v2),
+				   getArcballRotationAngle(v1, v2));
+}
+
+//----------------------------------------------------------------------------------------
 /*
  * Called once, after program is signaled to terminate.
  */
@@ -610,7 +649,24 @@ bool A3::mouseMoveEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+    static double prevXPos;
+    static double prevYPos;
 
+	auto updatePrevPosition = [&] () {
+		prevXPos = xPos;
+		prevYPos = yPos;
+	};
+
+    if(m_startMouseInput) {
+		updatePrevPosition();
+        m_startMouseInput = false;
+    }
+
+	if (m_LMB) {
+		performTrackballRotation(prevXPos, prevYPos, xPos, yPos);
+	}
+
+    updatePrevPosition();
 	return eventHandled;
 }
 
@@ -626,6 +682,24 @@ bool A3::mouseButtonInputEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+    if (!ImGui::IsMouseHoveringAnyWindow()) {
+        // The user clicked in the window.  If it's the left
+        // mouse button, initiate a rotation.
+
+        if (actions == GLFW_PRESS) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT) {
+                m_LMB = true;
+            }
+
+            m_startMouseInput = true;
+            eventHandled = true;
+        } else {
+            if (button == GLFW_MOUSE_BUTTON_LEFT) {
+                m_LMB = false;
+            }
+            eventHandled = true;
+        }
+    }
 
 	return eventHandled;
 }
