@@ -6,11 +6,40 @@
 
 // ~~~~~~~~~~~~~~~~~ Scene class ~~~~~~~~~~~~~~~~~
 
-Scene::Scene() {}
+Scene::Scene()
+{
+    m_globalTranslationNode = new SceneNode("GLOBAL_TRANSLATION_NODE");
+    m_globalRotationNode = new SceneNode("GLOBAL_ROTATION_NODE");
 
-Scene::Scene(SceneNode *root) : m_sceneRoot{root} {}
+    m_globalTranslationNode->add_child(m_globalRotationNode);
+    // the points should be rotated first before being translated
+
+    // lifetime of the above two tied to this
+    m_sceneRoot.reset(m_globalTranslationNode);
+}
+
+// returns true if import successful, false otherwise
+bool Scene::importSceneGraph(SceneNode *root)
+{
+    if (root) {
+        m_globalRotationNode->add_child(root);
+        return true;
+    } else {
+        return false;
+    }
+}
 
 bool Scene::isEmpty() { return !m_sceneRoot; }
+
+void Scene::rotate(const glm::vec3 & axis, const double & theta)
+{
+    m_globalRotationNode->rotateRadians(axis, theta);
+}
+
+void Scene::translate(const glm::vec3 & translation)
+{
+    m_globalTranslationNode->translate(translation);
+}
 
 // ~~~~~~~~~~~~~~~~~ Iterator ~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~ ctors ~~~~~~~~~~~~~~~~~
@@ -20,7 +49,7 @@ Scene::PreOrderTraversalIterator::PreOrderTraversalIterator(
     Scene::PreOrderTraversalIterator::pointer_t ptr)
 {
     if (ptr) {
-        InheritedNodeData nodeData = getInheritedNodeData(*ptr); // TODO uncomment
+        InheritedNodeData nodeData = getInheritedNodeData(*ptr);
         m_nodeStack.emplace(ptr, nodeData);
     }
 }

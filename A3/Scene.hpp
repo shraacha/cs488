@@ -6,6 +6,8 @@
 #include <map>
 #include <utility>
 
+#include <glm/glm.hpp>
+
 #include "SceneNode.hpp"
 #include "SceneNodeHelpers.hpp"
 
@@ -15,9 +17,15 @@ using NodeAndInheritedData = std::pair<SceneNode *, InheritedNodeData>;
 class Scene {
 public:
     Scene();
-    Scene(SceneNode* root);
+
+    bool importSceneGraph(SceneNode* root);
 
     bool isEmpty();
+
+    // in radians
+    void rotate(const glm::vec3 & axis, const double & theta);
+    void translate(const glm::vec3 & translation); // TODO
+
 
     // iterator stuff
     struct PreOrderTraversalIterator {
@@ -54,7 +62,9 @@ public:
     PreOrderTraversalIterator end() {return PreOrderTraversalIterator();};
 
 private:
-    std::shared_ptr<SceneNode> m_sceneRoot; // owns the tree
+    std::unique_ptr<SceneNode> m_sceneRoot; // owns the tree
+    SceneNode* m_globalTranslationNode;
+    SceneNode* m_globalRotationNode;
 
     // std::map<NodeID, std::shared_ptr<SceneNode>> jointIDToNodeMap; // TODO
 };
