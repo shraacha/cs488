@@ -13,6 +13,13 @@
 #include <glm/glm.hpp>
 #include <memory>
 
+// helper structs and stuff
+
+enum class InteractionMode {
+	PositionAndOrientation,
+	Joints
+};
+
 struct LightSource {
 	glm::vec3 position;
 	glm::vec3 rgbIntensity;
@@ -56,6 +63,8 @@ protected:
 
 	// other helper functions
 	void performTrackballRotation(float x1, float y1, float x2, float y2);
+	void performXYTranslation(float x1, float y1, float x2, float y2);
+	void performZTranslation(float x1, float y1, float x2, float y2);
 
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
@@ -97,6 +106,9 @@ protected:
 	double deviceHeight;
 
 	//-- interaction state info
+	InteractionMode m_interactionMode;
 	bool m_startMouseInput;
 	bool m_LMB;
+	bool m_MMB;
+	bool m_RMB;
 };

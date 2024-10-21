@@ -29,9 +29,10 @@ static bool show_gui = true;
 
 const size_t CIRCLE_PTS = 48;
 
-static bool c_cullFrontDefault = false;
-static bool c_cullBackDefault = false;
-static bool c_zBufferDefault = true;
+static const InteractionMode c_interactionModeDefault = InteractionMode::PositionAndOrientation;
+static const bool c_cullFrontDefault = false;
+static const bool c_cullBackDefault = false;
+static const bool c_zBufferDefault = true;
 
 //----------------------------------------------------------------------------------------
 // helpers
@@ -69,12 +70,14 @@ static inline void disableDepthTesting() {
 		glDisable(GL_DEPTH_TEST);
 }
 
+// converts from top left originm x right, y down to centered origin, x right, y up
 static inline std::pair<float, float>
 topLeftOriginToCenteredOrigin(float viewportWidth, float viewportHeight,
 							  float x, float y)
 {
 	// essentially the origin shift of the affine C.O.B.
-	return {x - (viewportWidth / 2), y - (viewportHeight / 2)};
+	// flip y
+	return {x - (viewportWidth / 2), -y + (viewportHeight / 2)};
 }
 
 // ~~~ trackball stuff ~~~
@@ -203,6 +206,7 @@ void A3::init()
 
 //----------------------------------------------------------------------------------------
 void A3::reset() {
+	m_interactionMode = c_interactionModeDefault;
 	m_cullFront = c_cullFrontDefault;
 	m_cullBack = c_cullBackDefault;
 	m_zBuffer = c_zBufferDefault;
@@ -610,6 +614,36 @@ void A3::performTrackballRotation(float x1, float y1, float x2, float y2)
 }
 
 //----------------------------------------------------------------------------------------
+// operates on device coordinates
+void A3::performXYTranslation(float x1, float y1, float x2, float y2)
+{
+	float windowWidth = static_cast<float>(m_windowWidth);
+	float windowHeight = static_cast<float>(m_windowHeight);
+
+	float scaleFactor = 2.0f; // TODO tweak
+
+	float scaledX = ((x2 - x1) / windowWidth) * scaleFactor;
+	// note that y is flipped due to device coordinates having positive y downwards
+	float scaledY = ((y1 - y2) / windowHeight) * scaleFactor;
+
+	m_scene.translate({scaledX, scaledY, 0});
+}
+
+//----------------------------------------------------------------------------------------
+// operates on device coordinates
+void A3::performZTranslation(float x1, float y1, float x2, float y2)
+{
+	float windowHeight = static_cast<float>(m_windowHeight);
+
+	float scaleFactor = 2.0f;
+
+	// note that positive y is downwards in device coordinates
+	float scaledY = ((y2 - y1) / windowHeight) * scaleFactor;
+
+	m_scene.translate({0, 0, scaledY});
+}
+
+//----------------------------------------------------------------------------------------
 /*
  * Called once, after program is signaled to terminate.
  */
@@ -656,8 +690,20 @@ bool A3::mouseMoveEvent (
         m_startMouseInput = false;
     }
 
-	if (m_LMB) {
-		performTrackballRotation(prevXPos, prevYPos, xPos, yPos);
+	switch (m_interactionMode) {
+	case InteractionMode::PositionAndOrientation:
+		if (m_LMB) {
+			performXYTranslation(prevXPos, prevYPos, xPos, yPos);
+		}
+		if (m_MMB) {
+			performZTranslation(prevXPos, prevYPos, xPos, yPos);
+		}
+		if (m_RMB) {
+			performTrackballRotation(prevXPos, prevYPos, xPos, yPos);
+		}
+		break;
+	case InteractionMode::Joints:
+		break;
 	}
 
     updatePrevPosition();
@@ -684,12 +730,24 @@ bool A3::mouseButtonInputEvent (
             if (button == GLFW_MOUSE_BUTTON_LEFT) {
                 m_LMB = true;
             }
+            if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+                m_MMB = true;
+            }
+            if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                m_RMB = true;
+            }
 
             m_startMouseInput = true;
             eventHandled = true;
         } else {
             if (button == GLFW_MOUSE_BUTTON_LEFT) {
                 m_LMB = false;
+            }
+            if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+                m_MMB = false;
+            }
+            if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                m_RMB = false;
             }
             eventHandled = true;
         }
