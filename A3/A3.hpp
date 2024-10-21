@@ -54,6 +54,9 @@ protected:
 	void renderScene(Scene &scene);
 	void renderArcCircle();
 
+	// other helper functions
+	void performTrackballRotation(float x1, float y1, float x2, float y2);
+
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
 
@@ -92,4 +95,8 @@ protected:
 	//-- device info
 	double deviceWidth;
 	double deviceHeight;
+
+	//-- interaction state info
+	bool m_startMouseInput;
+	bool m_LMB;
 };
