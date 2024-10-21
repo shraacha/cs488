@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include <glm/glm.hpp>
 
 #include "Scene.hpp"
@@ -33,7 +35,10 @@ bool Scene::isEmpty() { return !m_sceneRoot; }
 
 void Scene::rotate(const glm::vec3 & axis, const double & theta)
 {
-    m_globalRotationNode->rotateRadians(axis, theta);
+    // make these checks, otherwise the rotation might be invalid
+    if (glm::length(axis) != 0 && !std::isnan(theta)) {
+        m_globalRotationNode->rotateRadians(axis, theta);
+    }
 }
 
 void Scene::translate(const glm::vec3 & translation)

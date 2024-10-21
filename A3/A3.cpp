@@ -1,7 +1,6 @@
 // Termm-Fall 2024
 
 #include "A3.hpp"
-#include "SceneNodeHelpers.hpp"
 #include "scene_lua.hpp"
 using namespace std;
 
@@ -18,6 +17,10 @@ using namespace std;
 
 #include <cmath>
 #include <utility>
+
+
+#include "SceneNodeHelpers.hpp"
+#include "helpers.hpp"
 
 using namespace glm;
 
@@ -85,12 +88,13 @@ static inline float getTrackballRadius(float deviceWidth, float deviceHeight,
 
 // centered at the origin
 // if outside circle, map to closest point on the sphere at z = 0
-static inline glm::vec3 circleToSphereMapping(float r, float x, float y)
+// outputs points on a unit sphere
+static inline glm::vec3 circleToSphereMappingNormalized(float r, float x, float y)
 {
 	glm::vec3 vertex;
 	// if outside of the trackball, send vertex to the edge of the trackball
 	if ((x * x + y * y) >= r * r) {
-		vertex = glm::normalize(glm::vec3(x, y, 0));
+		vertex = glm::vec3(x, y, 0);
 	}
 	else {
 		vertex = glm::vec3(x, y, sqrt(r * r - (x * x + y * y)));
@@ -99,9 +103,9 @@ static inline glm::vec3 circleToSphereMapping(float r, float x, float y)
 	return glm::normalize(vertex);
 }
 
-static inline glm::vec3 circleToSphereMapping(float r, std::pair<float, float> coord)
+static inline glm::vec3 circleToSphereMappingNormalized(float r, std::pair<float, float> coord)
 {
-	return circleToSphereMapping(r, coord.first, coord.second);
+	return circleToSphereMappingNormalized(r, coord.first, coord.second);
 }
 
 static inline glm::vec3 getArcballRotationAxis (glm::vec3 v1, glm::vec3 v2)
@@ -120,8 +124,10 @@ static inline glm::vec3 getArcballRotationAxis (glm::vec3 v1, glm::vec3 v2)
 // in radians
 static inline double getArcballRotationAngle (glm::vec3 v1, glm::vec3 v2)
 {
-	// printf("dot value: %f\n", glm::dot(v1, v2)); // TODO wrap in debug macro
-	return acos(glm::dot(v1, v2));
+	// sus clamp...
+	// we work with normalized vectors, so dot is expected to be within [-1, 1],
+	// but sometimes it is out of this range, so we return here if so
+	return acos(clampValue(glm::dot(v1, v2), 1.0f, -1.0f));
 }
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -216,7 +222,6 @@ void A3::processLuaSceneFile(const std::string & filename) {
 	if (!importResult) {
 		std::cerr << "Could Not Open " << filename << std::endl;
 	}
-	// m_scene.translate({-2.75, 0.0, -10.0}); // TODO remove after tesing
 }
 
 //----------------------------------------------------------------------------------------
@@ -589,27 +594,16 @@ void A3::renderArcCircle() {
 //----------------------------------------------------------------------------------------
 void A3::performTrackballRotation(float x1, float y1, float x2, float y2)
 {
-	if (x1 == x2 && y2 == y2)
-	{
-		return;
-	}
-
 	float trackballRadius = getTrackballRadius(
 		static_cast<float>(m_windowWidth), static_cast<float>(m_windowHeight));
-	glm::vec3 v1 = circleToSphereMapping(
+	glm::vec3 v1 = circleToSphereMappingNormalized(
 		trackballRadius, topLeftOriginToCenteredOrigin(
 							 static_cast<float>(m_windowWidth),
 							 static_cast<float>(m_windowHeight), x1, y1));
-	glm::vec3 v2 = circleToSphereMapping(
+	glm::vec3 v2 = circleToSphereMappingNormalized(
 		trackballRadius, topLeftOriginToCenteredOrigin(
 							 static_cast<float> (m_windowWidth),
 							 static_cast<float> (m_windowHeight), x2, y2));
-
-	// TODO remove after testing
-	// std::cout << "v1: " << v1;
-	// std::cout << "v2: " << v2;
-	// std::cout << "axis: " << getArcballRotationAxis(v1, v2);
-	// std::cout << "angle: " << getArcballRotationAngle(v1, v2) << std::endl;
 
 	m_scene.rotate(getArcballRotationAxis(v1, v2),
 				   getArcballRotationAngle(v1, v2));
