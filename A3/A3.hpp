@@ -30,6 +30,7 @@ protected:
 	virtual void guiLogic() override;
 	virtual void draw() override;
 	virtual void cleanup() override;
+	void reset();
 
 	//-- Virtual callback methods
 	virtual bool cursorEnterWindowEvent(int entered) override;
@@ -77,7 +78,14 @@ protected:
 	// required to render the mesh with identifier MeshId.
 	BatchInfoMap m_batchInfoMap;
 
+	//-- Scene stuff
 	std::string m_luaSceneFile;
 
+	// holds the scene graph
 	Scene m_scene;
+
+	//-- optimization options
+	bool m_cullFront;
+	bool m_cullBack;
+	bool m_zBuffer;
 };
