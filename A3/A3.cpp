@@ -18,9 +18,50 @@ using namespace std;
 
 using namespace glm;
 
+// consts
 static bool show_gui = true;
 
 const size_t CIRCLE_PTS = 48;
+
+static bool c_cullFrontDefault = false;
+static bool c_cullBackDefault = false;
+static bool c_zBufferDefault = true;
+
+//----------------------------------------------------------------------------------------
+// helpers
+static inline void conditionallyEnableCulling(bool front, bool back)
+{
+	if (front || back) {
+		glEnable(GL_CULL_FACE);
+		if (front && back) {
+			glCullFace(GL_FRONT_AND_BACK);
+		}
+		else if (front) {
+			glCullFace(GL_FRONT);
+		}
+		else {
+			glCullFace(GL_BACK);
+		}
+	}
+}
+
+static inline void disableCulling() {
+	glDisable(GL_CULL_FACE);
+}
+
+static inline void conditionallyEnableDepthTesting(bool testing)
+{
+	if (testing) {
+		glEnable(GL_DEPTH_TEST);
+		// not actualy sure if we need this since the enabled vals are cleared between each frame?
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glDepthFunc(GL_LESS);
+    }
+}
+
+static inline void disableDepthTesting() {
+		glDisable(GL_DEPTH_TEST);
+}
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -34,7 +75,7 @@ A3::A3(const std::string & luaSceneFile)
 	  m_vao_arcCircle(0),
 	  m_vbo_arcCircle(0)
 {
-
+	reset();
 }
 
 //----------------------------------------------------------------------------------------
@@ -93,6 +134,14 @@ void A3::init()
 	// this point.
 }
 
+
+//----------------------------------------------------------------------------------------
+void A3::reset() {
+	m_cullFront = c_cullFrontDefault;
+	m_cullBack = c_cullBackDefault;
+	m_zBuffer = c_zBufferDefault;
+}
+
 //----------------------------------------------------------------------------------------
 void A3::processLuaSceneFile(const std::string & filename) {
 	// This version of the code treats the Lua file as an Asset,
@@ -104,7 +153,7 @@ void A3::processLuaSceneFile(const std::string & filename) {
 	// This version of the code treats the main program argument
 	// as a straightforward pathname.
 	m_scene = {import_lua(filename)};
-	if (m_scene.isEmpty()) { //TODO
+	if (m_scene.isEmpty()) {
 		std::cerr << "Could Not Open " << filename << std::endl;
 	}
 }
@@ -381,12 +430,15 @@ static void updateShaderUniforms(
  * Called once per frame, after guiLogic().
  */
 void A3::draw() {
+	// enables
+	conditionallyEnableDepthTesting(m_zBuffer);
+	conditionallyEnableCulling(m_cullFront, m_cullBack);
 
-	glEnable( GL_DEPTH_TEST );
 	renderScene(m_scene);
 
 
-	glDisable( GL_DEPTH_TEST );
+	disableDepthTesting();
+	disableCulling();
 	renderArcCircle();
 }
 
