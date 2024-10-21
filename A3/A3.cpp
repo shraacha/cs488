@@ -16,6 +16,9 @@ using namespace std;
 #include <glm/gtx/io.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <cmath>
+#include <utility>
+
 using namespace glm;
 
 // consts
@@ -61,6 +64,52 @@ static inline void conditionallyEnableDepthTesting(bool testing)
 
 static inline void disableDepthTesting() {
 		glDisable(GL_DEPTH_TEST);
+}
+
+static inline std::pair<float, float>
+topLeftOriginToCenteredOrigin(float viewportWidth, float viewportHeight,
+							  float x, float y)
+{
+	// essentially the origin shift of the affine C.O.B.
+	return {x - (viewportWidth / 2), y - (viewportHeight / 2)};
+}
+
+// ~~~ trackball stuff ~~~
+// trackball radius is a portion of the smallest measure between width/height
+// portionOfSmallest
+static inline float getTrackballRadius(float deviceWidth, float deviceHeight,
+										float portionOfSmallest = 0.5)
+{
+	return portionOfSmallest * (deviceWidth < deviceHeight) ? deviceWidth : deviceHeight;
+}
+
+// centered at the origin
+// if outside circle, map to closest point on the sphere at z = 0
+static inline glm::vec3 circleToSphereMapping(float r, float x, float y)
+{
+	glm::vec3 vertex;
+	// if outside of the trackball, send vertex to the edge of the trackball
+	if ((x * x + y * y) >= r * r) {
+		vertex = glm::normalize(glm::vec3(x, y, 0)) * r;
+	}
+	else {
+		vertex = glm::vec3(x, y, sqrt(r * r - (x * x + y * y)));
+	}
+
+	return vertex;
+}
+
+static inline glm::vec3 circleToSphereMapping(float r, std::pair<float, float> coord)
+{
+	return circleToSphereMapping(r, coord.first, coord.second);
+}
+
+static inline glm::mat4 getArcballRotation (glm::vec3 v1, glm::vec3 v2)
+{
+	glm::vec3 axis = glm::cross(v1, v2);
+	float theta = acos(glm::dot(v1, v2));
+
+	return glm::rotate(glm::mat4(), theta, axis);
 }
 
 //----------------------------------------------------------------------------------------
@@ -439,6 +488,7 @@ void A3::draw() {
 
 	disableDepthTesting();
 	disableCulling();
+
 	renderArcCircle();
 }
 
