@@ -232,8 +232,8 @@ void A3::processLuaSceneFile(const std::string & filename) {
 void A3::createShaderProgram()
 {
 	m_shader.generateProgramObject();
-	m_shader.attachVertexShader( getAssetFilePath("VertexShader.vs").c_str() );
-	m_shader.attachFragmentShader( getAssetFilePath("FragmentShader.fs").c_str() );
+	m_shader.attachVertexShader( getAssetFilePath("Phong.vs").c_str() );
+	m_shader.attachFragmentShader( getAssetFilePath("Phong.fs").c_str() );
 	m_shader.link();
 
 	m_shader_arcCircle.generateProgramObject();
@@ -379,8 +379,8 @@ void A3::initViewMatrix() {
 //----------------------------------------------------------------------------------------
 void A3::initLightSources() {
 	// World-space position
-	m_light.position = vec3(10.0f, 10.0f, 10.0f);
-	m_light.rgbIntensity = vec3(1.0f); // light
+	m_light.position = vec3(2.0f, 30.0f, 30.0f);
+	m_light.rgbIntensity = vec3(0.8f); // light
 }
 
 //----------------------------------------------------------------------------------------
@@ -405,7 +405,7 @@ void A3::uploadCommonSceneUniforms() {
 		//-- Set background light ambient intensity
 		{
 			location = m_shader.getUniformLocation("ambientIntensity");
-			vec3 ambientIntensity(0.25f);
+			vec3 ambientIntensity(0.1f);
 			glUniform3fv(location, 1, value_ptr(ambientIntensity));
 			CHECK_GL_ERRORS;
 		}
@@ -489,6 +489,16 @@ static void updateShaderUniforms(
 		location = shader.getUniformLocation("material.kd");
 		vec3 kd = node.material.kd;
 		glUniform3fv(location, 1, value_ptr(kd));
+		CHECK_GL_ERRORS;
+
+		location = shader.getUniformLocation("material.ks");
+		vec3 ks = node.material.ks;
+		glUniform3fv(location, 1, value_ptr(ks));
+		CHECK_GL_ERRORS;
+
+		location = shader.getUniformLocation("material.shininess");
+		float shininess = node.material.shininess;
+		glUniform1fv(location, 1, &shininess);
 		CHECK_GL_ERRORS;
 	}
 	shader.disable();
