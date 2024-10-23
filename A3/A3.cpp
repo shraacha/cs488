@@ -182,6 +182,7 @@ void A3::init()
 			getAssetFilePath("cone.obj"),
 			getAssetFilePath("cylinder.obj"),
 			getAssetFilePath("pyramid.obj"),
+			getAssetFilePath("triangularPrism.obj"),
 			getAssetFilePath("suzanne.obj")
 	});
 
