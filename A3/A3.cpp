@@ -177,7 +177,11 @@ void A3::init()
 	// class.
 	unique_ptr<MeshConsolidator> meshConsolidator (new MeshConsolidator{
 			getAssetFilePath("cube.obj"),
+			getAssetFilePath("blenderCube.obj"),
 			getAssetFilePath("sphere.obj"),
+			getAssetFilePath("cone.obj"),
+			getAssetFilePath("cylinder.obj"),
+			getAssetFilePath("pyramid.obj"),
 			getAssetFilePath("suzanne.obj")
 	});
 
