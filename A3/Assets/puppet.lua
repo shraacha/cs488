@@ -7,24 +7,476 @@ black = gr.material({0, 0, 0}, {0, 0, 0}, 0)
 black_leather = gr.material({0, 0, 0}, {0.1, 0.1, 0.1}, 1)
 brown_leather = gr.material({0.21, 0.097, 0.019}, {0.1, 0.1, 0.1}, 1)
 
-metal = gr.material({0.4735, 0.5519, 0.5206}, {0.1, 0.1, 0.1}, 10)
+metal = gr.material({0.4735, 0.5519, 0.5206}, {0.1, 0.1, 0.1}, 20)
 
--- HIP
-
+-- START OF HIP
 hip = gr.node('hip')
 rootnode:add_child(hip)
 
--- START OF HIP GEOMETRY
+-- HIP GEOMETRY
 hip_main = gr.mesh('sphere', 'hip')
 hip:add_child(hip_main)
 hip_main:scale(0.3574691712856293, 0.3606555461883545, 0.36714428663253784)
-hip_main:rotate('x', 0.0)
-hip_main:rotate('z', 0.0)
-hip_main:rotate('y', 0.0)
-hip_main:translate(0.0, 0.0, -0.0)
 hip_main:set_material(black)
+-- END OF HIP
 
--- TORSO
+-- START OF LEFT LEG
+left_leg_joint_to_hip_connector = gr.node('left_leg_joint_to_hip_connector')
+hip:add_child(left_leg_joint_to_hip_connector)
+left_leg_joint_to_hip_connector:translate(0.27, -0.17, 0)
+-- TODO add transformations
+
+left_leg_joint = gr.joint('left_leg_joint', {-90, 0, 10}, {0, 0, 0})
+left_leg_joint_to_hip_connector:add_child(left_leg_joint)
+
+-- LEFT LEG JOINT GEOMETRY
+left_leg_joint_geometry = gr.mesh('sphere', 'left_leg_joint_main')
+left_leg_joint:add_child(left_leg_joint_geometry)
+left_leg_joint_geometry:scale(0.180, 0.180, 0.180)
+left_leg_joint_geometry:set_material(black)
+
+-- UPPER
+left_upper_leg = gr.node('left_upper_leg')
+left_leg_joint:add_child(left_upper_leg)
+
+left_upper_leg_edge_1 = gr.mesh('cylinder', 'left_upper_leg_edge_1')
+left_upper_leg:add_child(left_upper_leg_edge_1)
+left_upper_leg_edge_1:scale(0.19461385905742645, 0.01601281203329563, 0.19593766331672668)
+left_upper_leg_edge_1:rotate('x', 0.0)
+left_upper_leg_edge_1:rotate('z', -0.0)
+left_upper_leg_edge_1:rotate('y', 0.0)
+left_upper_leg_edge_1:translate(0.030845968052744865, -0.8870561718940735, -0.0)
+left_upper_leg_edge_1:set_material(metal)
+
+left_upper_leg_panel_1 = gr.mesh('blenderCube', 'left_upper_leg_panel_1')
+left_upper_leg:add_child(left_upper_leg_panel_1)
+left_upper_leg_panel_1:scale(0.20209553837776184, 0.41695550084114075, 0.01878681592643261)
+left_upper_leg_panel_1:rotate('x', 0.0)
+left_upper_leg_panel_1:rotate('z', 0.0)
+left_upper_leg_panel_1:rotate('y', 62.58320653450761)
+left_upper_leg_panel_1:translate(0.16231031715869904, -0.5113279223442078, 0.1381201297044754)
+left_upper_leg_panel_1:set_material(metal)
+
+left_upper_leg_panel_2 = gr.mesh('blenderCube', 'left_upper_leg_panel_2')
+left_upper_leg:add_child(left_upper_leg_panel_2)
+left_upper_leg_panel_2:scale(0.20209549367427826, 0.3811342716217041, 0.018999993801116943)
+left_upper_leg_panel_2:rotate('x', 0.0)
+left_upper_leg_panel_2:rotate('z', 0.0)
+left_upper_leg_panel_2:rotate('y', -45.71602022821528)
+left_upper_leg_panel_2:translate(-0.06851030141115189, -0.5488333106040955, 0.15172062814235687)
+left_upper_leg_panel_2:set_material(metal)
+
+left_upper_leg_rivet_1 = gr.mesh('sphere', 'left_upper_leg_rivet_1')
+left_upper_leg:add_child(left_upper_leg_rivet_1)
+left_upper_leg_rivet_1:scale(0.030000003054738045, 0.026382867246866226, 0.019999997690320015)
+left_upper_leg_rivet_1:rotate('x', 0.0)
+left_upper_leg_rivet_1:rotate('z', 0.0)
+left_upper_leg_rivet_1:rotate('y', 63.056183474152654)
+left_upper_leg_rivet_1:translate(0.24624381959438324, -0.8821761012077332, 0.006972558796405792)
+left_upper_leg_rivet_1:set_material(metal)
+
+left_upper_leg_rivet_2 = gr.mesh('sphere', 'left_upper_leg_rivet_2')
+left_upper_leg:add_child(left_upper_leg_rivet_2)
+left_upper_leg_rivet_2:scale(0.029999999329447746, 0.026382867246866226, 0.019999997690320015)
+left_upper_leg_rivet_2:rotate('x', 0.0)
+left_upper_leg_rivet_2:rotate('z', 0.0)
+left_upper_leg_rivet_2:rotate('y', 129.46022515112207)
+left_upper_leg_rivet_2:translate(-0.18516799807548523, -0.8716042637825012, 0.052589401602745056)
+left_upper_leg_rivet_2:set_material(metal)
+
+left_upper_leg_main = gr.mesh('cylinder', 'left_upper_leg_main')
+left_upper_leg:add_child(left_upper_leg_main)
+left_upper_leg_main:scale(0.18795830011367798, 0.3521374464035034, 0.18480001389980316)
+left_upper_leg_main:rotate('x', 0.0)
+left_upper_leg_main:rotate('z', -0.0)
+left_upper_leg_main:rotate('y', 0.0)
+left_upper_leg_main:translate(0.030845968052744865, -0.5453643798828125, -0.0)
+left_upper_leg_main:set_material(metal)
+
+left_upper_leg_edge_2 = gr.mesh('cylinder', 'left_upper_leg_edge_2')
+left_upper_leg:add_child(left_upper_leg_edge_2)
+left_upper_leg_edge_2:scale(0.19461385905742645, 0.01601281203329563, 0.19593766331672668)
+left_upper_leg_edge_2:rotate('x', 0.0)
+left_upper_leg_edge_2:rotate('z', -0.0)
+left_upper_leg_edge_2:rotate('y', 0.0)
+left_upper_leg_edge_2:translate(0.030845968052744865, -0.2080041468143463, -0.0)
+left_upper_leg_edge_2:set_material(metal)
+-- KNEE
+
+left_knee_joint_to_upper_leg_connector = gr.node('left_knee_joint_to_upper_leg_connector')
+left_upper_leg:add_child(left_knee_joint_to_upper_leg_connector)
+left_knee_joint_to_upper_leg_connector:translate(0.05, -1, -0.01)
+
+left_knee_joint = gr.joint('left_knee_joint', {0, 0, 90}, {0, 0, 0})
+left_knee_joint_to_upper_leg_connector:add_child(left_knee_joint)
+
+-- KNEE GEOMETRY
+left_knee_geometry = gr.node('left_knee_geometry')
+left_knee_joint:add_child(left_knee_geometry)
+
+left_knee_front = gr.mesh('sphere', 'left_knee_front')
+left_knee_geometry:add_child(left_knee_front)
+left_knee_front:scale(0.20000000298023224, 0.20000000298023224, 0.14780372381210327)
+left_knee_front:rotate('x', 0.0)
+left_knee_front:rotate('z', -0.0)
+left_knee_front:rotate('y', 0.0)
+left_knee_front:translate(-0.005359657108783722, -0.022253073751926422, -0.01223701424896717)
+left_knee_front:set_material(metal)
+
+left_knee_spike_2 = gr.mesh('cone', 'left_knee_spike_2')
+left_knee_geometry:add_child(left_knee_spike_2)
+left_knee_spike_2:scale(0.05000000074505806, 0.05000000074505806, 0.05000000074505806)
+left_knee_spike_2:rotate('x', 103.81625259155253)
+left_knee_spike_2:rotate('z', 0.0)
+left_knee_spike_2:rotate('y', 33.49187016119796)
+left_knee_spike_2:translate(0.12206046283245087, -0.09024671465158463, 0.128074511885643)
+left_knee_spike_2:set_material(metal)
+
+left_knee_spike_3 = gr.mesh('cone', 'left_knee_spike_3')
+left_knee_geometry:add_child(left_knee_spike_3)
+left_knee_spike_3:scale(0.05000000074505806, 0.05000000074505806, 0.05000000074505806)
+left_knee_spike_3:rotate('x', 103.81625259155253)
+left_knee_spike_3:rotate('z', 0.0)
+left_knee_spike_3:rotate('y', -36.24899554798408)
+left_knee_spike_3:translate(-0.12912768125534058, -0.09024671465158463, 0.128074511885643)
+left_knee_spike_3:set_material(metal)
+
+left_knee_back = gr.mesh('sphere', 'left_knee_back')
+left_knee_geometry:add_child(left_knee_back)
+left_knee_back:scale(0.1980000138282776, 0.20000000298023224, 0.1625840812921524)
+left_knee_back:rotate('x', 0.0)
+left_knee_back:rotate('z', -0.0)
+left_knee_back:rotate('y', 0.0)
+left_knee_back:translate(-0.005359657108783722, -0.022253073751926422, -0.06381669640541077)
+left_knee_back:set_material(metal)
+
+left_knee_spike_1 = gr.mesh('cone', 'left_knee_spike_1')
+left_knee_geometry:add_child(left_knee_spike_1)
+left_knee_spike_1:scale(0.05000000074505806, 0.05000000074505806, 0.05000000074505806)
+left_knee_spike_1:rotate('x', 69.99999967119774)
+left_knee_spike_1:rotate('z', 0.0)
+left_knee_spike_1:rotate('y', 0.0)
+left_knee_spike_1:translate(-0.004607163369655609, 0.023880086839199066, 0.17548203468322754)
+left_knee_spike_1:set_material(metal)
+
+-- LOWER
+left_lower_leg = gr.node('left_lower_leg')
+left_knee_joint:add_child(left_lower_leg)
+
+left_lower_leg_1 = gr.mesh('triangularPrism', 'left_lower_leg_1')
+left_lower_leg:add_child(left_lower_leg_1)
+left_lower_leg_1:scale(0.23850670456886292, 0.2153385877609253, 0.23859436810016632)
+left_lower_leg_1:rotate('x', -12.452847852317792)
+left_lower_leg_1:rotate('z', -0.34632548891743703)
+left_lower_leg_1:rotate('y', -178.81722115038522)
+left_lower_leg_1:translate(-0.008386131376028061, -0.39286789298057556, -0.08002959936857224)
+left_lower_leg_1:set_material(metal)
+
+left_lower_leg_2 = gr.mesh('triangularPrism', 'left_lower_leg_2')
+left_lower_leg:add_child(left_lower_leg_2)
+left_lower_leg_2:scale(0.16248394548892975, 0.5344665050506592, 0.16712318360805511)
+left_lower_leg_2:rotate('x', -1.1033454501509805)
+left_lower_leg_2:rotate('z', -0.030926459566636352)
+left_lower_leg_2:rotate('y', -180.38701718770758)
+left_lower_leg_2:translate(-0.0035869814455509186, -0.822814404964447, -0.029323596507310867)
+left_lower_leg_2:set_material(metal)
+
+-- ANKLE
+left_ankle_joint_to_lower_leg_connector = gr.node('left_ankle_joint_to_lower_leg_connector')
+left_lower_leg:add_child(left_ankle_joint_to_lower_leg_connector)
+left_ankle_joint_to_lower_leg_connector:translate(-0.01, -0.8, -0.04)
+
+left_ankle_joint = gr.joint('left_ankle_joint', {-30, 0 , 30}, {0, 0, 0})
+left_ankle_joint_to_lower_leg_connector:add_child(left_ankle_joint)
+
+-- FOOT
+left_foot = gr.node('left_foot')
+left_ankle_joint:add_child(left_foot)
+
+left_foot_main_1 = gr.mesh('pyramid', 'left_foot_main_1')
+left_foot:add_child(left_foot_main_1)
+left_foot_main_1:scale(0.2577676475048065, 0.24979090690612793, 0.39642852544784546)
+left_foot_main_1:rotate('x', 0.0)
+left_foot_main_1:rotate('z', 0.0)
+left_foot_main_1:rotate('y', 179.8579780553551)
+left_foot_main_1:translate(-0.0025902464985847473, -0.0993727445602417, -0.04256855323910713)
+left_foot_main_1:set_material(metal)
+
+left_foot_main_2 = gr.mesh('pyramid', 'left_foot_main_2')
+left_foot:add_child(left_foot_main_2)
+left_foot_main_2:scale(0.19185324013233185, 0.12174402177333832, 0.39642778038978577)
+left_foot_main_2:rotate('x', 0.0)
+left_foot_main_2:rotate('z', 0.0)
+left_foot_main_2:rotate('y', 179.8579780553551)
+left_foot_main_2:translate(-0.0025902464985847473, -0.0993727445602417, 0.08704595267772675)
+left_foot_main_2:set_material(metal)
+
+left_foot_main_3 = gr.mesh('pyramid', 'left_foot_main_3')
+left_foot:add_child(left_foot_main_3)
+left_foot_main_3:scale(0.1762298196554184, 0.14032122492790222, 0.374011367559433)
+left_foot_main_3:rotate('x', 0.16576396872072863)
+left_foot_main_3:rotate('z', -0.0004108375044147535)
+left_foot_main_3:rotate('y', 179.8579780553551)
+left_foot_main_3:translate(-0.0025902464985847473, -0.07167863845825195, 0.06644409149885178)
+left_foot_main_3:set_material(metal)
+
+left_foot_spike_2 = gr.mesh('cone', 'left_foot_spike_2')
+left_foot:add_child(left_foot_spike_2)
+left_foot_spike_2:scale(0.03612713888287544, 0.04800285026431084, 0.04278295859694481)
+left_foot_spike_2:rotate('x', 28.397604304595212)
+left_foot_spike_2:rotate('z', -44.083447922231315)
+left_foot_spike_2:rotate('y', 0.0)
+left_foot_spike_2:translate(0.031033672392368317, -0.004587650299072266, 0.1922110766172409)
+left_foot_spike_2:set_material(metal)
+
+left_foot_spike_3 = gr.mesh('cone', 'left_foot_spike_3')
+left_foot:add_child(left_foot_spike_3)
+left_foot_spike_3:scale(-0.03612713888287544, 0.04800285026431084, -0.04278295859694481)
+left_foot_spike_3:rotate('x', 36.422017900038846)
+left_foot_spike_3:rotate('z', 22.395100873299192)
+left_foot_spike_3:rotate('y', -27.0405088957635)
+left_foot_spike_3:translate(-0.04448496177792549, -0.015393495559692383, 0.1909860223531723)
+left_foot_spike_3:set_material(metal)
+
+left_foot_spike_1 = gr.mesh('cone', 'left_foot_spike_1')
+left_foot:add_child(left_foot_spike_1)
+left_foot_spike_1:scale(0.020000001415610313, 0.05000000074505806, 0.05000000074505806)
+left_foot_spike_1:rotate('x', 28.397604304595212)
+left_foot_spike_1:rotate('z', 0.0)
+left_foot_spike_1:rotate('y', 0.0)
+left_foot_spike_1:translate(-0.0029709115624427795, 0.046738266944885254, 0.1922110766172409)
+left_foot_spike_1:set_material(metal)
+-- END OF LEFT LEG
+
+-- START OF RIGHT LEG
+right_leg_joint_to_hip_connector = gr.node('right_leg_joint_to_hip_connector')
+hip:add_child(right_leg_joint_to_hip_connector)
+right_leg_joint_to_hip_connector:translate(-0.27, -0.17, 0)
+-- TODO add transformations
+
+right_leg_joint = gr.joint('right_leg_joint', {-90, 0, 10}, {0, 0, 0})
+right_leg_joint_to_hip_connector:add_child(right_leg_joint)
+
+-- RIGHT LEG JOINT GEOMETRY
+right_leg_joint_geometry = gr.mesh('sphere', 'right_leg_joint_main')
+right_leg_joint:add_child(right_leg_joint_geometry)
+right_leg_joint_geometry:scale(0.180, 0.180, 0.180)
+right_leg_joint_geometry:set_material(black)
+
+-- UPPER
+right_upper_leg = gr.node('right_upper_leg')
+right_leg_joint:add_child(right_upper_leg)
+
+right_upper_leg_edge = gr.mesh('cylinder', 'right_upper_leg_edge')
+right_upper_leg:add_child(right_upper_leg_edge)
+right_upper_leg_edge:scale(-0.19461385905742645, 0.01601281203329563, 0.19593766331672668)
+right_upper_leg_edge:rotate('x', 0.0)
+right_upper_leg_edge:rotate('z', 0.0)
+right_upper_leg_edge:rotate('y', 0.0)
+right_upper_leg_edge:translate(-0.0019384789047762752, -0.8870561718940735, -0.0)
+right_upper_leg_edge:set_material(metal)
+
+right_upper_leg_panel_1 = gr.mesh('blenderCube', 'right_upper_leg_panel_1')
+right_upper_leg:add_child(right_upper_leg_panel_1)
+right_upper_leg_panel_1:scale(-0.20209553837776184, 0.41695550084114075, 0.01878681592643261)
+right_upper_leg_panel_1:rotate('x', 0.0)
+right_upper_leg_panel_1:rotate('z', 0.0)
+right_upper_leg_panel_1:rotate('y', -62.58320653450761)
+right_upper_leg_panel_1:translate(-0.13340282440185547, -0.5113279223442078, 0.1381201297044754)
+right_upper_leg_panel_1:set_material(metal)
+
+right_upper_leg_panel_2 = gr.mesh('blenderCube', 'right_upper_leg_panel_2')
+right_upper_leg:add_child(right_upper_leg_panel_2)
+right_upper_leg_panel_2:scale(-0.20209549367427826, 0.3811342716217041, 0.018999993801116943)
+right_upper_leg_panel_2:rotate('x', 0.0)
+right_upper_leg_panel_2:rotate('z', 0.0)
+right_upper_leg_panel_2:rotate('y', 45.71601681312069)
+right_upper_leg_panel_2:translate(0.09741778671741486, -0.5488333106040955, 0.15172062814235687)
+right_upper_leg_panel_2:set_material(metal)
+
+right_upper_leg_rivet_1 = gr.mesh('sphere', 'right_upper_leg_rivet_1')
+right_upper_leg:add_child(right_upper_leg_rivet_1)
+right_upper_leg_rivet_1:scale(-0.030000003054738045, 0.026382867246866226, 0.019999997690320015)
+right_upper_leg_rivet_1:rotate('x', 0.0)
+right_upper_leg_rivet_1:rotate('z', 0.0)
+right_upper_leg_rivet_1:rotate('y', -63.056183474152654)
+right_upper_leg_rivet_1:translate(-0.21733632683753967, -0.8821761012077332, 0.006972558796405792)
+right_upper_leg_rivet_1:set_material(metal)
+
+right_upper_leg_rivet_2 = gr.mesh('sphere', 'right_upper_leg_rivet_2')
+right_upper_leg:add_child(right_upper_leg_rivet_2)
+right_upper_leg_rivet_2:scale(-0.029999999329447746, 0.026382867246866226, 0.019999997690320015)
+right_upper_leg_rivet_2:rotate('x', 0.0)
+right_upper_leg_rivet_2:rotate('z', 0.0)
+right_upper_leg_rivet_2:rotate('y', 230.5397848667906)
+right_upper_leg_rivet_2:translate(0.2140754908323288, -0.8716042637825012, 0.052589401602745056)
+right_upper_leg_rivet_2:set_material(metal)
+
+right_upper_leg_main = gr.mesh('cylinder', 'right_upper_leg_main')
+right_upper_leg:add_child(right_upper_leg_main)
+right_upper_leg_main:scale(-0.18795830011367798, 0.3521374464035034, 0.18480001389980316)
+right_upper_leg_main:rotate('x', 0.0)
+right_upper_leg_main:rotate('z', 0.0)
+right_upper_leg_main:rotate('y', 0.0)
+right_upper_leg_main:translate(-0.0019384789047762752, -0.5453643798828125, -0.0)
+right_upper_leg_main:set_material(metal)
+
+right_upper_leg_edge_2 = gr.mesh('cylinder', 'right_upper_leg_edge_2')
+right_upper_leg:add_child(right_upper_leg_edge_2)
+right_upper_leg_edge_2:scale(-0.19461385905742645, 0.01601281203329563, 0.19593766331672668)
+right_upper_leg_edge_2:rotate('x', 0.0)
+right_upper_leg_edge_2:rotate('z', 0.0)
+right_upper_leg_edge_2:rotate('y', 0.0)
+right_upper_leg_edge_2:translate(-0.0019384789047762752, -0.2080041468143463, -0.0)
+right_upper_leg_edge_2:set_material(metal)
+-- KNEE
+
+right_knee_joint_to_upper_leg_connector = gr.node('right_knee_joint_to_upper_leg_connector')
+right_upper_leg:add_child(right_knee_joint_to_upper_leg_connector)
+right_knee_joint_to_upper_leg_connector:translate(-0.05, -1, -0.01)
+
+right_knee_joint = gr.joint('right_knee_joint', {0, 0, 90}, {0, 0, 0})
+right_knee_joint_to_upper_leg_connector:add_child(right_knee_joint)
+
+-- KNEE GEOMETRY
+right_knee_geometry = gr.node('right_knee_geometry')
+right_knee_joint:add_child(right_knee_geometry)
+
+right_knee_front = gr.mesh('sphere', 'right_knee_front')
+right_knee_geometry:add_child(right_knee_front)
+right_knee_front:scale(0.20000000298023224, 0.20000000298023224, 0.14780372381210327)
+right_knee_front:rotate('x', 0.0)
+right_knee_front:rotate('z', -0.0)
+right_knee_front:rotate('y', 0.0)
+right_knee_front:translate(-0.005359657108783722, -0.022253073751926422, -0.01223701424896717)
+right_knee_front:set_material(metal)
+
+right_knee_spike_2 = gr.mesh('cone', 'right_knee_spike_2')
+right_knee_geometry:add_child(right_knee_spike_2)
+right_knee_spike_2:scale(0.05000000074505806, 0.05000000074505806, 0.05000000074505806)
+right_knee_spike_2:rotate('x', 103.81625259155253)
+right_knee_spike_2:rotate('z', 0.0)
+right_knee_spike_2:rotate('y', 33.49187016119796)
+right_knee_spike_2:translate(0.12206046283245087, -0.09024671465158463, 0.128074511885643)
+right_knee_spike_2:set_material(metal)
+
+right_knee_spike_3 = gr.mesh('cone', 'right_knee_spike_3')
+right_knee_geometry:add_child(right_knee_spike_3)
+right_knee_spike_3:scale(0.05000000074505806, 0.05000000074505806, 0.05000000074505806)
+right_knee_spike_3:rotate('x', 103.81625259155253)
+right_knee_spike_3:rotate('z', 0.0)
+right_knee_spike_3:rotate('y', -36.24899554798408)
+right_knee_spike_3:translate(-0.12912768125534058, -0.09024671465158463, 0.128074511885643)
+right_knee_spike_3:set_material(metal)
+
+right_knee_back = gr.mesh('sphere', 'right_knee_back')
+right_knee_geometry:add_child(right_knee_back)
+right_knee_back:scale(0.1980000138282776, 0.20000000298023224, 0.1625840812921524)
+right_knee_back:rotate('x', 0.0)
+right_knee_back:rotate('z', -0.0)
+right_knee_back:rotate('y', 0.0)
+right_knee_back:translate(-0.005359657108783722, -0.022253073751926422, -0.06381669640541077)
+right_knee_back:set_material(metal)
+
+right_knee_spike_1 = gr.mesh('cone', 'right_knee_spike_1')
+right_knee_geometry:add_child(right_knee_spike_1)
+right_knee_spike_1:scale(0.05000000074505806, 0.05000000074505806, 0.05000000074505806)
+right_knee_spike_1:rotate('x', 69.99999967119774)
+right_knee_spike_1:rotate('z', 0.0)
+right_knee_spike_1:rotate('y', 0.0)
+right_knee_spike_1:translate(-0.004607163369655609, 0.023880086839199066, 0.17548203468322754)
+right_knee_spike_1:set_material(metal)
+
+-- LOWER
+right_lower_leg = gr.node('right_lower_leg')
+right_knee_joint:add_child(right_lower_leg)
+
+right_lower_leg_1 = gr.mesh('triangularPrism', 'right_lower_leg_1')
+right_lower_leg:add_child(right_lower_leg_1)
+right_lower_leg_1:scale(0.23850670456886292, 0.2153385877609253, 0.23859436810016632)
+right_lower_leg_1:rotate('x', -12.452847852317792)
+right_lower_leg_1:rotate('z', -0.34632548891743703)
+right_lower_leg_1:rotate('y', -178.81722115038522)
+right_lower_leg_1:translate(-0.008386131376028061, -0.39286789298057556, -0.08002959936857224)
+right_lower_leg_1:set_material(metal)
+
+right_lower_leg_2 = gr.mesh('triangularPrism', 'right_lower_leg_2')
+right_lower_leg:add_child(right_lower_leg_2)
+right_lower_leg_2:scale(0.16248394548892975, 0.5344665050506592, 0.16712318360805511)
+right_lower_leg_2:rotate('x', -1.1033454501509805)
+right_lower_leg_2:rotate('z', -0.030926459566636352)
+right_lower_leg_2:rotate('y', -180.38701718770758)
+right_lower_leg_2:translate(-0.0035869814455509186, -0.822814404964447, -0.029323596507310867)
+right_lower_leg_2:set_material(metal)
+
+-- ANKLE
+right_ankle_joint_to_lower_leg_connector = gr.node('right_ankle_joint_to_lower_leg_connector')
+right_lower_leg:add_child(right_ankle_joint_to_lower_leg_connector)
+right_ankle_joint_to_lower_leg_connector:translate(0.01, -0.8, -0.04)
+
+right_ankle_joint = gr.joint('right_ankle_joint', {-30, 0 , 30}, {0, 0, 0})
+right_ankle_joint_to_lower_leg_connector:add_child(right_ankle_joint)
+
+-- FOOT
+right_foot = gr.node('right_foot')
+right_ankle_joint:add_child(right_foot)
+
+right_foot_main_1 = gr.mesh('pyramid', 'right_foot_main_1')
+right_foot:add_child(right_foot_main_1)
+right_foot_main_1:scale(0.2577676475048065, 0.24979090690612793, 0.39642852544784546)
+right_foot_main_1:rotate('x', 0.0)
+right_foot_main_1:rotate('z', 0.0)
+right_foot_main_1:rotate('y', 179.8579780553551)
+right_foot_main_1:translate(-0.0025902464985847473, -0.0993727445602417, -0.04256855323910713)
+right_foot_main_1:set_material(metal)
+
+right_foot_main_2 = gr.mesh('pyramid', 'right_foot_main_2')
+right_foot:add_child(right_foot_main_2)
+right_foot_main_2:scale(0.19185324013233185, 0.12174402177333832, 0.39642778038978577)
+right_foot_main_2:rotate('x', 0.0)
+right_foot_main_2:rotate('z', 0.0)
+right_foot_main_2:rotate('y', 179.8579780553551)
+right_foot_main_2:translate(-0.0025902464985847473, -0.0993727445602417, 0.08704595267772675)
+right_foot_main_2:set_material(metal)
+
+right_foot_main_3 = gr.mesh('pyramid', 'right_foot_main_3')
+right_foot:add_child(right_foot_main_3)
+right_foot_main_3:scale(0.1762298196554184, 0.14032122492790222, 0.374011367559433)
+right_foot_main_3:rotate('x', 0.16576396872072863)
+right_foot_main_3:rotate('z', -0.0004108375044147535)
+right_foot_main_3:rotate('y', 179.8579780553551)
+right_foot_main_3:translate(-0.0025902464985847473, -0.07167863845825195, 0.06644409149885178)
+right_foot_main_3:set_material(metal)
+
+right_foot_spike_2 = gr.mesh('cone', 'right_foot_spike_2')
+right_foot:add_child(right_foot_spike_2)
+right_foot_spike_2:scale(0.03612713888287544, 0.04800285026431084, 0.04278295859694481)
+right_foot_spike_2:rotate('x', 28.397604304595212)
+right_foot_spike_2:rotate('z', -44.083447922231315)
+right_foot_spike_2:rotate('y', 0.0)
+right_foot_spike_2:translate(0.031033672392368317, -0.004587650299072266, 0.1922110766172409)
+right_foot_spike_2:set_material(metal)
+
+right_foot_spike_3 = gr.mesh('cone', 'right_foot_spike_3')
+right_foot:add_child(right_foot_spike_3)
+right_foot_spike_3:scale(-0.03612713888287544, 0.04800285026431084, -0.04278295859694481)
+right_foot_spike_3:rotate('x', 36.422017900038846)
+right_foot_spike_3:rotate('z', 22.395100873299192)
+right_foot_spike_3:rotate('y', -27.0405088957635)
+right_foot_spike_3:translate(-0.04448496177792549, -0.015393495559692383, 0.1909860223531723)
+right_foot_spike_3:set_material(metal)
+
+right_foot_spike_1 = gr.mesh('cone', 'right_foot_spike_1')
+right_foot:add_child(right_foot_spike_1)
+right_foot_spike_1:scale(0.020000001415610313, 0.05000000074505806, 0.05000000074505806)
+right_foot_spike_1:rotate('x', 28.397604304595212)
+right_foot_spike_1:rotate('z', 0.0)
+right_foot_spike_1:rotate('y', 0.0)
+right_foot_spike_1:translate(-0.0029709115624427795, 0.046738266944885254, 0.1922110766172409)
+right_foot_spike_1:set_material(metal)
+-- END OF RIGHT LEG
+
+-- START OF TORSO & HIP JOINT
 hip_joint_to_hip_connector = gr.node('hip_joint_to_hip_connector')
 hip:add_child(hip_joint_to_hip_connector)
 
@@ -34,7 +486,7 @@ hip_joint_to_hip_connector:add_child(hip_joint)
 torso = gr.node('torso')
 hip_joint:add_child(torso)
 
--- START OF TORSO GEOMETRY
+-- TORSO GEOMETRY
 
 torso_main = gr.mesh('cone', 'torso_main')
 torso:add_child(torso_main)
@@ -323,7 +775,6 @@ bottom_torso:rotate('z', -0.0)
 bottom_torso:rotate('y', 0.0)
 bottom_torso:translate(0.0, 0.38329553604125977, 0.012761984951794147)
 bottom_torso:set_material(metal)
-
--- END OF TORSO GEOMETRY
+-- END OF TORSO & HIP JOINT
 
 return rootnode
