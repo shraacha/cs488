@@ -735,7 +735,10 @@ void A3::renderScene(Scene & scene) {
             vec3 ks;
             float shininess;
 
-            if(nodeIt.getInheritedJointID().has_value() && bodyIdSelections.isInCollection(*nodeIt.getInheritedJointID())) {
+
+            std::optional<NodeID> inheritedID = nodeIt.getInheritedJointID();
+
+            if(inheritedID.has_value() && (bodyIdSelections.isInCollection(*inheritedID) || headIdSelections.isInCollection(*inheritedID))) {
                 kd = {0.5, 0.5, 0.0};
                 ks = {0.0, 0.0, 0.0};
                 shininess = 0;
@@ -890,12 +893,12 @@ static inline double getJointRotationAmountYAxis(const double & windowHeight, co
 
 void A3::applyJointRotationXAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection)
 {
-    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(MoveJointsCommand(&m_scene, bodyIdSelections.getAllIds(), degrees, 0))));
+    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(MoveJointsCommand(&m_scene, collection.getAllIds(), degrees, 0))));
 }
 
 void A3::applyJointRotationYAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection)
 {
-    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(&m_scene, bodyIdSelections.getAllIds(), 0, degrees)));
+    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(&m_scene, collection.getAllIds(), 0, degrees)));
 }
 
 
@@ -924,10 +927,15 @@ inline void A3::pickObject(double xpos, double ypos)
     if (m_scene.isValidId(id)){
         if (bodyIdSelections.isInCollection(id)) {
             bodyIdSelections.remove(id);
-        } else if (m_scene.isHeadId(id)) {
-            headIdSelections.add(id);
-        } else {
+        } else if (!m_scene.isHeadId(id)) {
             bodyIdSelections.add(id);
+        } else {
+            if (headIdSelections.isInCollection(id)) {
+                headIdSelections.remove(id);
+            }
+            else {
+                headIdSelections.add(id);
+            }
         }
     }
 }
@@ -1004,8 +1012,8 @@ bool A3::mouseMoveEvent (
                                     bodyIdSelections);
         }
         if (m_RMB) {
-            applyJointRotationXAxis(m_tempHeadSceneCommands,
-                                    getJointRotationAmountXAxis(
+            applyJointRotationYAxis(m_tempHeadSceneCommands,
+                                    getJointRotationAmountYAxis(
                                         double(m_windowHeight),
                                         m_mouseRightInputStartingYPos, yPos),
                                     headIdSelections);
@@ -1079,7 +1087,7 @@ bool A3::mouseButtonInputEvent (
             }
             if (button == GLFW_MOUSE_BUTTON_RIGHT) {
                 if (m_interactionMode == InteractionMode::Joints) {
-                    applyJointRotationXAxis(m_sceneCommands, getJointRotationAmountXAxis(double(m_windowHeight), m_mouseRightInputStartingYPos, yPos), headIdSelections);
+                    applyJointRotationYAxis(m_sceneCommands, getJointRotationAmountYAxis(double(m_windowHeight), m_mouseRightInputStartingYPos, yPos), headIdSelections);
                 }
 
                 m_RMB = false;
