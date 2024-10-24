@@ -4,7 +4,6 @@
 
 #include "Scene.hpp"
 #include "SceneNode.hpp"
-#include "SceneNodeHelpers.hpp"
 
 // ~~~~~~~~~~~~~~~~~ Scene class ~~~~~~~~~~~~~~~~~
 
@@ -61,16 +60,16 @@ Scene::PreOrderTraversalIterator::PreOrderTraversalIterator(
 
 // ~~~~~~~~~~~~~~~~~ operations ~~~~~~~~~~~~~~~~~
 
-Scene::PreOrderTraversalIterator::reference_t
+Scene::PreOrderTraversalIterator::const_reference_t
 Scene::PreOrderTraversalIterator::operator*() const
 {
-    return *m_nodeStack.top().first;
+    return const_cast<const_reference_t>(*m_nodeStack.top().first);
 }
 
-Scene::PreOrderTraversalIterator::pointer_t
+Scene::PreOrderTraversalIterator::const_pointer_t
 Scene::PreOrderTraversalIterator::operator->() const
 {
-    return m_nodeStack.top().first;
+    return const_cast<const_pointer_t>(m_nodeStack.top().first);
 }
 
 Scene::PreOrderTraversalIterator &Scene::PreOrderTraversalIterator::operator++()
@@ -102,10 +101,13 @@ bool operator!=(const Scene::PreOrderTraversalIterator &a,
 }
 
 // ~~~~~~~~~~~~~~~~~ other functions ~~~~~~~~~~~~~~~~~
-InheritedNodeData Scene::PreOrderTraversalIterator::getInheritedData() {
-    return m_nodeStack.top().second;
+glm::mat4 Scene::PreOrderTraversalIterator::getInheritedTransformation() {
+    return m_nodeStack.top().second.trans;
 }
 
+NodeID Scene::PreOrderTraversalIterator::getInheritedJointID() {
+    return m_nodeStack.top().second.nodeId;
+}
 
 // ~~~~~~~~~~~~~~~~~ helpers ~~~~~~~~~~~~~~~~~
 
@@ -117,4 +119,40 @@ void Scene::PreOrderTraversalIterator::addNodesToStack(
     for(auto nodeIt = nodes.crbegin(); nodeIt != nodes.crend(); ++nodeIt) {
         m_nodeStack.emplace(*nodeIt, inheritedData);
     }
+}
+
+// ~~~~~~~~~~~~~~~~~ InheritedNodeData ~~~~~~~~~~~~~~~~~
+
+bool operator==(const InheritedNodeData & a, const InheritedNodeData & b)
+{
+    return a.trans == b.trans && a.nodeId == b.nodeId;
+}
+
+bool operator!=(const InheritedNodeData & a, const InheritedNodeData & b)
+{
+    return !(a == b);
+}
+
+InheritedNodeData getInheritedNodeData(const SceneNode & thisNode)
+{
+    return {glm::mat4(1.0f), thisNode.m_nodeId};
+}
+
+
+InheritedNodeData getInheritedNodeData(const SceneNode & thisNode,
+                                       const InheritedNodeData &inheritedData)
+{
+    // transformation matrix should be multiplied down
+    glm::mat4 newTransformation = inheritedData.trans * thisNode.trans;
+
+    // ID should be inherited from first joint parent
+    NodeID newNodeId;
+
+    if (thisNode.m_nodeType == NodeType::JointNode) {
+        newNodeId = thisNode.m_nodeId;
+    } else {
+        newNodeId = inheritedData.nodeId;
+    }
+
+    return {newTransformation, newNodeId};
 }

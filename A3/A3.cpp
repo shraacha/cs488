@@ -18,8 +18,6 @@ using namespace std;
 #include <cmath>
 #include <utility>
 
-
-#include "SceneNodeHelpers.hpp"
 #include "helpers.hpp"
 
 using namespace glm;
@@ -470,8 +468,10 @@ void A3::guiLogic()
 // Update mesh specific shader uniforms:
 static void updateShaderUniforms(
 		const ShaderProgram & shader,
-		const GeometryNode & node,
-		const InheritedNodeData & inheritedData,
+		const mat4 & nodeTransformation,
+		const vec3 & diffuseInfo,
+		const vec3 & specularInfo,
+		const float & phongCoefficient,
 		const glm::mat4 & viewMatrix
 ) {
 
@@ -479,7 +479,7 @@ static void updateShaderUniforms(
 	{
 		//-- Set ModelView matrix:
 		GLint location = shader.getUniformLocation("ModelView");
-		mat4 modelView = viewMatrix * inheritedData.trans * node.trans;
+		mat4 modelView = viewMatrix * nodeTransformation;
 		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
 		CHECK_GL_ERRORS;
 
@@ -492,17 +492,17 @@ static void updateShaderUniforms(
 
 		//-- Set Material values:
 		location = shader.getUniformLocation("material.kd");
-		vec3 kd = node.material.kd;
+		vec3 kd = diffuseInfo;
 		glUniform3fv(location, 1, value_ptr(kd));
 		CHECK_GL_ERRORS;
 
 		location = shader.getUniformLocation("material.ks");
-		vec3 ks = node.material.ks;
+		vec3 ks = specularInfo;
 		glUniform3fv(location, 1, value_ptr(ks));
 		CHECK_GL_ERRORS;
 
 		location = shader.getUniformLocation("material.shininess");
-		float shininess = node.material.shininess;
+		float shininess = phongCoefficient;
 		glUniform1fv(location, 1, &shininess);
 		CHECK_GL_ERRORS;
 	}
@@ -534,57 +534,33 @@ void A3::renderScene(Scene & scene) {
 	// Bind the VAO once here, and reuse for all GeometryNode rendering below.
 	glBindVertexArray(m_vao_meshData);
 
-	// // This is emphatically *not* how you should be drawing the scene graph in
-	// // your final implementation.  This is a non-hierarchical demonstration
-	// // in which we assume that there is a list of GeometryNodes living directly
-	// // underneath the root node, and that we can draw them in a loop.  It's
-	// // just enough to demonstrate how to get geometry and materials out of
-	// // a GeometryNode and onto the screen.
+		for (Scene::PreOrderTraversalIterator nodeIt = scene.begin();
+			 nodeIt != scene.end(); ++nodeIt) {
 
-	// // You'll want to turn this into recursive code that walks over the tree.
-	// // You can do that by putting a method in SceneNode, overridden in its
-	// // subclasses, that renders the subtree rooted at every node.  Or you
-	// // could put a set of mutually recursive functions in this class, which
-	// // walk down the tree from nodes of different types.
+            if (nodeIt->m_nodeType != NodeType::GeometryNode)
+                continue;
 
-	// for (const SceneNode * node : root.children) {
+            const GeometryNode *geometryNode =
+                static_cast<const GeometryNode *>(&(*nodeIt));
 
-	// 	if (node->m_nodeType != NodeType::GeometryNode)
-	// 		continue;
+            updateShaderUniforms(m_shader,
+                                 nodeIt.getInheritedTransformation() *
+                                     geometryNode->trans,
+                                 geometryNode->material.kd, geometryNode->material.ks,
+                                 geometryNode->material.shininess, m_view);
 
-	// 	const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
+            // Get the BatchInfo corresponding to the GeometryNode's unique
+            // MeshId.
+            BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
 
-	// 	updateShaderUniforms(m_shader, *geometryNode, m_view);
+            //-- Now render the mesh:
+            m_shader.enable();
+            glDrawArrays(GL_TRIANGLES, batchInfo.startIndex,
+                         batchInfo.numIndices);
+            m_shader.disable();
+        }
 
-
-	// 	// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
-	// 	BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
-
-	// 	//-- Now render the mesh:
-	// 	m_shader.enable();
-	// 	glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
-	// 	m_shader.disable();
-	// }
-
-	for (Scene::PreOrderTraversalIterator nodeIt = scene.begin(); nodeIt != scene.end(); ++nodeIt) {
-
-		if (nodeIt->m_nodeType != NodeType::GeometryNode)
-			continue;
-
-		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(&(*nodeIt));
-
-		updateShaderUniforms(m_shader, *geometryNode, nodeIt.getInheritedData(), m_view);
-
-		// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
-		BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
-
-		//-- Now render the mesh:
-		m_shader.enable();
-		glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
-		m_shader.disable();
-	}
-
-	glBindVertexArray(0);
+    glBindVertexArray(0);
 	CHECK_GL_ERRORS;
 }
 
