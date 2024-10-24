@@ -503,13 +503,16 @@ void A3::appLogic()
     if (m_uiData.resetJoints)
     {
         //TODO
+        m_sceneCommands.undoAndClearAll();
+        m_scene.resetAllJoints();
         m_uiData.resetJoints = false;
     }
     if (m_uiData.resetAll)
     {
         m_scene.resetTranslation();
         m_scene.resetRotation();
-        //TODO
+        m_sceneCommands.undoAndClearAll();
+        m_scene.resetAllJoints();
         m_uiData.resetAll = false;
     }
     if (m_uiData.quit) {
@@ -518,6 +521,13 @@ void A3::appLogic()
 
     if (m_uiData.undo)
     {
+        m_sceneCommands.undoCommand();
+        m_uiData.undo = false;
+    }
+    if (m_uiData.redo)
+    {
+        m_sceneCommands.redoCommand();
+        m_uiData.redo = false;
     }
 
 
@@ -725,7 +735,7 @@ void A3::renderScene(Scene & scene) {
             vec3 ks;
             float shininess;
 
-            if(nodeIt.getInheritedJointID().has_value() && idSelections.isInCollection(*nodeIt.getInheritedJointID())) {
+            if(nodeIt.getInheritedJointID().has_value() && bodyIdSelections.isInCollection(*nodeIt.getInheritedJointID())) {
                 kd = {0.5, 0.5, 0.0};
                 ks = {0.0, 0.0, 0.0};
                 shininess = 0;
@@ -878,14 +888,14 @@ static inline double getJointRotationAmountYAxis(const double & windowHeight, co
 }
 
 
-void A3::applyJointRotationXAxis(SceneCommandList & commandList, double degrees)
+void A3::applyJointRotationXAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection)
 {
-    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(MoveJointsCommand(&m_scene, idSelections.getAllIds(), degrees, 0))));
+    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(MoveJointsCommand(&m_scene, bodyIdSelections.getAllIds(), degrees, 0))));
 }
 
-void A3::applyJointRotationYAxis(SceneCommandList & commandList, double degrees)
+void A3::applyJointRotationYAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection)
 {
-    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(&m_scene, idSelections.getAllIds(), 0, degrees)));
+    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(&m_scene, bodyIdSelections.getAllIds(), 0, degrees)));
 }
 
 
@@ -912,10 +922,12 @@ inline void A3::pickObject(double xpos, double ypos)
     unsigned int id = buffer[0] + (buffer[1] << 8) + (buffer[2] << 16);
 
     if (m_scene.isValidId(id)){
-        if (idSelections.isInCollection(id)) {
-            idSelections.remove(id);
+        if (bodyIdSelections.isInCollection(id)) {
+            bodyIdSelections.remove(id);
+        } else if (m_scene.isHeadId(id)) {
+            headIdSelections.add(id);
         } else {
-            idSelections.add(id);
+            bodyIdSelections.add(id);
         }
     }
 }
@@ -967,25 +979,40 @@ bool A3::mouseMoveEvent (
         m_startMouseInput = false;
     }
 
-	switch (m_interactionMode) {
-	case InteractionMode::PositionAndOrientation:
-		if (m_LMB) {
-			performXYTranslation(prevXPos, prevYPos, xPos, yPos);
-		}
-		if (m_MMB) {
-			performZTranslation(prevXPos, prevYPos, xPos, yPos);
-		}
-		if (m_RMB) {
-			performTrackballRotation(prevXPos, prevYPos, xPos, yPos);
-		}
-		break;
-	case InteractionMode::Joints:
-		if (m_MMB) {
-            m_tempSceneCommands.clearAll();
-            applyJointRotationXAxis(m_tempSceneCommands, getJointRotationAmountXAxis(double(m_windowHeight), m_mouseInputStartingYPos, yPos));
-		}
-		break;
-	}
+    m_tempBodySceneCommands.undoAndClearAll();
+    m_tempHeadSceneCommands.undoAndClearAll();
+
+    switch (m_interactionMode) {
+    case InteractionMode::PositionAndOrientation:
+        if (m_LMB) {
+            performXYTranslation(prevXPos, prevYPos, xPos, yPos);
+        }
+        if (m_MMB) {
+            performZTranslation(prevXPos, prevYPos, xPos, yPos);
+        }
+        if (m_RMB) {
+            performTrackballRotation(prevXPos, prevYPos, xPos, yPos);
+        }
+        eventHandled = true;
+        break;
+    case InteractionMode::Joints:
+        if (m_MMB) {
+            applyJointRotationXAxis(m_tempBodySceneCommands,
+                                    getJointRotationAmountXAxis(
+                                        double(m_windowHeight),
+                                        m_mouseMiddleInputStartingYPos, yPos),
+                                    bodyIdSelections);
+        }
+        if (m_RMB) {
+            applyJointRotationXAxis(m_tempHeadSceneCommands,
+                                    getJointRotationAmountXAxis(
+                                        double(m_windowHeight),
+                                        m_mouseRightInputStartingYPos, yPos),
+                                    headIdSelections);
+        }
+        eventHandled = true;
+        break;
+    }
 
     updatePrevPosition();
 	return eventHandled;
@@ -1007,6 +1034,9 @@ bool A3::mouseButtonInputEvent (
 		double xPos, yPos;
 		glfwGetCursorPos( m_window, &xPos, &yPos );
 
+        m_tempBodySceneCommands.undoAndClearAll();
+        m_tempHeadSceneCommands.undoAndClearAll();
+
         if (actions == GLFW_PRESS) {
             if (button == GLFW_MOUSE_BUTTON_LEFT) {
                 if (m_interactionMode == InteractionMode::Joints) {
@@ -1023,12 +1053,14 @@ bool A3::mouseButtonInputEvent (
             }
             if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
                 if (m_interactionMode == InteractionMode::Joints) {
-                    m_mouseInputStartingXPos = xPos;
-                    m_mouseInputStartingYPos = yPos;
+                    m_mouseMiddleInputStartingYPos = yPos;
                 }
                 m_MMB = true;
             }
             if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                if (m_interactionMode == InteractionMode::Joints) {
+                    m_mouseRightInputStartingYPos = yPos;
+                }
                 m_RMB = true;
             }
 
@@ -1040,13 +1072,16 @@ bool A3::mouseButtonInputEvent (
             }
             if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
                 if (m_interactionMode == InteractionMode::Joints) {
-                    m_tempSceneCommands.clearAll();
-                    applyJointRotationXAxis(m_sceneCommands, getJointRotationAmountXAxis(double(m_windowHeight), m_mouseInputStartingYPos, yPos));
+                    applyJointRotationXAxis(m_sceneCommands, getJointRotationAmountXAxis(double(m_windowHeight), m_mouseMiddleInputStartingYPos, yPos), bodyIdSelections);
                 }
 
                 m_MMB = false;
             }
             if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                if (m_interactionMode == InteractionMode::Joints) {
+                    applyJointRotationXAxis(m_sceneCommands, getJointRotationAmountXAxis(double(m_windowHeight), m_mouseRightInputStartingYPos, yPos), headIdSelections);
+                }
+
                 m_RMB = false;
             }
             eventHandled = true;
@@ -1089,20 +1124,81 @@ bool A3::windowResizeEvent (
  * Event handler.  Handles key input events.
  */
 bool A3::keyInputEvent (
-		int key,
-		int action,
-		int mods
+        int key,
+        int action,
+        int mods
 ) {
-	bool eventHandled(false);
+    bool eventHandled(false);
 
-	if( action == GLFW_PRESS ) {
-		if( key == GLFW_KEY_M ) {
-			show_gui = !show_gui;
-			eventHandled = true;
-		}
+    if( action == GLFW_PRESS ) {
 
-	}
-	// Fill in with event handling code...
+        if( key == GLFW_KEY_I ) {
+            m_uiData.resetPosition = true;
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_O ) {
+            m_uiData.resetOrientation = true;
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_S ) {
+            m_uiData.resetJoints = true;
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_A ) {
+            m_uiData.resetAll = true;
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_Q ) {
+            m_uiData.quit = true;
+            eventHandled = true;
+        }
 
-	return eventHandled;
+
+        if( key == GLFW_KEY_U ) {
+            m_uiData.undo = true;
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_R ) {
+            m_uiData.redo = true;
+            eventHandled = true;
+        }
+
+
+        if( key == GLFW_KEY_C ) {
+            toggleBoolInPlace(m_uiData.circle);
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_Z ) {
+            toggleBoolInPlace(m_uiData.zBuffer);
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_B ) {
+            toggleBoolInPlace(m_uiData.backface);
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_F ) {
+            toggleBoolInPlace(m_uiData.frontface);
+            eventHandled = true;
+        }
+
+
+        if( key == GLFW_KEY_P ) {
+            m_interactionMode = InteractionMode::PositionAndOrientation;
+            eventHandled = true;
+        }
+        if( key == GLFW_KEY_J ) {
+            m_interactionMode = InteractionMode::Joints;
+            eventHandled = true;
+        }
+
+
+        if( key == GLFW_KEY_M ) {
+            show_gui = !show_gui;
+            eventHandled = true;
+        }
+
+    }
+    // Fill in with event handling code...
+
+    return eventHandled;
 }

@@ -73,8 +73,8 @@ protected:
 	void performXYTranslation(float x1, float y1, float x2, float y2);
 	void performZTranslation(float x1, float y1, float x2, float y2);
 
-	void applyJointRotationXAxis(SceneCommandList & commandList, double degrees);
-    void applyJointRotationYAxis(SceneCommandList & commandList, double degrees);
+	void applyJointRotationXAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection);
+    void applyJointRotationYAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection);
 
 	inline void setOpenGlClearToDefault();
 
@@ -116,13 +116,15 @@ protected:
     // holds the scene graph
     Scene m_scene;
 
-    IdCollection idSelections;
+    IdCollection headIdSelections;
+    IdCollection bodyIdSelections;
 
 	void performTempJointRotationXAxis(double degrees);
 	void performTempJointRotationYAxis(double degrees);
 
     SceneCommandList m_sceneCommands;
-    SceneCommandList m_tempSceneCommands;
+    SceneCommandList m_tempBodySceneCommands;
+    SceneCommandList m_tempHeadSceneCommands;
 
     //-- device info
     double deviceWidth;
@@ -131,8 +133,8 @@ protected:
     //-- interaction state info
     InteractionMode m_interactionMode;
     bool m_startMouseInput;
-	double m_mouseInputStartingXPos;
-	double m_mouseInputStartingYPos;
+	double m_mouseMiddleInputStartingYPos;
+	double m_mouseRightInputStartingYPos;
     bool m_LMB;
     bool m_MMB;
     bool m_RMB;

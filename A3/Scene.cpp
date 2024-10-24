@@ -24,6 +24,16 @@ static inline std::map<NodeID, SceneNode *> generateJointTree (Scene & scene, Sc
     return std::move(jointIdToNodeMap);
 }
 
+static inline std::pair<NodeID, SceneNode *> findIdNodePairWithName (Scene & scene, const std::string & name)
+{
+    for(auto nodeIt = scene.begin(); nodeIt != scene.end(); ++nodeIt) {
+        SceneNode * node = const_cast<SceneNode *> (&(*nodeIt));
+        if(node->m_name == name) {
+            return {node->m_nodeId, node};
+        }
+    }
+    return {0, nullptr}; // not good behavuour but we are spaghetti-coding
+}
 
 // ~~~~~~~~~~~~~~~~~ Scene class ~~~~~~~~~~~~~~~~~
 
@@ -45,6 +55,8 @@ bool Scene::importSceneGraph(SceneNode *root)
     if (root) {
         m_globalRotationNode->add_child(root);
         m_jointIDToNodeMap = generateJointTree(*this, root);
+        m_headIDtoNode = findIdNodePairWithName(*this, c_head_joint_name);
+
         return true;
     } else {
         return false;
@@ -82,6 +94,11 @@ bool Scene::isValidId(const NodeID & id)
     return m_jointIDToNodeMap.count(id) > 0;
 }
 
+bool Scene::isHeadId(const NodeID & id)
+{
+    return id == m_headIDtoNode.first;
+}
+
 JointNode * Scene::getJoint(const NodeID & id)
 {
     auto it = m_jointIDToNodeMap.find(id);
@@ -90,6 +107,16 @@ JointNode * Scene::getJoint(const NodeID & id)
         return static_cast<JointNode *>(it->second);
     } else {
         return nullptr;
+    }
+}
+
+void Scene::resetAllJoints()
+{
+    for(auto element : m_jointIDToNodeMap)
+    {
+        JointNode * joint = static_cast<JointNode *> (element.second);
+        joint->reset_joint_x();
+        joint->reset_joint_y();
     }
 }
 
@@ -277,14 +304,26 @@ void SceneCommandList::redoCommand()
     }
 }
 
-void SceneCommandList::clearAll()
+void SceneCommandList::undoAll()
 {
     for (auto it = commandList.rbegin(); it != commandList.rend(); ++it)
     {
         (*it)->undo();
     }
     indexPlusOne = 0;
+}
+
+
+inline void SceneCommandList::clearAll()
+{
     commandList.erase(commandList.begin(), commandList.end());
+    indexPlusOne = 0;
+}
+
+void SceneCommandList::undoAndClearAll()
+{
+    undoAll();
+    clearAll();
 }
 
 size_t SceneCommandList::getLength()
