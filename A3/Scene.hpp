@@ -44,6 +44,10 @@ public:
     void resetRotation();
     void resetTranslation();
 
+    // ids
+
+    bool isValidId(const NodeID & id);
+
     // iterator stuff
     struct PreOrderTraversalIterator {
         using iterator_category = std::forward_iterator_tag;
@@ -86,5 +90,5 @@ private:
     SceneNode* m_globalTranslationNode;
     SceneNode* m_globalRotationNode;
 
-    // std::map<NodeID, std::shared_ptr<SceneNode>> jointIDToNodeMap; // TODO
+    std::map<NodeID, SceneNode *> m_jointIDToNodeMap;
 };

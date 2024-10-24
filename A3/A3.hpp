@@ -9,9 +9,11 @@
 
 #include "SceneNode.hpp"
 #include "Scene.hpp"
+#include "NodeID.hpp"
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <set>
 
 // helper structs and stuff
 
@@ -24,7 +26,6 @@ struct LightSource {
 	glm::vec3 position;
 	glm::vec3 rgbIntensity;
 };
-
 
 class A3 : public CS488Window {
 public:
@@ -63,8 +64,8 @@ protected:
 
 	// other functions
 	void drawScene();
-	void drawPickingScene();
 	void drawCircle();
+	void drawPickingScene();
 
 	void renderPickingScene(Scene &scene);
 
@@ -73,6 +74,8 @@ protected:
 	void performZTranslation(float x1, float y1, float x2, float y2);
 
 	inline void setOpenGlClearToDefault();
+
+	inline void pickObject(double xpos, double ypos);
 
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
@@ -139,4 +142,6 @@ protected:
         bool frontface = false;
         bool pickingView = false;
     } m_uiData;
+
+	IdCollection idSelections;
 };

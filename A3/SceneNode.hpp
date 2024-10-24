@@ -3,14 +3,13 @@
 #pragma once
 
 #include "Material.hpp"
+#include "NodeID.hpp"
 
 #include <glm/glm.hpp>
 
 #include <list>
 #include <string>
 #include <iostream>
-
-using NodeID = unsigned int;
 
 enum class NodeType {
 	SceneNode,
