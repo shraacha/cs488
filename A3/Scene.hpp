@@ -7,11 +7,14 @@
 #include <stack>
 #include <utility>
 #include <vector>
+#include <string>
 
 #include <glm/glm.hpp>
 
 #include "SceneNode.hpp"
 #include "JointNode.hpp"
+
+const std::string c_head_joint_name = "head_joint";
 
 // This struct stores data that should be inherited from the parent node in some form
 struct InheritedNodeData {
@@ -47,9 +50,10 @@ public:
     void resetTranslation();
 
     // ids
-
     bool isValidId(const NodeID & id);
+    bool isHeadId(const NodeID & id);
     JointNode* getJoint(const NodeID & id);
+    void resetAllJoints();
 
     // iterator stuff
     struct PreOrderTraversalIterator {
@@ -94,6 +98,7 @@ private:
     SceneNode* m_globalRotationNode;
 
     std::map<NodeID, SceneNode *> m_jointIDToNodeMap;
+    std::pair<NodeID, SceneNode *> m_headIDtoNode;
 };
 
 class SceneCommand {
@@ -143,7 +148,9 @@ class SceneCommandList {
     void addCommand(std::unique_ptr<SceneCommand> command);
     void undoCommand();
     void redoCommand();
-    void clearAll();
+    void undoAll();
+    inline void clearAll();
+    void undoAndClearAll();
 
     size_t getLength();
     size_t getIndex();
