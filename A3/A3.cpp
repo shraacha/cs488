@@ -715,11 +715,24 @@ void A3::renderScene(Scene & scene) {
             const GeometryNode *geometryNode =
                 static_cast<const GeometryNode *>(&(*nodeIt));
 
+            vec3 kd;
+            vec3 ks;
+            float shininess;
+
+            if(nodeIt.getInheritedJointID().has_value() && idSelections.isInCollection(*nodeIt.getInheritedJointID())) {
+                kd = {0.5, 0.5, 0.0};
+                ks = {0.0, 0.0, 0.0};
+                shininess = 0;
+            } else {
+                kd = geometryNode->material.kd;
+                ks = geometryNode->material.ks;
+                shininess = geometryNode->material.shininess;
+            }
+
             updateShaderUniforms(m_shader,
                                  nodeIt.getInheritedTransformation() *
                                      geometryNode->trans,
-                                 geometryNode->material.kd, geometryNode->material.ks,
-                                 geometryNode->material.shininess, m_view);
+                                 kd, ks, shininess, m_view);
 
             // Get the BatchInfo corresponding to the GeometryNode's unique
             // MeshId.
@@ -848,6 +861,30 @@ inline void A3::setOpenGlClearToDefault()
                  c_background_colour_default.z, c_background_colour_default.w);
 }
 
+inline void A3::pickObject(double xpos, double ypos)
+{
+    drawPickingScene();
+
+    GLubyte buffer[4] = {0, 0, 0, 0};
+    // A bit ugly -- don't want to swap the just-drawn false colours
+    // to the screen, so read from the back buffer.
+    glReadBuffer(GL_BACK);
+    // Actually read the pixel at the mouse location.
+    glReadPixels(int(xpos), int(ypos), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    CHECK_GL_ERRORS;
+
+    // Reassemble the object ID.
+    unsigned int id = buffer[0] + (buffer[1] << 8) + (buffer[2] << 16);
+
+    if (m_scene.isValidId(id)){
+        if (idSelections.isInCollection(id)) {
+            idSelections.remove(id);
+        } else {
+            idSelections.add(id);
+        }
+    }
+}
+
 //----------------------------------------------------------------------------------------
 /*
  * Called once, after program is signaled to terminate.
@@ -928,11 +965,21 @@ bool A3::mouseButtonInputEvent (
 
 	// Fill in with event handling code...
     if (!ImGui::IsMouseHoveringAnyWindow()) {
-        // The user clicked in the window.  If it's the left
-        // mouse button, initiate a rotation.
+		double xpos, ypos;
+		glfwGetCursorPos( m_window, &xpos, &ypos );
 
         if (actions == GLFW_PRESS) {
             if (button == GLFW_MOUSE_BUTTON_LEFT) {
+                if (m_interactionMode == InteractionMode::Joints) {
+                    // Code Taken from Picking_Example
+                    xpos *= double(m_framebufferWidth) / double(m_windowWidth);
+                    ypos = m_windowHeight - ypos;
+                    ypos *=
+                        double(m_framebufferHeight) / double(m_windowHeight);
+
+                    pickObject(xpos, ypos);
+                }
+
                 m_LMB = true;
             }
             if (button == GLFW_MOUSE_BUTTON_MIDDLE) {

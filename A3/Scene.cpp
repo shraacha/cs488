@@ -4,7 +4,25 @@
 #include <optional>
 
 #include "Scene.hpp"
+#include "NodeID.hpp"
 #include "SceneNode.hpp"
+
+static inline std::map<NodeID, SceneNode *> generateJointTree (Scene & scene, SceneNode * root)
+{
+    std::map<NodeID, SceneNode *> jointIdToNodeMap;
+
+    for(auto nodeIt = scene.begin(); nodeIt != scene.end(); ++nodeIt) {
+        SceneNode * node = const_cast<SceneNode *> (&(*nodeIt));
+        NodeID id = node->m_nodeId;
+
+        if (node->m_nodeType == NodeType::JointNode) {
+            jointIdToNodeMap.emplace(id, node);
+        }
+    }
+
+    return std::move(jointIdToNodeMap);
+}
+
 
 // ~~~~~~~~~~~~~~~~~ Scene class ~~~~~~~~~~~~~~~~~
 
@@ -25,6 +43,7 @@ bool Scene::importSceneGraph(SceneNode *root)
 {
     if (root) {
         m_globalRotationNode->add_child(root);
+        m_jointIDToNodeMap = generateJointTree(*this, root);
         return true;
     } else {
         return false;
@@ -50,9 +69,16 @@ void Scene::resetRotation()
 {
     m_globalRotationNode->trans = glm::mat4();
 }
+
 void Scene::resetTranslation()
 {
     m_globalTranslationNode->trans = glm::mat4();
+}
+
+
+bool Scene::isValidId(const NodeID & id)
+{
+    return m_jointIDToNodeMap.count(id) > 0;
 }
 
 // ~~~~~~~~~~~~~~~~~ Iterator ~~~~~~~~~~~~~~~~~
