@@ -9,7 +9,21 @@
 #include <glm/glm.hpp>
 
 #include "SceneNode.hpp"
-#include "SceneNodeHelpers.hpp"
+
+// This struct stores data that should be inherited from the parent node in some form
+struct InheritedNodeData {
+    glm::mat4 trans;
+    NodeID nodeId;
+};
+
+bool operator==(const InheritedNodeData & a, const InheritedNodeData & b);
+bool operator!=(const InheritedNodeData & a, const InheritedNodeData & b);
+
+InheritedNodeData getInheritedNodeData(const SceneNode & thisNode);
+
+// controls how data is inherited
+InheritedNodeData getInheritedNodeData(const SceneNode & thisNode,
+                                       const InheritedNodeData &inheritedData);
 
 using NodeAndInheritedData = std::pair<SceneNode *, InheritedNodeData>;
 
@@ -26,20 +40,21 @@ public:
     void rotate(const glm::vec3 & axis, const double & theta);
     void translate(const glm::vec3 & translation); // TODO
 
-
     // iterator stuff
     struct PreOrderTraversalIterator {
         using iterator_category = std::forward_iterator_tag;
         using pointer_t = SceneNode *;
+        using const_pointer_t = const SceneNode *;
         using reference_t = SceneNode &;
+        using const_reference_t = const SceneNode &;
 
         // ctors
         PreOrderTraversalIterator(); // for end()
         PreOrderTraversalIterator(pointer_t ptr);
 
         // operations
-        reference_t operator*() const;
-        pointer_t operator->() const;
+        const_reference_t operator*() const;
+        const_pointer_t operator->() const;
 
         // prefix
         PreOrderTraversalIterator& operator++();
@@ -50,7 +65,8 @@ public:
         friend bool operator!=(const PreOrderTraversalIterator& a, const PreOrderTraversalIterator& b);
 
         // other functions
-        InheritedNodeData getInheritedData();
+        glm::mat4 getInheritedTransformation();
+        NodeID getInheritedJointID();
 
     private:
         std::stack<NodeAndInheritedData> m_nodeStack;
