@@ -11,5 +11,5 @@ struct IdCollection {
 	bool isInCollection(const NodeID & id);
 	void add(const NodeID & id);
 	void remove(const NodeID & id);
-	std::vector<NodeID> getAllIds();
+	std::vector<NodeID> getAllIds() const;
 };

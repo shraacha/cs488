@@ -16,7 +16,7 @@ void IdCollection::remove(const NodeID & id)
 }
 
 
-std::vector<NodeID> IdCollection::getAllIds()
+std::vector<NodeID> IdCollection::getAllIds() const
 {
     return {nodeIdentities.begin(), nodeIdentities.end()};
 }
