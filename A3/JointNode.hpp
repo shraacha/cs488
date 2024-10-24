@@ -12,10 +12,22 @@ public:
 	void set_joint_x(double min, double init, double max);
 	void set_joint_y(double min, double init, double max);
 
+	void reset_joint_x();
+	void reset_joint_y();
+
+	double get_clamped_addition_x(double degrees);
+	double get_clamped_addition_y(double degrees);
+
+	void update_joint_x(double degrees);
+	void update_joint_y(double degrees);
+
+	glm::mat4 getJointRotationMatrix();
+
 	struct JointRange {
 		double min, init, max;
 	};
 
+	double currXRot, currYRot;
 
 	JointRange m_joint_x, m_joint_y;
 };
