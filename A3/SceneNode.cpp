@@ -103,6 +103,10 @@ void SceneNode::rotateRadians(const glm::vec3 & axis, float angle) {
 }
 
 //---------------------------------------------------------------------------------------
+void SceneNode::rotate(const glm::vec3 & axis, float angle){
+	rotateRadians(axis, degreesToRadians(angle));
+}
+//---------------------------------------------------------------------------------------
 void SceneNode::scale(const glm::vec3 & amount) {
 	trans = glm::scale(amount) * trans;
 }

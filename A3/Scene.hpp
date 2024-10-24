@@ -1,15 +1,17 @@
 #pragma once
 
 #include <iterator>
-#include <stack>
-#include <memory>
 #include <map>
-#include <utility>
+#include <memory>
 #include <optional>
+#include <stack>
+#include <utility>
+#include <vector>
 
 #include <glm/glm.hpp>
 
 #include "SceneNode.hpp"
+#include "JointNode.hpp"
 
 // This struct stores data that should be inherited from the parent node in some form
 struct InheritedNodeData {
@@ -20,10 +22,10 @@ struct InheritedNodeData {
 bool operator==(const InheritedNodeData & a, const InheritedNodeData & b);
 bool operator!=(const InheritedNodeData & a, const InheritedNodeData & b);
 
-InheritedNodeData getInheritedNodeData(const SceneNode & thisNode);
+InheritedNodeData makeInheritableNodeData(const SceneNode & thisNode);
 
 // controls how data is inherited
-InheritedNodeData getInheritedNodeData(const SceneNode & thisNode,
+InheritedNodeData makeInheritableNodeData(const SceneNode & thisNode,
                                        const InheritedNodeData &inheritedData);
 
 using NodeAndInheritedData = std::pair<SceneNode *, InheritedNodeData>;
@@ -47,6 +49,7 @@ public:
     // ids
 
     bool isValidId(const NodeID & id);
+    JointNode* getJoint(const NodeID & id);
 
     // iterator stuff
     struct PreOrderTraversalIterator {
@@ -91,4 +94,61 @@ private:
     SceneNode* m_globalRotationNode;
 
     std::map<NodeID, SceneNode *> m_jointIDToNodeMap;
+};
+
+class SceneCommand {
+  public:
+    virtual ~SceneCommand() {}
+    virtual void execute() = 0;
+    virtual void undo() = 0;
+};
+
+class MoveJointsCommand : public SceneCommand {
+  public:
+    MoveJointsCommand(Scene * scene, const std::vector<NodeID> & jointIds,
+                      const double & degreesX, const double & degreesY);
+    virtual void execute() override;
+    virtual void undo() override;
+
+  private:
+    Scene * scene;
+    std::vector<std::tuple<JointNode*, double, double>> jointAndRotation;
+};
+
+class RotateCommand : public SceneCommand {
+  public:
+    RotateCommand(Scene *scene, const glm::vec3 & axis, const double & degrees);
+    virtual void execute() override;
+    virtual void undo() override;
+
+  private:
+    Scene *scene;
+    glm::vec3 axis;
+    double degrees;
+};
+
+class TranslateCommand : public SceneCommand {
+  public:
+    TranslateCommand(Scene *scene, const glm::vec3 & translation);
+    virtual void execute() override;
+    virtual void undo() override;
+
+  private:
+    Scene *scene;
+    glm::vec3 translation;
+};
+
+class SceneCommandList {
+  public:
+    void addCommand(std::unique_ptr<SceneCommand> command);
+    void undoCommand();
+    void redoCommand();
+    void clearAll();
+
+    size_t getLength();
+    size_t getIndex();
+
+  private:
+    std::vector<std::unique_ptr<SceneCommand>> commandList;
+    size_t indexPlusOne;
 };

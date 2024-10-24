@@ -6,6 +6,7 @@
 #include "Scene.hpp"
 #include "NodeID.hpp"
 #include "SceneNode.hpp"
+#include "helpers.hpp"
 
 static inline std::map<NodeID, SceneNode *> generateJointTree (Scene & scene, SceneNode * root)
 {
@@ -81,6 +82,17 @@ bool Scene::isValidId(const NodeID & id)
     return m_jointIDToNodeMap.count(id) > 0;
 }
 
+JointNode * Scene::getJoint(const NodeID & id)
+{
+    auto it = m_jointIDToNodeMap.find(id);
+    if (it != m_jointIDToNodeMap.end())
+    {
+        return static_cast<JointNode *>(it->second);
+    } else {
+        return nullptr;
+    }
+}
+
 // ~~~~~~~~~~~~~~~~~ Iterator ~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~ ctors ~~~~~~~~~~~~~~~~~
 Scene::PreOrderTraversalIterator::PreOrderTraversalIterator() {}
@@ -89,7 +101,7 @@ Scene::PreOrderTraversalIterator::PreOrderTraversalIterator(
     Scene::PreOrderTraversalIterator::pointer_t ptr)
 {
     if (ptr) {
-        InheritedNodeData nodeData = getInheritedNodeData(*ptr);
+        InheritedNodeData nodeData = makeInheritableNodeData(*ptr);
         m_nodeStack.emplace(ptr, nodeData);
     }
 }
@@ -113,7 +125,7 @@ Scene::PreOrderTraversalIterator &Scene::PreOrderTraversalIterator::operator++()
     NodeAndInheritedData currentNodeAndData = m_nodeStack.top();
     m_nodeStack.pop();
     addNodesToStack(currentNodeAndData.first->children,
-                    getInheritedNodeData(*currentNodeAndData.first,
+                    makeInheritableNodeData(*currentNodeAndData.first,
                                          currentNodeAndData.second));
     return *this;
 }
@@ -169,31 +181,118 @@ bool operator!=(const InheritedNodeData & a, const InheritedNodeData & b)
     return !(a == b);
 }
 
-InheritedNodeData getInheritedNodeData(const SceneNode & thisNode)
+InheritedNodeData makeInheritableNodeData(const SceneNode & thisNode)
 {
     if (thisNode.m_nodeType == NodeType::JointNode)
     {
-        return {glm::mat4(1.0f), thisNode.m_nodeId};
+        JointNode * joint = static_cast<JointNode *>(const_cast<SceneNode*>(&thisNode));
+
+        // must apply the joint specific rotation as this is stored separate from the main transformation matrix
+        return {joint->getJointRotationMatrix() * thisNode.trans, thisNode.m_nodeId};
     } else {
         return {glm::mat4(1.0f), std::nullopt};
     }
 }
 
 
-InheritedNodeData getInheritedNodeData(const SceneNode & thisNode,
+InheritedNodeData makeInheritableNodeData(const SceneNode & thisNode,
                                        const InheritedNodeData &inheritedData)
 {
     // transformation matrix should be multiplied down
-    glm::mat4 newTransformation = inheritedData.trans * thisNode.trans;
+    glm::mat4 newTransformation = thisNode.trans;
 
     // ID should be inherited from first joint parent
     std::optional<NodeID> newNodeId;
 
     if (thisNode.m_nodeType == NodeType::JointNode) {
+        JointNode * joint = static_cast<JointNode *>(const_cast<SceneNode*>(&thisNode));
+
+        // must apply the joint specific rotation as this is stored separate from the main transformation matrix
+        newTransformation = joint->getJointRotationMatrix() * newTransformation;
         newNodeId = thisNode.m_nodeId;
     } else {
         newNodeId = inheritedData.nodeId;
     }
 
+    newTransformation = inheritedData.trans * newTransformation;
     return {newTransformation, newNodeId};
+}
+
+
+// ~~~~~~~~~~~~~~~~~ Commands ~~~~~~~~~~~~~~~~~
+MoveJointsCommand::MoveJointsCommand(Scene *scene,
+                                     const std::vector<NodeID> &jointIds,
+                                     const double &degreesX,
+                                     const double &degreesY)
+    : scene{scene}
+{
+    for (auto jointId : jointIds) {
+        JointNode *joint = scene->getJoint(jointId);
+        if (joint != nullptr) {
+            jointAndRotation.emplace_back(
+                joint, joint->get_clamped_addition_x(degreesX),
+                joint->get_clamped_addition_y(degreesY));
+        }
+    }
+}
+
+void MoveJointsCommand::execute()
+{
+    for (auto item : jointAndRotation) {
+        std::get<0>(item)->update_joint_x(std::get<1>(item));
+        std::get<0>(item)->update_joint_y(std::get<2>(item));
+    }
+}
+
+void MoveJointsCommand::undo()
+{
+    for (auto item : jointAndRotation) {
+        std::get<0>(item)->update_joint_y(-std::get<2>(item));
+        std::get<0>(item)->update_joint_x(-std::get<1>(item));
+    }
+}
+
+
+// ~~~~~~~~~~~~~~~~~ Command List ~~~~~~~~~~~~~~~~~
+void SceneCommandList::addCommand(std::unique_ptr<SceneCommand> command)
+{
+    commandList.erase(commandList.begin() + indexPlusOne, commandList.end());
+    commandList.emplace_back(std::move(command));
+    commandList[indexPlusOne++]->execute();
+}
+
+void SceneCommandList::undoCommand()
+{
+    if(indexPlusOne > 0)
+    {
+        commandList[--indexPlusOne]->undo();
+    }
+}
+
+void SceneCommandList::redoCommand()
+{
+    if(indexPlusOne < commandList.size())
+    {
+        commandList[indexPlusOne++]->execute();
+    }
+}
+
+void SceneCommandList::clearAll()
+{
+    for (auto it = commandList.rbegin(); it != commandList.rend(); ++it)
+    {
+        (*it)->undo();
+    }
+    indexPlusOne = 0;
+    commandList.erase(commandList.begin(), commandList.end());
+}
+
+size_t SceneCommandList::getLength()
+{
+    return commandList.size();
+}
+
+size_t SceneCommandList::getIndex()
+{
+    return indexPlusOne;
 }

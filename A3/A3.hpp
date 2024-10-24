@@ -73,6 +73,9 @@ protected:
 	void performXYTranslation(float x1, float y1, float x2, float y2);
 	void performZTranslation(float x1, float y1, float x2, float y2);
 
+	void applyJointRotationXAxis(SceneCommandList & commandList, double degrees);
+    void applyJointRotationYAxis(SceneCommandList & commandList, double degrees);
+
 	inline void setOpenGlClearToDefault();
 
 	inline void pickObject(double xpos, double ypos);
@@ -110,17 +113,26 @@ protected:
 	//-- Scene
 	std::string m_luaSceneFile;
 
-	// holds the scene graph
-	Scene m_scene;
+    // holds the scene graph
+    Scene m_scene;
 
+    IdCollection idSelections;
 
-	//-- device info
-	double deviceWidth;
-	double deviceHeight;
+	void performTempJointRotationXAxis(double degrees);
+	void performTempJointRotationYAxis(double degrees);
 
-	//-- interaction state info
-	InteractionMode m_interactionMode;
+    SceneCommandList m_sceneCommands;
+    SceneCommandList m_tempSceneCommands;
+
+    //-- device info
+    double deviceWidth;
+    double deviceHeight;
+
+    //-- interaction state info
+    InteractionMode m_interactionMode;
     bool m_startMouseInput;
+	double m_mouseInputStartingXPos;
+	double m_mouseInputStartingYPos;
     bool m_LMB;
     bool m_MMB;
     bool m_RMB;
@@ -142,6 +154,4 @@ protected:
         bool frontface = false;
         bool pickingView = false;
     } m_uiData;
-
-	IdCollection idSelections;
 };

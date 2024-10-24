@@ -1,6 +1,7 @@
 // Termm-Fall 2024
 
 #include "A3.hpp"
+#include "Scene.hpp"
 #include "scene_lua.hpp"
 using namespace std;
 
@@ -488,33 +489,36 @@ void A3::appLogic()
 {
 	// Place per frame, application logic here ...
 
-	// uiData updates
-	if (m_uiData.resetPosition)
-	{
-		m_scene.resetTranslation();
-		m_uiData.resetPosition = false;
-	}
-	if (m_uiData.resetOrientation)
-	{
-		m_scene.resetRotation();
-		m_uiData.resetOrientation = false;
-	}
-	if (m_uiData.resetJoints)
-	{
-		//TODO
-		m_uiData.resetJoints = false;
-	}
-	if (m_uiData.resetAll)
-	{
-		m_scene.resetTranslation();
-		m_scene.resetRotation();
-		//TODO
-		m_uiData.resetAll = false;
-	}
-	if (m_uiData.quit) {
-		glfwSetWindowShouldClose(m_window, GL_TRUE);
-	}
+    // uiData updates
+    if (m_uiData.resetPosition)
+    {
+        m_scene.resetTranslation();
+        m_uiData.resetPosition = false;
+    }
+    if (m_uiData.resetOrientation)
+    {
+        m_scene.resetRotation();
+        m_uiData.resetOrientation = false;
+    }
+    if (m_uiData.resetJoints)
+    {
+        //TODO
+        m_uiData.resetJoints = false;
+    }
+    if (m_uiData.resetAll)
+    {
+        m_scene.resetTranslation();
+        m_scene.resetRotation();
+        //TODO
+        m_uiData.resetAll = false;
+    }
+    if (m_uiData.quit) {
+        glfwSetWindowShouldClose(m_window, GL_TRUE);
+    }
 
+    if (m_uiData.undo)
+    {
+    }
 
 
 	uploadCommonSceneUniforms();
@@ -577,10 +581,12 @@ void A3::guiLogic()
 		ImGui::Separator();
 
 		ImGui::Text( "Other Keybinds:");
-		ImGui::Text( "M - Hide Gui Panel");
+		ImGui::Text( "  - (M) Hide Gui Panel");
 
 		ImGui::Separator();
 
+		ImGui::Text( "Current Action #: %zu", m_sceneCommands.getIndex());
+		ImGui::Text( "Total # of Actions: %zu", m_sceneCommands.getLength());
 		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 
 	ImGui::End();
@@ -810,19 +816,19 @@ void A3::renderPickingScene(Scene &scene)
 //----------------------------------------------------------------------------------------
 void A3::performTrackballRotation(float x1, float y1, float x2, float y2)
 {
-	float trackballRadius = getTrackballRadius(
-		static_cast<float>(m_windowWidth), static_cast<float>(m_windowHeight));
-	glm::vec3 v1 = circleToSphereMappingNormalized(
-		trackballRadius, topLeftOriginToCenteredOrigin(
-							 static_cast<float>(m_windowWidth),
-							 static_cast<float>(m_windowHeight), x1, y1));
-	glm::vec3 v2 = circleToSphereMappingNormalized(
-		trackballRadius, topLeftOriginToCenteredOrigin(
-							 static_cast<float> (m_windowWidth),
-							 static_cast<float> (m_windowHeight), x2, y2));
+    float trackballRadius = getTrackballRadius(
+        static_cast<float>(m_windowWidth), static_cast<float>(m_windowHeight));
+    glm::vec3 v1 = circleToSphereMappingNormalized(
+        trackballRadius, topLeftOriginToCenteredOrigin(
+                             static_cast<float>(m_windowWidth),
+                             static_cast<float>(m_windowHeight), x1, y1));
+    glm::vec3 v2 = circleToSphereMappingNormalized(
+        trackballRadius, topLeftOriginToCenteredOrigin(
+                             static_cast<float> (m_windowWidth),
+                             static_cast<float> (m_windowHeight), x2, y2));
 
-	m_scene.rotate(getArcballRotationAxis(v1, v2),
-				   getArcballRotationAngle(v1, v2));
+    m_scene.rotate(getArcballRotationAxis(v1, v2),
+                   getArcballRotationAngle(v1, v2));
 }
 
 //----------------------------------------------------------------------------------------
@@ -855,6 +861,35 @@ void A3::performZTranslation(float x1, float y1, float x2, float y2)
 	m_scene.translate({0, 0, scaledY});
 }
 
+//----------------------------------------------------------------------------------------
+static inline double getJointRotationAmountXAxis(const double & windowHeight, const double & y1, const double & y2)
+{
+    double scaleFactor = 90;
+
+    // note that positive y is downwards in device coordinates
+    return ((y2 - y1) / windowHeight) * scaleFactor;
+
+}
+
+//----------------------------------------------------------------------------------------
+static inline double getJointRotationAmountYAxis(const double & windowHeight, const double & y1, const double & y2)
+{
+    return getJointRotationAmountXAxis(windowHeight, y1, y2);
+}
+
+
+void A3::applyJointRotationXAxis(SceneCommandList & commandList, double degrees)
+{
+    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(MoveJointsCommand(&m_scene, idSelections.getAllIds(), degrees, 0))));
+}
+
+void A3::applyJointRotationYAxis(SceneCommandList & commandList, double degrees)
+{
+    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(&m_scene, idSelections.getAllIds(), 0, degrees)));
+}
+
+
+//----------------------------------------------------------------------------------------
 inline void A3::setOpenGlClearToDefault()
 {
     glClearColor(c_background_colour_default.x, c_background_colour_default.y,
@@ -945,6 +980,10 @@ bool A3::mouseMoveEvent (
 		}
 		break;
 	case InteractionMode::Joints:
+		if (m_MMB) {
+            m_tempSceneCommands.clearAll();
+            applyJointRotationXAxis(m_tempSceneCommands, getJointRotationAmountXAxis(double(m_windowHeight), m_mouseInputStartingYPos, yPos));
+		}
 		break;
 	}
 
@@ -965,24 +1004,28 @@ bool A3::mouseButtonInputEvent (
 
 	// Fill in with event handling code...
     if (!ImGui::IsMouseHoveringAnyWindow()) {
-		double xpos, ypos;
-		glfwGetCursorPos( m_window, &xpos, &ypos );
+		double xPos, yPos;
+		glfwGetCursorPos( m_window, &xPos, &yPos );
 
         if (actions == GLFW_PRESS) {
             if (button == GLFW_MOUSE_BUTTON_LEFT) {
                 if (m_interactionMode == InteractionMode::Joints) {
                     // Code Taken from Picking_Example
-                    xpos *= double(m_framebufferWidth) / double(m_windowWidth);
-                    ypos = m_windowHeight - ypos;
-                    ypos *=
+                    xPos *= double(m_framebufferWidth) / double(m_windowWidth);
+                    yPos = m_windowHeight - yPos;
+                    yPos *=
                         double(m_framebufferHeight) / double(m_windowHeight);
 
-                    pickObject(xpos, ypos);
+                    pickObject(xPos, yPos);
                 }
 
                 m_LMB = true;
             }
             if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+                if (m_interactionMode == InteractionMode::Joints) {
+                    m_mouseInputStartingXPos = xPos;
+                    m_mouseInputStartingYPos = yPos;
+                }
                 m_MMB = true;
             }
             if (button == GLFW_MOUSE_BUTTON_RIGHT) {
@@ -996,6 +1039,11 @@ bool A3::mouseButtonInputEvent (
                 m_LMB = false;
             }
             if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+                if (m_interactionMode == InteractionMode::Joints) {
+                    m_tempSceneCommands.clearAll();
+                    applyJointRotationXAxis(m_sceneCommands, getJointRotationAmountXAxis(double(m_windowHeight), m_mouseInputStartingYPos, yPos));
+                }
+
                 m_MMB = false;
             }
             if (button == GLFW_MOUSE_BUTTON_RIGHT) {
