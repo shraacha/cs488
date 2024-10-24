@@ -5,6 +5,7 @@
 #include <memory>
 #include <map>
 #include <utility>
+#include <optional>
 
 #include <glm/glm.hpp>
 
@@ -13,7 +14,7 @@
 // This struct stores data that should be inherited from the parent node in some form
 struct InheritedNodeData {
     glm::mat4 trans;
-    NodeID nodeId;
+    std::optional<NodeID> nodeId;
 };
 
 bool operator==(const InheritedNodeData & a, const InheritedNodeData & b);
@@ -69,7 +70,7 @@ public:
 
         // other functions
         glm::mat4 getInheritedTransformation();
-        NodeID getInheritedJointID();
+        std::optional<NodeID> getInheritedJointID();
 
     private:
         std::stack<NodeAndInheritedData> m_nodeStack;
