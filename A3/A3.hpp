@@ -15,7 +15,7 @@
 
 // helper structs and stuff
 
-enum class InteractionMode {
+enum InteractionMode {
 	PositionAndOrientation,
 	Joints
 };
@@ -96,10 +96,6 @@ protected:
 	// holds the scene graph
 	Scene m_scene;
 
-	//-- optimization options
-	bool m_cullFront;
-	bool m_cullBack;
-	bool m_zBuffer;
 
 	//-- device info
 	double deviceWidth;
@@ -107,8 +103,25 @@ protected:
 
 	//-- interaction state info
 	InteractionMode m_interactionMode;
-	bool m_startMouseInput;
-	bool m_LMB;
-	bool m_MMB;
-	bool m_RMB;
+    bool m_startMouseInput;
+    bool m_LMB;
+    bool m_MMB;
+    bool m_RMB;
+
+    struct uiData {
+		// application
+        bool resetPosition = false;
+        bool resetOrientation = false;
+        bool resetJoints = false;
+        bool resetAll = false;
+        bool quit = false;
+		// edit
+        bool undo = false;
+        bool redo = false;
+		// options
+        bool circle = false;
+        bool zBuffer = false;
+        bool backface = false;
+        bool frontface = false;
+    } m_uiData;
 };
