@@ -1,4 +1,4 @@
---- A puppet of Edward Elric from the Anime Fullmetal Alchemist
+--- A puppet of Alphonse Elric from the Anime Fullmetal Alchemist
 
 rootnode = gr.node('root')
 
@@ -105,7 +105,7 @@ left_upper_leg_edge_2:set_material(metal)
 
 left_knee_joint_to_upper_leg_connector = gr.node('left_knee_joint_to_upper_leg_connector')
 left_upper_leg:add_child(left_knee_joint_to_upper_leg_connector)
-left_knee_joint_to_upper_leg_connector:translate(0.05, -1, -0.01)
+left_knee_joint_to_upper_leg_connector:translate(0.04, -1, -0.01)
 
 left_knee_joint = gr.joint('left_knee_joint', {0, 0, 90}, {0, 0, 0})
 left_knee_joint_to_upper_leg_connector:add_child(left_knee_joint)
@@ -333,7 +333,7 @@ right_upper_leg_edge_2:set_material(metal)
 
 right_knee_joint_to_upper_leg_connector = gr.node('right_knee_joint_to_upper_leg_connector')
 right_upper_leg:add_child(right_knee_joint_to_upper_leg_connector)
-right_knee_joint_to_upper_leg_connector:translate(-0.05, -1, -0.01)
+right_knee_joint_to_upper_leg_connector:translate(-0.01, -1, 0.005)
 
 right_knee_joint = gr.joint('right_knee_joint', {0, 0, 90}, {0, 0, 0})
 right_knee_joint_to_upper_leg_connector:add_child(right_knee_joint)
