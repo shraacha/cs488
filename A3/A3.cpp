@@ -17,6 +17,7 @@ using namespace std;
 
 #include <cmath>
 #include <utility>
+#include <string>
 
 #include "helpers.hpp"
 
@@ -27,10 +28,13 @@ static bool show_gui = true;
 
 const size_t CIRCLE_PTS = 48;
 
-static const InteractionMode c_interactionModeDefault = InteractionMode::PositionAndOrientation;
-static const bool c_cullFrontDefault = false;
-static const bool c_cullBackDefault = false;
-static const bool c_zBufferDefault = true;
+static const glm::vec4 c_background_colour_default (0.49, 0.098, 0.016, 1);
+
+static const InteractionMode c_interactionMode_default = InteractionMode::PositionAndOrientation;
+
+static const bool c_optimize_zBuffer_default = true;
+static const bool c_optimize_backface_default = false;
+static const bool c_optimize_frontface_default = false;
 
 //----------------------------------------------------------------------------------------
 // helpers
@@ -159,9 +163,11 @@ A3::~A3()
 void A3::init()
 {
 	// Set the background colour.
-	glClearColor(0.2, 0.5, 0.3, 1.0);
+    glClearColor(
+        c_background_colour_default.x, c_background_colour_default.y,
+        c_background_colour_default.z, c_background_colour_default.w);
 
-	createShaderProgram();
+    createShaderProgram();
 
 	glGenVertexArrays(1, &m_vao_arcCircle);
 	glGenVertexArrays(1, &m_vao_meshData);
@@ -208,11 +214,15 @@ void A3::init()
 
 
 //----------------------------------------------------------------------------------------
-void A3::reset() {
-	m_interactionMode = c_interactionModeDefault;
-	m_cullFront = c_cullFrontDefault;
-	m_cullBack = c_cullBackDefault;
-	m_zBuffer = c_zBufferDefault;
+void A3::reset()
+{
+	m_interactionMode = c_interactionMode_default;
+
+	m_uiData = A3::uiData();
+
+    m_uiData.zBuffer = c_optimize_zBuffer_default;
+    m_uiData.backface = c_optimize_backface_default;
+    m_uiData.frontface = c_optimize_frontface_default;
 }
 
 //----------------------------------------------------------------------------------------
@@ -424,6 +434,35 @@ void A3::appLogic()
 {
 	// Place per frame, application logic here ...
 
+	// uiData updates
+	if (m_uiData.resetPosition)
+	{
+		m_scene.resetTranslation();
+		m_uiData.resetPosition = false;
+	}
+	if (m_uiData.resetOrientation)
+	{
+		m_scene.resetRotation();
+		m_uiData.resetOrientation = false;
+	}
+	if (m_uiData.resetJoints)
+	{
+		//TODO
+		m_uiData.resetJoints = false;
+	}
+	if (m_uiData.resetAll)
+	{
+		m_scene.resetTranslation();
+		m_scene.resetRotation();
+		//TODO
+		m_uiData.resetAll = false;
+	}
+	if (m_uiData.quit) {
+		glfwSetWindowShouldClose(m_window, GL_TRUE);
+	}
+
+
+
 	uploadCommonSceneUniforms();
 }
 
@@ -444,20 +483,48 @@ void A3::guiLogic()
 	}
 
 	static bool showDebugWindow(true);
-	ImGuiWindowFlags windowFlags(ImGuiWindowFlags_AlwaysAutoResize);
+	ImGuiWindowFlags windowFlags(ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar);
 	float opacity(0.5f);
 
-	ImGui::Begin("Properties", &showDebugWindow, ImVec2(100,100), opacity,
+	ImGui::Begin("##GUI", &showDebugWindow, ImVec2(100,100), opacity,
 			windowFlags);
-
-
 		// Add more gui elements here here ...
 
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("Application")) {
+				ImGui::MenuItem("Reset Position (I)", NULL, &m_uiData.resetPosition);
+				ImGui::MenuItem("Reset Orientation (O)", NULL, &m_uiData.resetOrientation);
+				ImGui::MenuItem("Reset Joints (S)", NULL, &m_uiData.resetJoints);
+				ImGui::MenuItem("Reset All (A)", NULL, &m_uiData.resetAll);
+				ImGui::MenuItem("Quit (Q)", NULL, &m_uiData.quit);
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit")) {
+				ImGui::MenuItem("Undo (U)", NULL, &m_uiData.undo);
+				ImGui::MenuItem("Redo (R)", NULL, &m_uiData.redo);
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Options")) {
+				ImGui::MenuItem("Circle (C)", NULL, &m_uiData.circle);
+				ImGui::MenuItem("Z Buffer (Z)", NULL, &m_uiData.zBuffer);
+				ImGui::MenuItem("Backface (B)", NULL, &m_uiData.backface);
+				ImGui::MenuItem("Frontface (D)", NULL, &m_uiData.frontface);
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
 
-		// Create Button, and check if it was clicked:
-		if( ImGui::Button( "Quit Application" ) ) {
-			glfwSetWindowShouldClose(m_window, GL_TRUE);
-		}
+        ImGui::PushID( 0 );
+        ImGui::RadioButton( "Position Orientation (P)", (int *)&m_interactionMode, (int)InteractionMode::PositionAndOrientation );
+        ImGui::RadioButton( "Joints (J)", (int *)&m_interactionMode, (int)InteractionMode::Joints );
+        ImGui::PopID();
+
+		ImGui::Separator();
+
+		ImGui::Text( "Other Keybinds:");
+		ImGui::Text( "M - Hide Gui Panel");
+
+		ImGui::Separator();
 
 		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 
@@ -516,16 +583,17 @@ static void updateShaderUniforms(
  */
 void A3::draw() {
 	// enables
-	conditionallyEnableDepthTesting(m_zBuffer);
-	conditionallyEnableCulling(m_cullFront, m_cullBack);
+	conditionallyEnableDepthTesting(m_uiData.zBuffer);
+	conditionallyEnableCulling(m_uiData.frontface, m_uiData.backface);
 
 	renderScene(m_scene);
-
 
 	disableDepthTesting();
 	disableCulling();
 
-	renderArcCircle();
+	if(m_uiData.circle) {
+		renderArcCircle();
+	}
 }
 
 //----------------------------------------------------------------------------------------
@@ -791,6 +859,7 @@ bool A3::keyInputEvent (
 			show_gui = !show_gui;
 			eventHandled = true;
 		}
+
 	}
 	// Fill in with event handling code...
 

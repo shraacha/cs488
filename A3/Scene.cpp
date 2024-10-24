@@ -45,6 +45,15 @@ void Scene::translate(const glm::vec3 & translation)
     m_globalTranslationNode->translate(translation);
 }
 
+void Scene::resetRotation()
+{
+    m_globalRotationNode->trans = glm::mat4();
+}
+void Scene::resetTranslation()
+{
+    m_globalTranslationNode->trans = glm::mat4();
+}
+
 // ~~~~~~~~~~~~~~~~~ Iterator ~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~ ctors ~~~~~~~~~~~~~~~~~
 Scene::PreOrderTraversalIterator::PreOrderTraversalIterator() {}

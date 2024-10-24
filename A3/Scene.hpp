@@ -38,7 +38,10 @@ public:
 
     // in radians
     void rotate(const glm::vec3 & axis, const double & theta);
-    void translate(const glm::vec3 & translation); // TODO
+    void translate(const glm::vec3 & translation);
+
+    void resetRotation();
+    void resetTranslation();
 
     // iterator stuff
     struct PreOrderTraversalIterator {
