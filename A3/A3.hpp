@@ -61,10 +61,18 @@ protected:
 	void renderScene(Scene &scene);
 	void renderArcCircle();
 
-	// other helper functions
+	// other functions
+	void drawScene();
+	void drawPickingScene();
+	void drawCircle();
+
+	void renderPickingScene(Scene &scene);
+
 	void performTrackballRotation(float x1, float y1, float x2, float y2);
 	void performXYTranslation(float x1, float y1, float x2, float y2);
 	void performZTranslation(float x1, float y1, float x2, float y2);
+
+	inline void setOpenGlClearToDefault();
 
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
@@ -85,12 +93,18 @@ protected:
 	GLint m_arc_positionAttribLocation;
 	ShaderProgram m_shader_arcCircle;
 
+	//-- GL resources for picking:
+	// reuses mesh geometry info
+	GLuint m_vao_picking;
+	GLint m_picking_positionAttribLocation;
+	ShaderProgram m_shader_picking;
+
 	// BatchInfoMap is an associative container that maps a unique MeshId to a BatchInfo
 	// object. Each BatchInfo object contains an index offset and the number of indices
 	// required to render the mesh with identifier MeshId.
 	BatchInfoMap m_batchInfoMap;
 
-	//-- Scene stuff
+	//-- Scene
 	std::string m_luaSceneFile;
 
 	// holds the scene graph
@@ -123,5 +137,6 @@ protected:
         bool zBuffer = false;
         bool backface = false;
         bool frontface = false;
+        bool pickingView = false;
     } m_uiData;
 };

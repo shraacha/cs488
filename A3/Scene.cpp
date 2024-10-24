@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <glm/glm.hpp>
+#include <optional>
 
 #include "Scene.hpp"
 #include "SceneNode.hpp"
@@ -114,7 +115,7 @@ glm::mat4 Scene::PreOrderTraversalIterator::getInheritedTransformation() {
     return m_nodeStack.top().second.trans;
 }
 
-NodeID Scene::PreOrderTraversalIterator::getInheritedJointID() {
+std::optional<NodeID> Scene::PreOrderTraversalIterator::getInheritedJointID() {
     return m_nodeStack.top().second.nodeId;
 }
 
@@ -144,7 +145,12 @@ bool operator!=(const InheritedNodeData & a, const InheritedNodeData & b)
 
 InheritedNodeData getInheritedNodeData(const SceneNode & thisNode)
 {
-    return {glm::mat4(1.0f), thisNode.m_nodeId};
+    if (thisNode.m_nodeType == NodeType::JointNode)
+    {
+        return {glm::mat4(1.0f), thisNode.m_nodeId};
+    } else {
+        return {glm::mat4(1.0f), std::nullopt};
+    }
 }
 
 
@@ -155,7 +161,7 @@ InheritedNodeData getInheritedNodeData(const SceneNode & thisNode,
     glm::mat4 newTransformation = inheritedData.trans * thisNode.trans;
 
     // ID should be inherited from first joint parent
-    NodeID newNodeId;
+    std::optional<NodeID> newNodeId;
 
     if (thisNode.m_nodeType == NodeType::JointNode) {
         newNodeId = thisNode.m_nodeId;

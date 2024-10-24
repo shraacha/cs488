@@ -63,7 +63,7 @@ static inline void conditionallyEnableDepthTesting(bool testing)
 	if (testing) {
 		glEnable(GL_DEPTH_TEST);
 		// not actualy sure if we need this since the enabled vals are cleared between each frame?
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDepthFunc(GL_LESS);
     }
 }
@@ -81,6 +81,8 @@ topLeftOriginToCenteredOrigin(float viewportWidth, float viewportHeight,
 	// flip y
 	return {x - (viewportWidth / 2), -y + (viewportHeight / 2)};
 }
+
+
 
 // ~~~ trackball stuff ~~~
 // trackball radius is a portion of the smallest measure between width/height
@@ -134,6 +136,16 @@ static inline double getArcballRotationAngle (glm::vec3 v1, glm::vec3 v2)
 	// but sometimes it is out of this range, so we return here if so
 	return acos(clampValue(glm::dot(v1, v2), 1.0f, -1.0f));
 }
+
+
+
+// ~~~~~ opengl helpers
+static inline void openGlClearToWhite()
+{
+	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
 //----------------------------------------------------------------------------------------
 // Constructor
 A3::A3(const std::string & luaSceneFile)
@@ -144,7 +156,9 @@ A3::A3(const std::string & luaSceneFile)
 	  m_vbo_vertexPositions(0),
 	  m_vbo_vertexNormals(0),
 	  m_vao_arcCircle(0),
-	  m_vbo_arcCircle(0)
+	  m_vbo_arcCircle(0),
+	  m_vao_picking(0),
+      m_picking_positionAttribLocation(0)
 {
 	reset();
 }
@@ -163,14 +177,13 @@ A3::~A3()
 void A3::init()
 {
 	// Set the background colour.
-    glClearColor(
-        c_background_colour_default.x, c_background_colour_default.y,
-        c_background_colour_default.z, c_background_colour_default.w);
+	setOpenGlClearToDefault();
 
     createShaderProgram();
 
 	glGenVertexArrays(1, &m_vao_arcCircle);
 	glGenVertexArrays(1, &m_vao_meshData);
+	glGenVertexArrays(1, &m_vao_picking);
 	enableVertexShaderInputSlots();
 
 	processLuaSceneFile(m_luaSceneFile);
@@ -253,6 +266,11 @@ void A3::createShaderProgram()
 	m_shader_arcCircle.attachVertexShader( getAssetFilePath("arc_VertexShader.vs").c_str() );
 	m_shader_arcCircle.attachFragmentShader( getAssetFilePath("arc_FragmentShader.fs").c_str() );
 	m_shader_arcCircle.link();
+
+	m_shader_picking.generateProgramObject();
+	m_shader_picking.attachVertexShader( getAssetFilePath("pick_VertexShader.vs").c_str() );
+	m_shader_picking.attachFragmentShader( getAssetFilePath("pick_FragmentShader.fs").c_str() );
+	m_shader_picking.link();
 }
 
 //----------------------------------------------------------------------------------------
@@ -270,6 +288,7 @@ void A3::enableVertexShaderInputSlots()
 		m_normalAttribLocation = m_shader.getAttribLocation("normal");
 		glEnableVertexAttribArray(m_normalAttribLocation);
 
+
 		CHECK_GL_ERRORS;
 	}
 
@@ -281,6 +300,18 @@ void A3::enableVertexShaderInputSlots()
 		// Enable the vertex shader attribute location for "position" when rendering.
 		m_arc_positionAttribLocation = m_shader_arcCircle.getAttribLocation("position");
 		glEnableVertexAttribArray(m_arc_positionAttribLocation);
+
+		CHECK_GL_ERRORS;
+	}
+
+	//-- Enable input slots for m_vao_picking:
+	{
+		glBindVertexArray(m_vao_picking);
+
+		// for PICKING
+		// Enable the vertex shader attribute location for "position" when rendering.
+		m_picking_positionAttribLocation = m_shader_picking.getAttribLocation("position");
+		glEnableVertexAttribArray(m_picking_positionAttribLocation);
 
 		CHECK_GL_ERRORS;
 	}
@@ -373,6 +404,21 @@ void A3::mapVboDataToVertexShaderInputLocations()
 	glBindVertexArray(0);
 
 	CHECK_GL_ERRORS;
+
+    // for picking
+	// Bind VAO in order to record the data mapping.
+	glBindVertexArray(m_vao_picking);
+
+	// Tell GL how to map data from the vertex buffer "m_vbo_vertexPositions" into the
+	// "position" vertex attribute location for any bound vertex shader program.
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbo_vertexPositions);
+	glVertexAttribPointer(m_picking_positionAttribLocation, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	// Unbind target, and restore default values:
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	CHECK_GL_ERRORS;
 }
 
 //----------------------------------------------------------------------------------------
@@ -398,32 +444,40 @@ void A3::initLightSources() {
 
 //----------------------------------------------------------------------------------------
 void A3::uploadCommonSceneUniforms() {
-	m_shader.enable();
-	{
-		//-- Set Perpsective matrix uniform for the scene:
-		GLint location = m_shader.getUniformLocation("Perspective");
-		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(m_perpsective));
-		CHECK_GL_ERRORS;
+    m_shader.enable();
+    {
+        //-- Set Perpsective matrix uniform for the regular shader:
+        GLint location = m_shader.getUniformLocation("Perspective");
+        glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(m_perpsective));
+        CHECK_GL_ERRORS;
 
+        //-- Set LightSource uniform for the scene:
+        {
+            location = m_shader.getUniformLocation("light.position");
+            glUniform3fv(location, 1, value_ptr(m_light.position));
+            location = m_shader.getUniformLocation("light.rgbIntensity");
+            glUniform3fv(location, 1, value_ptr(m_light.rgbIntensity));
+            CHECK_GL_ERRORS;
+        }
 
-		//-- Set LightSource uniform for the scene:
-		{
-			location = m_shader.getUniformLocation("light.position");
-			glUniform3fv(location, 1, value_ptr(m_light.position));
-			location = m_shader.getUniformLocation("light.rgbIntensity");
-			glUniform3fv(location, 1, value_ptr(m_light.rgbIntensity));
-			CHECK_GL_ERRORS;
-		}
+        //-- Set background light ambient intensity
+        {
+            location = m_shader.getUniformLocation("ambientIntensity");
+            vec3 ambientIntensity(0.1f);
+            glUniform3fv(location, 1, value_ptr(ambientIntensity));
+            CHECK_GL_ERRORS;
+        }
+    }
+    m_shader.disable();
 
-		//-- Set background light ambient intensity
-		{
-			location = m_shader.getUniformLocation("ambientIntensity");
-			vec3 ambientIntensity(0.1f);
-			glUniform3fv(location, 1, value_ptr(ambientIntensity));
-			CHECK_GL_ERRORS;
-		}
-	}
-	m_shader.disable();
+    m_shader_picking.enable();
+    {
+        //-- Set Perpsective matrix uniform for the picking shader:
+        GLint location = m_shader_picking.getUniformLocation("Perspective");
+        glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(m_perpsective));
+        CHECK_GL_ERRORS;
+    }
+    m_shader_picking.disable();
 }
 
 //----------------------------------------------------------------------------------------
@@ -509,6 +563,7 @@ void A3::guiLogic()
 				ImGui::MenuItem("Z Buffer (Z)", NULL, &m_uiData.zBuffer);
 				ImGui::MenuItem("Backface (B)", NULL, &m_uiData.backface);
 				ImGui::MenuItem("Frontface (D)", NULL, &m_uiData.frontface);
+				ImGui::MenuItem("Picking View", NULL, &m_uiData.pickingView);
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -533,67 +588,116 @@ void A3::guiLogic()
 
 //----------------------------------------------------------------------------------------
 // Update mesh specific shader uniforms:
-static void updateShaderUniforms(
-		const ShaderProgram & shader,
-		const mat4 & nodeTransformation,
-		const vec3 & diffuseInfo,
-		const vec3 & specularInfo,
-		const float & phongCoefficient,
-		const glm::mat4 & viewMatrix
-) {
+static void updateShaderUniforms(const ShaderProgram &shader,
+								 const mat4 &nodeTransformation,
+								 const vec3 &diffuseInfo,
+								 const vec3 &specularInfo,
+								 const float &phongCoefficient,
+								 const glm::mat4 &viewMatrix)
+{
 
-	shader.enable();
-	{
-		//-- Set ModelView matrix:
-		GLint location = shader.getUniformLocation("ModelView");
-		mat4 modelView = viewMatrix * nodeTransformation;
-		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
-		CHECK_GL_ERRORS;
+    shader.enable();
+    {
+        //-- Set ModelView matrix:
+        GLint location = shader.getUniformLocation("ModelView");
+        mat4 modelView = viewMatrix * nodeTransformation;
+        glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
+        CHECK_GL_ERRORS;
 
-		//-- Set NormMatrix:
-		location = shader.getUniformLocation("NormalMatrix");
-		mat3 normalMatrix = glm::transpose(glm::inverse(mat3(modelView)));
-		glUniformMatrix3fv(location, 1, GL_FALSE, value_ptr(normalMatrix));
-		CHECK_GL_ERRORS;
+        //-- Set NormMatrix:
+        location = shader.getUniformLocation("NormalMatrix");
+        mat3 normalMatrix = glm::transpose(glm::inverse(mat3(modelView)));
+        glUniformMatrix3fv(location, 1, GL_FALSE, value_ptr(normalMatrix));
+        CHECK_GL_ERRORS;
 
+        //-- Set Material values:
+        location = shader.getUniformLocation("material.kd");
+        vec3 kd = diffuseInfo;
+        glUniform3fv(location, 1, value_ptr(kd));
+        CHECK_GL_ERRORS;
 
-		//-- Set Material values:
-		location = shader.getUniformLocation("material.kd");
-		vec3 kd = diffuseInfo;
-		glUniform3fv(location, 1, value_ptr(kd));
-		CHECK_GL_ERRORS;
+        location = shader.getUniformLocation("material.ks");
+        vec3 ks = specularInfo;
+        glUniform3fv(location, 1, value_ptr(ks));
+        CHECK_GL_ERRORS;
 
-		location = shader.getUniformLocation("material.ks");
-		vec3 ks = specularInfo;
-		glUniform3fv(location, 1, value_ptr(ks));
-		CHECK_GL_ERRORS;
+        location = shader.getUniformLocation("material.shininess");
+        float shininess = phongCoefficient;
+        glUniform1fv(location, 1, &shininess);
+        CHECK_GL_ERRORS;
+    }
+    shader.disable();
+}
 
-		location = shader.getUniformLocation("material.shininess");
-		float shininess = phongCoefficient;
-		glUniform1fv(location, 1, &shininess);
-		CHECK_GL_ERRORS;
-	}
-	shader.disable();
+//----------------------------------------------------------------------------------------
+// Update mesh specific shader uniforms:
+static void updatePickingShaderUniforms(const ShaderProgram &shader,
+                                        const mat4 &nodeTransformation,
+                                        const NodeID &objid,
+                                        const glm::mat4 &viewMatrix)
+{
 
+    shader.enable();
+    {
+        //-- Set ModelView matrix:
+        GLint location = shader.getUniformLocation("ModelView");
+        mat4 modelView = viewMatrix * nodeTransformation;
+        glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
+        CHECK_GL_ERRORS;
+
+        //-- Set objid:
+        float r = float(objid&0xff) / 255.0f;
+        float g = float((objid>>8)&0xff) / 255.0f;
+        float b = float((objid>>16)&0xff) / 255.0f;
+
+        location = shader.getUniformLocation("objCol");
+        glUniform3f( location, r, g, b );
+        CHECK_GL_ERRORS;
+    }
+    shader.disable();
 }
 
 //----------------------------------------------------------------------------------------
 /*
  * Called once per frame, after guiLogic().
  */
-void A3::draw() {
-	// enables
-	conditionallyEnableDepthTesting(m_uiData.zBuffer);
-	conditionallyEnableCulling(m_uiData.frontface, m_uiData.backface);
+void A3::draw()
+{
+    if (m_uiData.pickingView) {
+        drawPickingScene();
+    }
+    else {
+        drawScene();
+    }
 
-	renderScene(m_scene);
+    if (m_uiData.circle) {
+        drawCircle();
+    }
+}
 
-	disableDepthTesting();
-	disableCulling();
+void A3::drawScene()
+{
+    // enables
+    conditionallyEnableDepthTesting(m_uiData.zBuffer);
+    conditionallyEnableCulling(m_uiData.frontface, m_uiData.backface);
 
-	if(m_uiData.circle) {
-		renderArcCircle();
-	}
+    renderScene(m_scene);
+
+    disableDepthTesting();
+    disableCulling();
+}
+
+void A3::drawCircle() { renderArcCircle(); }
+
+void A3::drawPickingScene()
+{
+    // clear to white
+    openGlClearToWhite();
+
+    conditionallyEnableDepthTesting(true);
+    renderPickingScene(m_scene);
+
+    setOpenGlClearToDefault();
 }
 
 //----------------------------------------------------------------------------------------
@@ -655,6 +759,42 @@ void A3::renderArcCircle() {
 }
 
 //----------------------------------------------------------------------------------------
+void A3::renderPickingScene(Scene &scene)
+{
+    // Bind the VAO once here, and reuse for all GeometryNode rendering below.
+    glBindVertexArray(m_vao_picking);
+
+    for (Scene::PreOrderTraversalIterator nodeIt = scene.begin();
+         nodeIt != scene.end(); ++nodeIt) {
+        if (nodeIt->m_nodeType != NodeType::GeometryNode)
+            continue;
+
+        const GeometryNode *geometryNode =
+            static_cast<const GeometryNode *>(&(*nodeIt));
+
+        if (nodeIt.getInheritedJointID().has_value()) {
+
+            updatePickingShaderUniforms(m_shader_picking,
+                                        nodeIt.getInheritedTransformation() *
+                                            geometryNode->trans,
+                                        *nodeIt.getInheritedJointID(), m_view);
+        }
+
+        // Get the BatchInfo corresponding to the GeometryNode's unique
+        // MeshId.
+        BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
+
+        //-- Now render the mesh:
+        m_shader_picking.enable();
+        glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
+        m_shader_picking.disable();
+    }
+
+    glBindVertexArray(0);
+    CHECK_GL_ERRORS;
+}
+
+//----------------------------------------------------------------------------------------
 void A3::performTrackballRotation(float x1, float y1, float x2, float y2)
 {
 	float trackballRadius = getTrackballRadius(
@@ -700,6 +840,12 @@ void A3::performZTranslation(float x1, float y1, float x2, float y2)
 	float scaledY = ((y2 - y1) / windowHeight) * scaleFactor;
 
 	m_scene.translate({0, 0, scaledY});
+}
+
+inline void A3::setOpenGlClearToDefault()
+{
+    glClearColor(c_background_colour_default.x, c_background_colour_default.y,
+                 c_background_colour_default.z, c_background_colour_default.w);
 }
 
 //----------------------------------------------------------------------------------------
