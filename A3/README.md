@@ -29,7 +29,7 @@ Note that the code uses C++17 features (this is reflected in the premake file). 
 
 - The structure of the puppet follows the image below:
 
-![model_structure](./A3_model_strucure.png)
+![model_structure](./A3_model_structure.png)
 
 - In general, I broke down the model into individual components connected to singular joints. I would place the joints at the origin, and model the components next to them. After modeling these, I would connect joints with "connectors" to the hierarchical parent (eg. hand + wrist connected to lower arm). Geometry was attached to the "main" components that are initially attached to each joint (denoted in purple in the graph above).
 
