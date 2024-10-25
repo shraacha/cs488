@@ -29,7 +29,7 @@ static bool show_gui = true;
 
 const size_t CIRCLE_PTS = 48;
 
-static const glm::vec4 c_background_colour_default (0.49, 0.098, 0.016, 1);
+static const glm::vec4 c_background_colour_default (0.369, 0.133, 0.067, 1);
 
 static const InteractionMode c_interactionMode_default = InteractionMode::PositionAndOrientation;
 
@@ -439,7 +439,7 @@ void A3::initViewMatrix() {
 //----------------------------------------------------------------------------------------
 void A3::initLightSources() {
 	// World-space position
-	m_light.position = vec3(2.0f, 30.0f, 30.0f);
+	m_light.position = vec3(15.0f, 30.0f, 30.0f);
 	m_light.rgbIntensity = vec3(0.8f); // light
 }
 
@@ -464,7 +464,7 @@ void A3::uploadCommonSceneUniforms() {
         //-- Set background light ambient intensity
         {
             location = m_shader.getUniformLocation("ambientIntensity");
-            vec3 ambientIntensity(0.1f);
+            vec3 ambientIntensity(0.21f);
             glUniform3fv(location, 1, value_ptr(ambientIntensity));
             CHECK_GL_ERRORS;
         }
@@ -893,7 +893,8 @@ static inline double getJointRotationAmountYAxis(const double & windowHeight, co
 
 void A3::applyJointRotationXAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection)
 {
-    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(MoveJointsCommand(&m_scene, collection.getAllIds(), degrees, 0))));
+    commandList.addCommand(std::move(std::make_unique<MoveJointsCommand>(
+        MoveJointsCommand(&m_scene, collection.getAllIds(), degrees, 0))));
 }
 
 void A3::applyJointRotationYAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection)
