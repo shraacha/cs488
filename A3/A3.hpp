@@ -8,15 +8,24 @@
 #include "cs488-framework/MeshConsolidator.hpp"
 
 #include "SceneNode.hpp"
+#include "Scene.hpp"
+#include "NodeID.hpp"
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <set>
+
+// helper structs and stuff
+
+enum InteractionMode {
+	PositionAndOrientation,
+	Joints
+};
 
 struct LightSource {
 	glm::vec3 position;
 	glm::vec3 rgbIntensity;
 };
-
 
 class A3 : public CS488Window {
 public:
@@ -29,6 +38,7 @@ protected:
 	virtual void guiLogic() override;
 	virtual void draw() override;
 	virtual void cleanup() override;
+	void reset();
 
 	//-- Virtual callback methods
 	virtual bool cursorEnterWindowEvent(int entered) override;
@@ -49,8 +59,26 @@ protected:
 
 	void initPerspectiveMatrix();
 	void uploadCommonSceneUniforms();
-	void renderSceneGraph(const SceneNode &node);
+	void renderScene(Scene &scene);
 	void renderArcCircle();
+
+	// other functions
+	void drawScene();
+	void drawCircle();
+	void drawPickingScene();
+
+	void renderPickingScene(Scene &scene);
+
+	void performTrackballRotation(float x1, float y1, float x2, float y2);
+	void performXYTranslation(float x1, float y1, float x2, float y2);
+	void performZTranslation(float x1, float y1, float x2, float y2);
+
+	void applyJointRotationXAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection);
+    void applyJointRotationYAxis(SceneCommandList & commandList, double degrees, const IdCollection & collection);
+
+	inline void setOpenGlClearToDefault();
+
+	inline void pickObject(double xpos, double ypos);
 
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
@@ -71,12 +99,61 @@ protected:
 	GLint m_arc_positionAttribLocation;
 	ShaderProgram m_shader_arcCircle;
 
+	//-- GL resources for picking:
+	// reuses mesh geometry info
+	GLuint m_vao_picking;
+	GLint m_picking_positionAttribLocation;
+	ShaderProgram m_shader_picking;
+
 	// BatchInfoMap is an associative container that maps a unique MeshId to a BatchInfo
 	// object. Each BatchInfo object contains an index offset and the number of indices
 	// required to render the mesh with identifier MeshId.
 	BatchInfoMap m_batchInfoMap;
 
+	//-- Scene
 	std::string m_luaSceneFile;
 
-	std::shared_ptr<SceneNode> m_rootNode;
+    // holds the scene graph
+    Scene m_scene;
+
+    IdCollection headIdSelections;
+    IdCollection bodyIdSelections;
+
+	void performTempJointRotationXAxis(double degrees);
+	void performTempJointRotationYAxis(double degrees);
+
+    SceneCommandList m_sceneCommands;
+    SceneCommandList m_tempBodySceneCommands;
+    SceneCommandList m_tempHeadSceneCommands;
+
+    //-- device info
+    double deviceWidth;
+    double deviceHeight;
+
+    //-- interaction state info
+    InteractionMode m_interactionMode;
+    bool m_startMouseInput;
+	double m_mouseMiddleInputStartingYPos;
+	double m_mouseRightInputStartingYPos;
+    bool m_LMB;
+    bool m_MMB;
+    bool m_RMB;
+
+    struct uiData {
+		// application
+        bool resetPosition = false;
+        bool resetOrientation = false;
+        bool resetJoints = false;
+        bool resetAll = false;
+        bool quit = false;
+		// edit
+        bool undo = false;
+        bool redo = false;
+		// options
+        bool circle = false;
+        bool zBuffer = false;
+        bool backface = false;
+        bool frontface = false;
+        bool pickingView = false;
+    } m_uiData;
 };

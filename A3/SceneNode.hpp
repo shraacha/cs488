@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Material.hpp"
+#include "NodeID.hpp"
 
 #include <glm/glm.hpp>
 
@@ -37,6 +38,8 @@ public:
 
 	//-- Transformations:
     void rotate(char axis, float angle);
+    void rotateRadians(const glm::vec3 & axis, float angle);
+    void rotate(const glm::vec3 & axis, float angle);
     void scale(const glm::vec3& amount);
     void translate(const glm::vec3& amount);
 
@@ -53,10 +56,9 @@ public:
 
 	NodeType m_nodeType;
 	std::string m_name;
-	unsigned int m_nodeId;
+	NodeID m_nodeId;
 
-
-private:
+    private:
 	// The number of SceneNode instances.
 	static unsigned int nodeInstanceCount;
 };
