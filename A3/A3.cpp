@@ -464,7 +464,7 @@ void A3::uploadCommonSceneUniforms() {
         //-- Set background light ambient intensity
         {
             location = m_shader.getUniformLocation("ambientIntensity");
-            vec3 ambientIntensity(0.21f);
+            vec3 ambientIntensity(0.15);
             glUniform3fv(location, 1, value_ptr(ambientIntensity));
             CHECK_GL_ERRORS;
         }
