@@ -2,43 +2,38 @@
 
 #include "Primitive.hpp"
 
-Primitive::~Primitive()
-{
-}
+// ------------------------------
+Primitive::~Primitive() {}
 
-Sphere::Sphere()
-{
-  m_primitiveType = PrimitiveType::Sphere;
-}
+// ------------------------------
+Sphere::Sphere() {}
 
-Sphere::~Sphere()
-{
-}
+Sphere::~Sphere() {}
 
-Cube::Cube()
-{
-  m_primitiveType = PrimitiveType::Cube;
-}
+// ------------------------------
+Cube::Cube() {}
 
-Cube::~Cube()
-{
-}
+Cube::~Cube() {}
 
+// ------------------------------
 NonhierSphere::NonhierSphere(const glm::vec3 &pos, double radius)
     : m_pos(pos), m_radius(radius)
 {
-  m_primitiveType = PrimitiveType::NHSphere;
 }
 
-NonhierSphere::~NonhierSphere()
+NonhierSphere::~NonhierSphere() {}
+
+glm::dvec4 NonhierSphere::getPosAsDvec4()
+{
+    return {m_pos.x, m_pos.y, m_pos.z, 1.0};
+}
+
+double NonhierSphere::getRadius() { return m_radius; }
+
+// ------------------------------
+NonhierBox::NonhierBox(const glm::vec3 &pos, double size)
+    : m_pos(pos), m_size(size)
 {
 }
 
-NonhierBox::NonhierBox(const glm::vec3 &pos, double size) : m_pos(pos), m_size(size)
-{
-  m_primitiveType = PrimitiveType::NHBox;
-}
-
-NonhierBox::~NonhierBox()
-{
-}
+NonhierBox::~NonhierBox() {}

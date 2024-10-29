@@ -1,9 +1,108 @@
 // Termm--Fall 2024
 
+#include <cmath>
+#include <limits>
+#include <optional>
+
 #include <glm/ext.hpp>
 
-#include "A4.hpp"
+#include "cs488-framework/MathUtils.hpp"
 
+#include "A4.hpp"
+#include "PhongMaterial.hpp"
+#include "Primitive.hpp"
+#include "RayIntersect.hpp"
+#include "SceneManager.hpp"
+#include "ImageHelpers.hpp"
+
+
+// ------------------- helpers ----------------------
+// paramaeters:
+// - fovy
+//   fov in DEGREES
+static inline double getScreenDepth(const double & height, const double & fovy)
+{
+  return (height / 2) / std::tan(degreesToRadians(fovy) / 2);
+}
+
+// paramaeters:
+// - flip
+//   whether to flip the position, this is needed when supplying an device coordinate index
+static inline double getScreenPosition(const double &sideLength,
+                                       const uint &index, const bool &flip = false)
+{
+
+    if (flip)
+    {
+        return - (double)index + sideLength / 2 - 0.5;
+    } else {
+        return (double)index - sideLength / 2 + 0.5;
+    }
+}
+
+static inline std::optional<std::pair<double, glm::dvec4>>
+intersect(Primitive *primitive, const glm::dvec4 eye, const glm::dvec4 pixel)
+{
+    std::optional<std::pair<double, glm::dvec4>> result;
+
+    // casting to derived primitive for further intersection calculation
+    NonhierSphere * NhSphere = dynamic_cast<NonhierSphere *>(primitive);
+
+    if (NhSphere) {
+        NonhierSphere *NHSphere = static_cast<NonhierSphere *>(primitive);
+
+        result = findRaySphereIntersectAndNormal(
+            eye, pixel, NHSphere->getRadius(), NHSphere->getPosAsDvec4());
+    }
+
+    return result;
+}
+
+static inline glm::dvec3 getColour(Material *material)
+{
+    glm::dvec3 colour{1.0, 1.0, 1.0};
+
+    // casting to derived primitive
+    PhongMaterial *phongMaterial = dynamic_cast<PhongMaterial *>(material);
+
+    if (phongMaterial) {
+        colour = phongMaterial->getKD();
+    }
+
+    return colour;
+}
+
+static inline void printSceneInfo(const uint &imgWidth, const uint &imgHeight,
+                                  const SceneNode &root, const glm::vec3 &eye,
+                                  const glm::vec3 &view, const glm::vec3 &up,
+                                  const double &fovy, const glm::vec3 &ambient,
+                                  const std::list<Light *> &lights)
+{
+    std::cout << "F24: Calling A4_Render(\n"
+              << "\t" << root << "\t"
+              << "Image(width:" << imgWidth << ", height:" << imgHeight
+              << ")\n"
+                 "\t"
+              << "eye:  " << glm::to_string(eye) << std::endl
+              << "\t"
+              << "view: " << glm::to_string(view) << std::endl
+              << "\t"
+              << "up:   " << glm::to_string(up) << std::endl
+              << "\t"
+              << "fovy: " << fovy << std::endl
+              << "\t"
+              << "ambient: " << glm::to_string(ambient) << std::endl
+              << "\t"
+              << "lights{" << std::endl;
+
+    for (const Light *light : lights) {
+        std::cout << "\t\t" << *light << std::endl;
+    }
+    std::cout << "\t}" << std::endl;
+    std::cout << ")" << std::endl;
+}
+
+// ------------------- main ----------------------
 void A4_Render(
     // What to render
     SceneNode * root,
@@ -22,36 +121,66 @@ void A4_Render(
     const std::list<Light *> & lights
 ) {
 
-  // Fill in raytracing code here...  
+    printSceneInfo(image.width(), image.height(), *root, eye, view, up, fovy,
+                   ambient, lights);
 
-  std::cout << "F24: Calling A4_Render(\n" <<
-      "\t" << *root <<
-          "\t" << "Image(width:" << image.width() << ", height:" << image.height() << ")\n"
-          "\t" << "eye:  " << glm::to_string(eye) << std::endl <<
-      "\t" << "view: " << glm::to_string(view) << std::endl <<
-      "\t" << "up:   " << glm::to_string(up) << std::endl <<
-      "\t" << "fovy: " << fovy << std::endl <<
-          "\t" << "ambient: " << glm::to_string(ambient) << std::endl <<
-      "\t" << "lights{" << std::endl;
+    SceneManager sceneManager;
+    sceneManager.importSceneGraph(root);
 
-  for(const Light * light : lights) {
-    std::cout << "\t\t" <<  *light << std::endl;
-  }
-  std::cout << "\t}" << std::endl;
-  std:: cout <<")" << std::endl;
+    size_t h = image.height();
+    size_t w = image.width();
 
-  size_t h = image.height();
-  size_t w = image.width();
+    double zval = getScreenDepth(h, fovy);
+    glm::dvec4 basePixel {0.0, 0.0, -zval, 1.0};
+    glm::dvec4 baseEyeDouble {0.0, 0.0, 0.0, 1.0};
 
-  for (uint y = 0; y < h; ++y) {
-    for (uint x = 0; x < w; ++x) {
-      // Red:
-      image(x, y, 0) = (double)1.0;
-      // Green:
-      image(x, y, 1) = (double)1.0;
-      // Blue:
-      image(x, y, 2) = (double)1.0;
+    glm::mat4 viewMatrix = glm::lookAt(eye, eye + view, up);
+
+    for (uint y = 0; y < h; ++y) {
+        basePixel.y = getScreenPosition(h, y, true);
+
+        for (uint x = 0; x < w; ++x) {
+            basePixel.x = getScreenPosition(w, x);
+
+            double t = std::numeric_limits<double>::max();
+            glm::dvec4 normal;
+            Material * material = nullptr;
+
+            for (SceneManager::PreOrderTraversalIterator nodeIt = sceneManager.begin();
+                 nodeIt != sceneManager.end(); ++nodeIt) {
+
+                if (nodeIt->m_nodeType != NodeType::GeometryNode)
+                    continue;
+
+                const GeometryNode *geometryNode = nodeIt.asGeometryNode();
+
+                glm::dvec4 transformedPixel =
+                    glm::inverse(geometryNode->get_transform()) *
+                    glm::inverse(nodeIt.getInheritedTransformation()) *
+                    glm::inverse(viewMatrix) * basePixel;
+                glm::dvec4 transformedEyeDouble =
+                    glm::inverse(geometryNode->get_transform()) *
+                    glm::inverse(nodeIt.getInheritedTransformation()) *
+                    glm::inverse(viewMatrix) * baseEyeDouble;
+
+                auto result = intersect(geometryNode->getPrimitive(),
+                                        transformedEyeDouble, transformedPixel);
+
+                if (result && result->first < t && t >= 0) {
+                    t = result->first;
+                    normal = result->second;
+                    material = geometryNode->getMaterial();
+                }
+            }
+
+            if (t != std::numeric_limits<double>::max())
+            {
+                image = setPixelColour(std::move(image), x, y, getColour(material));
+            }
+            else
+            {
+                image = setPixelColour(std::move(image), x, y, 1.0, 1.0, 1.0);
+            }
+        }
     }
-  }
-
 }

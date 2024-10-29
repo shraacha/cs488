@@ -3,30 +3,10 @@
 #include <cmath>
 
 #include <glm/glm.hpp>
-#include <optional>
 
-#include "Scene.hpp"
-#include "NodeID.hpp"
 #include "SceneNode.hpp"
-#include "helpers.hpp"
 
-static inline std::map<NodeID, SceneNode *> generateJointTree (Scene & scene, SceneNode * root)
-{
-    std::map<NodeID, SceneNode *> jointIdToNodeMap;
-
-    for(auto nodeIt = scene.begin(); nodeIt != scene.end(); ++nodeIt) {
-        SceneNode * node = const_cast<SceneNode *> (&(*nodeIt));
-        NodeID id = node->m_nodeId;
-
-        if (node->m_nodeType == NodeType::JointNode) {
-            jointIdToNodeMap.emplace(id, node);
-        }
-    }
-
-    return std::move(jointIdToNodeMap);
-}
-
-static inline std::pair<NodeID, SceneNode *> findIdNodePairWithName (Scene & scene, const std::string & name)
+static inline std::pair<NodeID, SceneNode *> findIdNodePairWithName (SceneManager & scene, const std::string & name)
 {
     for(auto nodeIt = scene.begin(); nodeIt != scene.end(); ++nodeIt) {
         SceneNode * node = const_cast<SceneNode *> (&(*nodeIt));
@@ -39,12 +19,12 @@ static inline std::pair<NodeID, SceneNode *> findIdNodePairWithName (Scene & sce
 
 // ~~~~~~~~~~~~~~~~~ Scene class ~~~~~~~~~~~~~~~~~
 
-Scene::Scene()
+SceneManager::SceneManager()
 {
 }
 
 // returns true if import successful, false otherwise
-bool Scene::importSceneGraph(SceneNode *root)
+bool SceneManager::importSceneGraph(SceneNode *root)
 {
     if (root) {
         m_sceneRoot.reset(root);
@@ -54,14 +34,14 @@ bool Scene::importSceneGraph(SceneNode *root)
     }
 }
 
-bool Scene::isEmpty() { return !m_sceneRoot; }
+bool SceneManager::isEmpty() { return !m_sceneRoot; }
 
 // ~~~~~~~~~~~~~~~~~ Iterator ~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~ ctors ~~~~~~~~~~~~~~~~~
-Scene::PreOrderTraversalIterator::PreOrderTraversalIterator() {}
+SceneManager::PreOrderTraversalIterator::PreOrderTraversalIterator() {}
 
-Scene::PreOrderTraversalIterator::PreOrderTraversalIterator(
-    Scene::PreOrderTraversalIterator::pointer_t ptr)
+SceneManager::PreOrderTraversalIterator::PreOrderTraversalIterator(
+    SceneManager::PreOrderTraversalIterator::pointer_t ptr)
 {
     if (ptr) {
         InheritedNodeData nodeData = makeInheritableNodeData(*ptr);
@@ -71,19 +51,19 @@ Scene::PreOrderTraversalIterator::PreOrderTraversalIterator(
 
 // ~~~~~~~~~~~~~~~~~ operations ~~~~~~~~~~~~~~~~~
 
-Scene::PreOrderTraversalIterator::const_reference_t
-Scene::PreOrderTraversalIterator::operator*() const
+SceneManager::PreOrderTraversalIterator::const_reference_t
+SceneManager::PreOrderTraversalIterator::operator*() const
 {
     return const_cast<const_reference_t>(*m_nodeStack.top().first);
 }
 
-Scene::PreOrderTraversalIterator::const_pointer_t
-Scene::PreOrderTraversalIterator::operator->() const
+SceneManager::PreOrderTraversalIterator::const_pointer_t
+SceneManager::PreOrderTraversalIterator::operator->() const
 {
     return const_cast<const_pointer_t>(m_nodeStack.top().first);
 }
 
-Scene::PreOrderTraversalIterator &Scene::PreOrderTraversalIterator::operator++()
+SceneManager::PreOrderTraversalIterator &SceneManager::PreOrderTraversalIterator::operator++()
 {
     NodeAndInheritedData currentNodeAndData = m_nodeStack.top();
     m_nodeStack.pop();
@@ -93,36 +73,41 @@ Scene::PreOrderTraversalIterator &Scene::PreOrderTraversalIterator::operator++()
     return *this;
 }
 
-Scene::PreOrderTraversalIterator
-Scene::PreOrderTraversalIterator::operator++(int)
+SceneManager::PreOrderTraversalIterator
+SceneManager::PreOrderTraversalIterator::operator++(int)
 {
-    Scene::PreOrderTraversalIterator temp(*this);
+    SceneManager::PreOrderTraversalIterator temp(*this);
     ++(*this);
     return temp;
 }
 
-bool operator==(const Scene::PreOrderTraversalIterator &a,
-                const Scene::PreOrderTraversalIterator &b) {
+bool operator==(const SceneManager::PreOrderTraversalIterator &a,
+                const SceneManager::PreOrderTraversalIterator &b) {
     return a.m_nodeStack == b.m_nodeStack;
 }
 
-bool operator!=(const Scene::PreOrderTraversalIterator &a,
-                const Scene::PreOrderTraversalIterator &b) {
+bool operator!=(const SceneManager::PreOrderTraversalIterator &a,
+                const SceneManager::PreOrderTraversalIterator &b) {
     return a.m_nodeStack != b.m_nodeStack;
 }
 
 // ~~~~~~~~~~~~~~~~~ other functions ~~~~~~~~~~~~~~~~~
-glm::mat4 Scene::PreOrderTraversalIterator::getInheritedTransformation() {
+glm::mat4 SceneManager::PreOrderTraversalIterator::getInheritedTransformation() {
     return m_nodeStack.top().second.trans;
 }
 
-std::optional<NodeID> Scene::PreOrderTraversalIterator::getInheritedJointID() {
+std::optional<NodeID> SceneManager::PreOrderTraversalIterator::getInheritedJointID() {
     return m_nodeStack.top().second.nodeId;
 }
 
+
+const GeometryNode * SceneManager::PreOrderTraversalIterator::asGeometryNode()
+{
+    return static_cast<const GeometryNode *>(m_nodeStack.top().first);
+}
 // ~~~~~~~~~~~~~~~~~ helpers ~~~~~~~~~~~~~~~~~
 
-void Scene::PreOrderTraversalIterator::addNodesToStack(
+void SceneManager::PreOrderTraversalIterator::addNodesToStack(
     std::list<SceneNode *> &nodes,
     const InheritedNodeData &inheritedData)
 {

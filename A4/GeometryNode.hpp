@@ -12,6 +12,8 @@ public:
 		Material *mat = nullptr );
 
 	void setMaterial( Material *material );
+	Material * getMaterial() const;
+	Primitive * getPrimitive() const;
 
 	Material *m_material;
 	Primitive *m_primitive;

@@ -11,3 +11,8 @@ PhongMaterial::PhongMaterial(
 
 PhongMaterial::~PhongMaterial()
 {}
+
+glm::dvec3 PhongMaterial::getKD()
+{
+	return m_kd;
+}

@@ -11,6 +11,7 @@
 
 #include "SceneNode.hpp"
 #include "JointNode.hpp"
+#include "GeometryNode.hpp"
 
 // This struct stores data that should be inherited from the parent node in some form
 struct InheritedNodeData {
@@ -30,9 +31,9 @@ InheritedNodeData makeInheritableNodeData(const SceneNode & thisNode,
 using NodeAndInheritedData = std::pair<SceneNode *, InheritedNodeData>;
 
 // container for scene nodes
-class Scene {
+class SceneManager {
 public:
-    Scene();
+    SceneManager();
 
     bool importSceneGraph(SceneNode* root);
 
@@ -78,6 +79,7 @@ public:
         // other functions
         glm::mat4 getInheritedTransformation();
         std::optional<NodeID> getInheritedJointID();
+        const GeometryNode * asGeometryNode();
 
     private:
         std::stack<NodeAndInheritedData> m_nodeStack;

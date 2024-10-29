@@ -4,19 +4,9 @@
 
 #include <glm/glm.hpp>
 
-enum class PrimitiveType {
-  NHSphere,
-  NHBox,
-  Sphere,
-  Cube,
-  Mesh
-};
-
 class Primitive {
 public:
   virtual ~Primitive();
-
-  PrimitiveType m_primitiveType;
 };
 
 class Sphere : public Primitive {
@@ -35,6 +25,9 @@ class NonhierSphere : public Primitive {
 public:
   NonhierSphere(const glm::vec3& pos, double radius);
   virtual ~NonhierSphere();
+
+  glm::dvec4 getPosAsDvec4();
+  double getRadius();
 
 private:
   glm::vec3 m_pos;

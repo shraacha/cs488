@@ -27,3 +27,13 @@ void GeometryNode::setMaterial( Material *mat )
 
 	m_material = mat;
 }
+
+Material * GeometryNode::getMaterial() const
+{
+	return m_material;
+}
+
+Primitive * GeometryNode::getPrimitive() const
+{
+	return m_primitive;
+}
