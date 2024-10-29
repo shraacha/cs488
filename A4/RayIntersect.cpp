@@ -12,7 +12,7 @@ static inline bool isDeterminantPositive(const double & a, const double & b, con
 // -------------------------------------------------
 std::optional<std::pair<double, glm::dvec4>>
 findRaySphereIntersectAndNormal(const glm::dvec4 &eye, const glm::dvec4 &pixel,
-                                const double &radius, const glm::dvec4 &centre)
+                                const glm::dvec4 &centre, const double &radius)
 {
 
     glm::dvec4 pixelDelta = pixel - eye;
@@ -43,8 +43,7 @@ findRaySphereIntersectAndNormal(const glm::dvec4 &eye, const glm::dvec4 &pixel,
 
 // -------------------------------------------------
 bool doesRayIntersectSphere(const glm::dvec4 &eye, const glm::dvec4 &pixel,
-                            const double &radius,
-                            const glm::dvec4 &centre)
+                            const glm::dvec4 &centre, const double &radius)
 {
     glm::dvec4 pixelDelta = pixel - eye;
     glm::dvec4 eyeToCentre = eye - centre;

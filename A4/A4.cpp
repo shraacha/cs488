@@ -43,16 +43,19 @@ static inline double getScreenPosition(const double &sideLength,
 static inline std::optional<std::pair<double, glm::dvec4>>
 intersect(Primitive *primitive, const glm::dvec4 eye, const glm::dvec4 pixel)
 {
-    std::optional<std::pair<double, glm::dvec4>> result;
+    std::optional<std::pair<double, glm::dvec4>> result{std::nullopt};
 
     // casting to derived primitive for further intersection calculation
-    NonhierSphere * NhSphere = dynamic_cast<NonhierSphere *>(primitive);
+    NonhierSphere * nhSphere = dynamic_cast<NonhierSphere *>(primitive);
+    Sphere * sphere = dynamic_cast<Sphere *>(primitive);
 
-    if (NhSphere) {
-        NonhierSphere *NHSphere = static_cast<NonhierSphere *>(primitive);
-
+    if (nhSphere) {
         result = findRaySphereIntersectAndNormal(
-            eye, pixel, NHSphere->getRadius(), NHSphere->getPosAsDvec4());
+            eye, pixel, nhSphere->getPosAsDvec4(), nhSphere->getRadius());
+    }
+
+    if (sphere) {
+        result = findRaySphereIntersectAndNormal(eye, pixel);
     }
 
     return result;
@@ -132,7 +135,7 @@ void A4_Render(
 
     double zval = getScreenDepth(h, fovy);
     glm::dvec4 basePixel {0.0, 0.0, -zval, 1.0};
-    glm::dvec4 baseEyeDouble {0.0, 0.0, 0.0, 1.0};
+    glm::dvec4 baseEye {0.0, 0.0, 0.0, 1.0};
 
     glm::mat4 viewMatrix = glm::lookAt(eye, eye + view, up);
 
@@ -158,13 +161,13 @@ void A4_Render(
                     glm::inverse(geometryNode->get_transform()) *
                     glm::inverse(nodeIt.getInheritedTransformation()) *
                     glm::inverse(viewMatrix) * basePixel;
-                glm::dvec4 transformedEyeDouble =
+                glm::dvec4 transformedEye=
                     glm::inverse(geometryNode->get_transform()) *
                     glm::inverse(nodeIt.getInheritedTransformation()) *
-                    glm::inverse(viewMatrix) * baseEyeDouble;
+                    glm::inverse(viewMatrix) * baseEye;
 
                 auto result = intersect(geometryNode->getPrimitive(),
-                                        transformedEyeDouble, transformedPixel);
+                                        transformedEye, transformedPixel);
 
                 if (result && result->first < t && t >= 0) {
                     t = result->first;
@@ -175,11 +178,11 @@ void A4_Render(
 
             if (t != std::numeric_limits<double>::max())
             {
-                image = setPixelColour(std::move(image), x, y, getColour(material));
+                setPixelColour(image, x, y, getColour(material));
             }
             else
             {
-                image = setPixelColour(std::move(image), x, y, 1.0, 1.0, 1.0);
+                setPixelColour(image, x, y, 1.0, 1.0, 1.0);
             }
         }
     }

@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "SceneNode.hpp"
+#include "debug.hpp"
 
 static inline std::pair<NodeID, SceneNode *> findIdNodePairWithName (SceneManager & scene, const std::string & name)
 {
@@ -67,6 +68,8 @@ SceneManager::PreOrderTraversalIterator &SceneManager::PreOrderTraversalIterator
 {
     NodeAndInheritedData currentNodeAndData = m_nodeStack.top();
     m_nodeStack.pop();
+
+    // DLOG("top node: %s", (currentNodeAndData).first->m_name.c_str());
     addNodesToStack(currentNodeAndData.first->children,
                     makeInheritableNodeData(*currentNodeAndData.first,
                                          currentNodeAndData.second));
@@ -114,6 +117,7 @@ void SceneManager::PreOrderTraversalIterator::addNodesToStack(
     // adding children in reverse order to the stack
     for(auto nodeIt = nodes.crbegin(); nodeIt != nodes.crend(); ++nodeIt) {
         m_nodeStack.emplace(*nodeIt, inheritedData);
+        // DLOG("adding node to stack: %s", (*nodeIt)->m_name.c_str());
     }
 }
 
