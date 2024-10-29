@@ -9,23 +9,25 @@
 #include "Mesh.hpp"
 
 Mesh::Mesh( const std::string& fname )
-	: m_vertices()
-	, m_faces()
+  : m_vertices()
+  , m_faces()
 {
-	std::string code;
-	double vx, vy, vz;
-	size_t s1, s2, s3;
+  std::string code;
+  double vx, vy, vz;
+  size_t s1, s2, s3;
 
-	std::ifstream ifs( fname.c_str() );
-	while( ifs >> code ) {
-		if( code == "v" ) {
-			ifs >> vx >> vy >> vz;
-			m_vertices.push_back( glm::vec3( vx, vy, vz ) );
-		} else if( code == "f" ) {
-			ifs >> s1 >> s2 >> s3;
-			m_faces.push_back( Triangle( s1 - 1, s2 - 1, s3 - 1 ) );
-		}
-	}
+  std::ifstream ifs( fname.c_str() );
+  while( ifs >> code ) {
+    if( code == "v" ) {
+      ifs >> vx >> vy >> vz;
+      m_vertices.push_back( glm::vec3( vx, vy, vz ) );
+    } else if( code == "f" ) {
+      ifs >> s1 >> s2 >> s3;
+      m_faces.push_back( Triangle( s1 - 1, s2 - 1, s3 - 1 ) );
+    }
+  }
+
+  m_primitiveType = PrimitiveType::Mesh;
 }
 
 std::ostream& operator<<(std::ostream& out, const Mesh& mesh)
