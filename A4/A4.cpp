@@ -161,7 +161,7 @@ void A4_Render(
                     glm::inverse(geometryNode->get_transform()) *
                     glm::inverse(nodeIt.getInheritedTransformation()) *
                     glm::inverse(viewMatrix) * basePixel;
-                glm::dvec4 transformedEye=
+                glm::dvec4 transformedEye =
                     glm::inverse(geometryNode->get_transform()) *
                     glm::inverse(nodeIt.getInheritedTransformation()) *
                     glm::inverse(viewMatrix) * baseEye;
