@@ -39,6 +39,9 @@ public:
   NonhierBox(const glm::vec3& pos, double size);
   virtual ~NonhierBox();
 
+  glm::dvec4 getPosAsDvec4();
+  double getSize();
+
 private:
   glm::vec3 m_pos;
   double m_size;

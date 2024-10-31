@@ -48,6 +48,8 @@ intersect(Primitive *primitive, const glm::dvec4 eye, const glm::dvec4 pixel)
     // casting to derived primitive for further intersection calculation
     NonhierSphere * nhSphere = dynamic_cast<NonhierSphere *>(primitive);
     Sphere * sphere = dynamic_cast<Sphere *>(primitive);
+    NonhierBox * nhBox = dynamic_cast<NonhierBox *>(primitive);
+    Cube * cube = dynamic_cast<Cube *>(primitive);
 
     if (nhSphere) {
         result = findRaySphereIntersectAndNormal(
@@ -58,6 +60,13 @@ intersect(Primitive *primitive, const glm::dvec4 eye, const glm::dvec4 pixel)
         result = findRaySphereIntersectAndNormal(eye, pixel);
     }
 
+    if (nhBox) {
+        result = findRayBoxIntersectAndNormal(eye, pixel, nhBox->getPosAsDvec4(), nhBox->getSize());
+    }
+
+    if (cube) {
+        result = findRayBoxIntersectAndNormal(eye, pixel);
+    }
     return result;
 }
 
@@ -169,7 +178,7 @@ void A4_Render(
                 auto result = intersect(geometryNode->getPrimitive(),
                                         transformedEye, transformedPixel);
 
-                if (result && result->first < t && t >= 0) {
+                if (result && result->first < t && result->first >= 1.0) {
                     t = result->first;
                     normal = result->second;
                     material = geometryNode->getMaterial();
