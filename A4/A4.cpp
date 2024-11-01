@@ -14,6 +14,7 @@
 #include "RayIntersect.hpp"
 #include "SceneManager.hpp"
 #include "ImageHelpers.hpp"
+#include "debug.hpp"
 
 
 // ------------------- helpers ----------------------
@@ -167,18 +168,18 @@ void A4_Render(
                 const GeometryNode *geometryNode = nodeIt.asGeometryNode();
 
                 glm::dvec4 transformedPixel =
-                    glm::inverse(geometryNode->get_transform()) *
+                    geometryNode->get_inverse() *
                     glm::inverse(nodeIt.getInheritedTransformation()) *
                     glm::inverse(viewMatrix) * basePixel;
                 glm::dvec4 transformedEye =
-                    glm::inverse(geometryNode->get_transform()) *
+                    geometryNode->get_inverse() *
                     glm::inverse(nodeIt.getInheritedTransformation()) *
                     glm::inverse(viewMatrix) * baseEye;
 
                 auto result = intersect(geometryNode->getPrimitive(),
                                         transformedEye, transformedPixel);
 
-                if (result && result->first < t && result->first >= 1.0) {
+                if (result && result->first < t && result->first >= 0) {
                     t = result->first;
                     normal = result->second;
                     material = geometryNode->getMaterial();

@@ -166,7 +166,7 @@ findRayBoxIntersectAndNormal(const glm::dvec4 &eye, const glm::dvec4 &pixel,
         result = findRayPolygonIntersectAndNormal(
             eye, pixel, getBoxFaceVertices(corner, width, i));
 
-        if (result.has_value() && result->first < t && result->first >= 1.0) {
+        if (result.has_value() && result->first < t && result->first >= 0.0) {
             t = result->first;
             normal = result->second;
         }
