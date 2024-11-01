@@ -28,7 +28,7 @@ SceneManager::SceneManager()
 bool SceneManager::importSceneGraph(SceneNode *root)
 {
     if (root) {
-        m_sceneRoot.reset(root);
+        m_sceneRoot = root;
         return true;
     } else {
         return false;
@@ -45,8 +45,7 @@ SceneManager::PreOrderTraversalIterator::PreOrderTraversalIterator(
     SceneManager::PreOrderTraversalIterator::pointer_t ptr)
 {
     if (ptr) {
-        InheritedNodeData nodeData = makeInheritableNodeData(*ptr);
-        m_nodeStack.emplace(ptr, nodeData);
+        m_nodeStack.emplace(ptr, InheritedNodeData());
     }
 }
 
@@ -132,20 +131,6 @@ bool operator!=(const InheritedNodeData & a, const InheritedNodeData & b)
 {
     return !(a == b);
 }
-
-InheritedNodeData makeInheritableNodeData(const SceneNode & thisNode)
-{
-    if (thisNode.m_nodeType == NodeType::JointNode)
-    {
-        JointNode * joint = static_cast<JointNode *>(const_cast<SceneNode*>(&thisNode));
-
-        // must apply the joint specific rotation as this is stored separate from the main transformation matrix
-        return {joint->getJointRotationMatrix() * thisNode.trans, thisNode.m_nodeId};
-    } else {
-        return {thisNode.trans, std::nullopt};
-    }
-}
-
 
 InheritedNodeData makeInheritableNodeData(const SceneNode & thisNode,
                                        const InheritedNodeData &inheritedData)

@@ -87,9 +87,9 @@ public:
         void addNodesToStack(std::list<SceneNode*> & nodes, const InheritedNodeData & inheritedData);
     };
 
-    PreOrderTraversalIterator begin() {return PreOrderTraversalIterator(m_sceneRoot.get());};
+    PreOrderTraversalIterator begin() {return PreOrderTraversalIterator(m_sceneRoot);};
     PreOrderTraversalIterator end() {return PreOrderTraversalIterator();};
 
 private:
-    std::unique_ptr<SceneNode> m_sceneRoot; // owns the tree
+    SceneNode* m_sceneRoot; // owns the tree
 };
