@@ -179,7 +179,7 @@ void A4_Render(
                 auto result = intersect(geometryNode->getPrimitive(),
                                         transformedEye, transformedPixel);
 
-                if (result && result->first < t && result->first >= 0) {
+                if (result && result->first < t && result->first >= 0.0) {
                     t = result->first;
                     normal = result->second;
                     material = geometryNode->getMaterial();
