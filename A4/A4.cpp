@@ -16,6 +16,10 @@
 #include "ImageHelpers.hpp"
 #include "debug.hpp"
 
+// ------------------- constants ----------------------
+const glm::dvec3 c_botScreenColour = {0.89411764705, 0.58823529411, 0.80392156862};
+const glm::dvec3 c_topScreenColour = {0.013725490196, 0.003529411764, 0.001176470588};
+
 
 // ------------------- helpers ----------------------
 // paramaeters:
@@ -83,6 +87,14 @@ static inline glm::dvec3 getColour(Material *material)
     }
 
     return colour;
+}
+
+static inline glm::dvec3 getBackgroundColour(glm::dvec3 rayDirection,
+                                             glm::vec3 topColour = glm::vec3(1.0, 1.0, 1.0),
+                                             glm::vec3 botColour = glm::vec3(0.0, 0.0, 0.0)) {
+    glm::dvec3 normalizedDirection = glm::normalize(rayDirection);
+    double t = 0.5 * (normalizedDirection.y + 1.0); // normalized y is in [-1, 1], this bring it to [0, 1]
+    return  t * topColour + (1.0 - t) * botColour;
 }
 
 static inline void printSceneInfo(const uint &imgWidth, const uint &imgHeight,
@@ -192,7 +204,9 @@ void A4_Render(
             }
             else
             {
-                setPixelColour(image, x, y, 1.0, 1.0, 1.0);
+                setPixelColour(image, x, y,
+                               getBackgroundColour(glm::dvec3(basePixel),
+                                                   c_topScreenColour, c_botScreenColour));
             }
         }
     }
