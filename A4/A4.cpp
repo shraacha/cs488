@@ -89,11 +89,17 @@ static inline glm::dvec3 getColour(Material *material)
     return colour;
 }
 
+/**
+ * Generates a gradient based on the normalized y-value of the ray direction.
+ * We also scale by FOV so that we see the supplied colours at the top & bottom of the view frame.
+ */
 static inline glm::dvec3 getBackgroundColour(glm::dvec3 rayDirection,
                                              glm::vec3 topColour = glm::vec3(1.0, 1.0, 1.0),
-                                             glm::vec3 botColour = glm::vec3(0.0, 0.0, 0.0)) {
+                                             glm::vec3 botColour = glm::vec3(0.0, 0.0, 0.0),
+                                             const double & fovy = 180) {
     glm::dvec3 normalizedDirection = glm::normalize(rayDirection);
-    double t = 0.5 * (normalizedDirection.y + 1.0); // normalized y is in [-1, 1], this bring it to [0, 1]
+    // normalized y is in [-1, 1], we need to bring it to [0, 1] otherwise we may get negative colour vals
+    double t = 0.5 * (normalizedDirection.y / sin(degreesToRadians(fovy / 2)) + 1.0);
     return  t * topColour + (1.0 - t) * botColour;
 }
 
@@ -206,7 +212,7 @@ void A4_Render(
             {
                 setPixelColour(image, x, y,
                                getBackgroundColour(glm::dvec3(basePixel),
-                                                   c_topScreenColour, c_botScreenColour));
+                                                   c_topScreenColour, c_botScreenColour, fovy));
             }
         }
     }
