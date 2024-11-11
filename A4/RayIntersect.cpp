@@ -1,4 +1,5 @@
 #include "RayIntersect.hpp"
+#include "Intersection.hpp"
 #include "debug.hpp"
 
 #include <optional>
@@ -62,13 +63,13 @@ static inline bool isDeterminantPositive(const double & a, const double & b, con
 }
 
 // -------------------------------------------------
-std::optional<std::pair<double, glm::dvec4>>
-findRaySphereIntersectAndNormal(const glm::dvec4 &eye, const glm::dvec4 &pixel,
+std::optional<Intersection>
+findRaySphereIntersection(const Ray & ray,
                                 const glm::dvec4 &centre, const double &radius)
 {
 
-    glm::dvec4 pixelDelta = pixel - eye;
-    glm::dvec4 eyeToCentre = eye - centre;
+    glm::dvec4 pixelDelta = ray.getDirection();
+    glm::dvec4 eyeToCentre = ray.getEyePoint() - centre;
 
     double a = glm::dot(pixelDelta, pixelDelta);
     double b = 2 * glm::dot(eyeToCentre, pixelDelta);
@@ -87,18 +88,18 @@ findRaySphereIntersectAndNormal(const glm::dvec4 &eye, const glm::dvec4 &pixel,
             closestRoot = roots[1];
         }
 
-        return std::make_optional<std::pair<double, glm::dvec4>>(closestRoot, glm::normalize(evaluateRay(eye, pixel, closestRoot) - centre));
+        return std::make_optional<Intersection>(closestRoot, glm::normalize(evaluate(ray, closestRoot) - centre));
     } else {
         return std::nullopt;
     }
 }
 
 // -------------------------------------------------
-bool doesRayIntersectSphere(const glm::dvec4 &eye, const glm::dvec4 &pixel,
+bool doesRayIntersectSphere(const Ray & ray,
                             const glm::dvec4 &centre, const double &radius)
 {
-    glm::dvec4 pixelDelta = pixel - eye;
-    glm::dvec4 eyeToCentre = eye - centre;
+    glm::dvec4 pixelDelta = ray.getDirection();
+    glm::dvec4 eyeToCentre = ray.getEyePoint() - centre;
 
     return isDeterminantPositive(
         glm::dot(pixelDelta, pixelDelta), glm::dot(eyeToCentre, pixelDelta),
@@ -153,49 +154,74 @@ getBoxFaceVertices(const glm::dvec4 &corner, const double &width,
     }
 }
 
-std::optional<std::pair<double, glm::dvec4>>
-findRayBoxIntersectAndNormal(const glm::dvec4 &eye, const glm::dvec4 &pixel,
-                             const glm::dvec4 &corner, const double &width)
-{
+std::optional<Intersection>
+findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const double &width) {
     double t = std::numeric_limits<double>::max();
     glm::dvec4 normal;
 
     for (size_t i = 0; i < 6; ++i) {
-        std::optional<std::pair<double, glm::dvec4>> result{std::nullopt};
+        std::optional<Intersection> result{std::nullopt};
 
-        result = findRayPolygonIntersectAndNormal(
-            eye, pixel, getBoxFaceVertices(corner, width, i));
+        result =
+            findRayPolygonIntersection(ray, getBoxFaceVertices(corner, width, i));
 
-        if (result.has_value() && result->first < t && result->first >= 0.0) {
-            t = result->first;
-            normal = result->second;
+        if (result.has_value() && result->getT() < t && result->getT() >= 0.0) {
+            t = result->getT();
+            normal = result->getNormal();
         }
     }
 
     if (t != std::numeric_limits<double>::max())
     {
-        return std::make_pair(t, normal);
+        return Intersection(t, normal);
+    } else {
+        return std::nullopt;
+    }
+}
+
+std::optional<Intersection>
+findRayMeshIntersection(const Ray & ray, const Mesh & mesh)
+{
+    double t = std::numeric_limits<double>::max();
+    glm::dvec4 normal;
+    const std::vector<glm::vec3> & meshVerts = mesh.getVertices();
+    std::optional<Intersection> result{std::nullopt};
+
+    for (const Triangle & face : mesh.getFaces()) {
+        result = findRayPolygonIntersection(ray, {glm::dvec4(meshVerts[face.v1], 1.0),
+                                                  glm::dvec4(meshVerts[face.v2], 1.0),
+                                                  glm::dvec4(meshVerts[face.v3], 1.0)});
+
+        if (result.has_value() && result->getT() < t && result->getT() >= 0.0) {
+            t = result->getT();
+            normal = result->getNormal();
+        }
+    }
+
+    if (t != std::numeric_limits<double>::max())
+    {
+        return Intersection(t, normal);
     } else {
         return std::nullopt;
     }
 }
 
 // -------------------------------------------------
-std::optional<std::pair<double, glm::dvec4>> findRayPolygonIntersectAndNormal(const glm::dvec4 &eye, const glm::dvec4 &pixel,
-                                                                              const std::vector<glm::dvec4> &vertices) {
+std::optional<Intersection>
+findRayPolygonIntersection(const Ray &ray, const std::vector<glm::dvec4> &vertices) {
     if (vertices.size() < 3) {
         return std::nullopt;
-        DLOG("findRayPolygonIntersectAndNormal: less than 3 vertices supplied");
+        DLOG("findRayPolygonIntersection: less than 3 vertices supplied");
     }
 
     glm::dvec4 polyNormal(glm::cross(glm::dvec3(vertices[2] - vertices[1]), glm::dvec3(vertices[0] - vertices[1])), 0.0);
-    std::optional<double> t = findRayPlaneIntersect(eye, pixel, polyNormal, vertices[0]);
+    std::optional<double> t = findRayPlaneIntersect(ray, polyNormal, vertices[0]);
 
     CoordinatePlane closestCoordinatePlane = getClosestCoordinatePlane(polyNormal);
     VertexOrder order = isNonCoordinatePlaneValueNonNegative(polyNormal, closestCoordinatePlane) ? VertexOrder::CCW : VertexOrder::CW;
 
     if (t.has_value()) {
-        glm::dvec2 projectedPoint = projectOntoPlane(evaluateRay(eye, pixel, t.value()), closestCoordinatePlane);
+        glm::dvec2 projectedPoint = projectOntoPlane(evaluate(ray, t.value()), closestCoordinatePlane);
 
         for (size_t i = 0; i < vertices.size(); ++i) {
             glm::dvec2 v1 = projectOntoPlane(vertices[i], closestCoordinatePlane);
@@ -208,20 +234,19 @@ std::optional<std::pair<double, glm::dvec4>> findRayPolygonIntersectAndNormal(co
                 return std::nullopt;
             }
         }
-        return std::make_pair(t.value(), polyNormal);
+        return Intersection(t.value(), polyNormal);
     } else {
         return std::nullopt;
     }
 }
 
 // -------------------------------------------------
-std::optional<double> findRayPlaneIntersect(const glm::dvec4 &eye,
-                                            const glm::dvec4 &pixel,
+std::optional<double> findRayPlaneIntersect(const Ray & ray,
                                             const glm::dvec4 &planeNormal,
                                             const glm::dvec4 &planePoint)
 {
-    if (doesRayIntersectPlane(eye, pixel, planeNormal)) {
-        return glm::dot(planeNormal, planePoint - eye) / glm::dot(planeNormal, pixel - eye);
+    if (doesRayIntersectPlane(ray, planeNormal)) {
+        return glm::dot(planeNormal, planePoint - ray.getEyePoint()) / glm::dot(planeNormal, ray.getDirection());
     }
     else {
         return std::nullopt;

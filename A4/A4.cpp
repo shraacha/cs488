@@ -6,6 +6,7 @@
 
 #include <glm/ext.hpp>
 
+#include "ProgressBar.hpp"
 #include "cs488-framework/MathUtils.hpp"
 
 #include "A4.hpp"
@@ -15,6 +16,8 @@
 #include "SceneManager.hpp"
 #include "ImageHelpers.hpp"
 #include "debug.hpp"
+#include "Ray.hpp"
+#include "Intersection.hpp"
 
 // ------------------- constants ----------------------
 const glm::dvec3 c_botScreenColour = {0.89411764705, 0.58823529411, 0.80392156862};
@@ -45,33 +48,39 @@ static inline double getScreenPosition(const double &sideLength,
     }
 }
 
-static inline std::optional<std::pair<double, glm::dvec4>>
-intersect(Primitive *primitive, const glm::dvec4 eye, const glm::dvec4 pixel)
+static inline std::optional<Intersection>
+intersect(Primitive *primitive, const Ray & ray)
 {
-    std::optional<std::pair<double, glm::dvec4>> result{std::nullopt};
+    std::optional<Intersection> result{std::nullopt};
 
     // casting to derived primitive for further intersection calculation
     NonhierSphere * nhSphere = dynamic_cast<NonhierSphere *>(primitive);
     Sphere * sphere = dynamic_cast<Sphere *>(primitive);
     NonhierBox * nhBox = dynamic_cast<NonhierBox *>(primitive);
     Cube * cube = dynamic_cast<Cube *>(primitive);
+    Mesh * mesh = dynamic_cast<Mesh *>(primitive);
 
     if (nhSphere) {
-        result = findRaySphereIntersectAndNormal(
-            eye, pixel, nhSphere->getPosAsDvec4(), nhSphere->getRadius());
+        result = findRaySphereIntersection(
+            ray, nhSphere->getPosAsDvec4(), nhSphere->getRadius());
     }
 
     if (sphere) {
-        result = findRaySphereIntersectAndNormal(eye, pixel);
+        result = findRaySphereIntersection(ray);
     }
 
     if (nhBox) {
-        result = findRayBoxIntersectAndNormal(eye, pixel, nhBox->getPosAsDvec4(), nhBox->getSize());
+        result = findRayBoxIntersection(ray, nhBox->getPosAsDvec4(), nhBox->getSize());
     }
 
     if (cube) {
-        result = findRayBoxIntersectAndNormal(eye, pixel);
+        result = findRayBoxIntersection(ray);
     }
+
+    if (mesh) {
+        result = findRayMeshIntersection(ray, *mesh);
+    }
+
     return result;
 }
 
@@ -151,7 +160,6 @@ void A4_Render(
     const glm::vec3 & ambient,
     const std::list<Light *> & lights
 ) {
-
     printSceneInfo(image.width(), image.height(), *root, eye, view, up, fovy,
                    ambient, lights);
 
@@ -167,6 +175,8 @@ void A4_Render(
 
     glm::mat4 viewMatrix = glm::lookAt(eye, eye + view, up);
 
+    ProgressBar progressBar(h * w);
+
     for (uint y = 0; y < h; ++y) {
         basePixel.y = getScreenPosition(h, y, true);
 
@@ -175,7 +185,7 @@ void A4_Render(
 
             double t = std::numeric_limits<double>::max();
             glm::dvec4 normal;
-            Material * material = nullptr;
+            Material *material = nullptr;
 
             for (SceneManager::PreOrderTraversalIterator nodeIt = sceneManager.begin();
                  nodeIt != sceneManager.end(); ++nodeIt) {
@@ -195,25 +205,26 @@ void A4_Render(
                     glm::inverse(viewMatrix) * baseEye;
 
                 auto result = intersect(geometryNode->getPrimitive(),
-                                        transformedEye, transformedPixel);
+                                        Ray(transformedEye, transformedPixel));
 
-                if (result && result->first < t && result->first >= 0.0) {
-                    t = result->first;
-                    normal = result->second;
+                if (result && result->getT() < t && result->getT() >= 0.0) {
+                    t = result->getT();
+                    normal = result->getNormal();
                     material = geometryNode->getMaterial();
                 }
             }
 
-            if (t != std::numeric_limits<double>::max())
-            {
+            if (t != std::numeric_limits<double>::max()) {
                 setPixelColour(image, x, y, getColour(material));
-            }
-            else
-            {
+            } else {
                 setPixelColour(image, x, y,
                                getBackgroundColour(glm::dvec3(basePixel),
-                                                   c_topScreenColour, c_botScreenColour, fovy));
+                                                   c_topScreenColour, c_botScreenColour,
+                                                   fovy));
             }
+            ++progressBar;
+            progressBar.conditionalOut(std::cout);
         }
     }
+    std::cout << progressBar;
 }

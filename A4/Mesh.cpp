@@ -48,3 +48,14 @@ std::ostream& operator<<(std::ostream& out, const Mesh& mesh)
   out << "}";
   return out;
 }
+
+
+const std::vector<glm::vec3> & Mesh::getVertices() const
+{
+  return m_vertices;
+}
+
+const std::vector<Triangle> & Mesh::getFaces() const
+{
+  return m_faces;
+}
