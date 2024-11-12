@@ -88,7 +88,7 @@ findRaySphereIntersection(const Ray & ray,
             closestRoot = roots[1];
         }
 
-        return std::make_optional<Intersection>(closestRoot, glm::normalize(evaluate(ray, closestRoot) - centre));
+        return std::make_optional<Intersection>(closestRoot, evaluate(ray, closestRoot) - centre);
     } else {
         return std::nullopt;
     }

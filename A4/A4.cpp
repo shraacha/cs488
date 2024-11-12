@@ -89,6 +89,12 @@ intersect(Primitive *primitive, const Ray & ray)
     return result;
 }
 
+
+static inline glm::dvec3 calculateNormalLighting(const Intersection &intersect)
+{
+    return intersect.getNormalizedNormal();
+}
+
 static inline glm::dvec3 calculatePhongLighting(const Ray &ray,
                                           const Intersection &intersect,
                                           const PhongMaterial &material,
@@ -104,7 +110,10 @@ static inline glm::dvec3 calculatePhongLighting(const Ray &ray,
         glm::dvec3 reflectedVector =
             -lightVector + 2 * lightDotNormal * intersect.getNormalizedNormal();
 
-        lightOut += lightDotNormal * material.getKD() * glm::dvec3(light->colour);
+        // difuse
+        lightOut += material.getKD() * lightDotNormal * glm::dvec3(light->colour);
+
+        // specular
         lightOut +=
             pow(glm::dot(reflectedVector, glm::normalize(glm::dvec3(ray.getEyePoint()) -
                                                          intersectionPoint)),
@@ -228,12 +237,12 @@ void A4_Render(
 
                 const GeometryNode *geometryNode = nodeIt.asGeometryNode();
 
-                glm::mat4 transformationStack = viewMatrix *
-                                                nodeIt.getInheritedTransformation() *
+                glm::mat4 transformationStack = nodeIt.getInheritedTransformation() *
                                                 geometryNode->get_transform();
 
-                glm::dvec4 transformedPixel = glm::inverse(transformationStack) * basePixel;
-                glm::dvec4 transformedEye = glm::inverse(transformationStack) * baseEye;
+                // must include view matrix to transfrom pixel & eye from view space
+                glm::dvec4 transformedPixel = glm::inverse(viewMatrix * transformationStack) * basePixel;
+                glm::dvec4 transformedEye = glm::inverse(viewMatrix * transformationStack) * baseEye;
 
                 auto result = intersect(geometryNode->getPrimitive(),
                                         Ray(transformedEye, transformedPixel));
@@ -249,7 +258,12 @@ void A4_Render(
 
 
             if (intersectionWorldCoordinates.getT() != std::numeric_limits<double>::max()) {
-                setPixelColour(image, x, y, calculateColour({baseEye, basePixel}, intersectionWorldCoordinates, material, ambient, lights));
+                // must include view matrix to transfrom pixel & eye from view space
+                setPixelColour(image, x, y,
+                               calculateColour({glm::inverse(viewMatrix) * baseEye,
+                                                glm::inverse(viewMatrix) * basePixel},
+                                               intersectionWorldCoordinates, material,
+                                               ambient, lights));
             } else {
                 setPixelColour(image, x, y,
                                getBackgroundColour(glm::dvec3(basePixel),
