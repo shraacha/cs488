@@ -100,6 +100,7 @@ static inline glm::dvec3 calculatePhongLighting(const Ray &ray,
                                           const PhongMaterial &material,
                                           const glm::vec3 &ambient,
                                           const std::list<Light *> &lights) {
+    // ambient
     glm::dvec3 lightOut = material.getKD() * glm::dvec3(ambient);
 
     glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
