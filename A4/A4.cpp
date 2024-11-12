@@ -40,7 +40,6 @@ static inline double getScreenDepth(const double & height, const double & fovy)
 static inline double getScreenPosition(const double &sideLength,
                                        const uint &index, const bool &flip = false)
 {
-
     if (flip)
     {
         return - (double)index + sideLength / 2 - 0.5;
@@ -101,24 +100,27 @@ static inline glm::dvec3 calculatePhongLighting(const Ray &ray,
                                           const PhongMaterial &material,
                                           const glm::vec3 &ambient,
                                           const std::list<Light *> &lights) {
-    glm::dvec3 lightOut = material.getKD() * glm::dvec3(ambient); //TODO
+    glm::dvec3 lightOut = material.getKD() * glm::dvec3(ambient);
 
     glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
 
     for (const Light *light : lights) {
-        glm::dvec3 lightVector = glm::normalize(glm::dvec3(light->position) - intersectionPoint);
-        double lightDotNormal = glm::dot(lightVector, intersect.getNormalizedNormal());
-        glm::dvec3 reflectedVector = -lightVector + 2 * lightDotNormal * intersect.getNormalizedNormal();
+        glm::dvec3 lightVector = glm::dvec3(light->position) - intersectionPoint;
+        glm::dvec3 normalizedLightVector = glm::normalize(glm::dvec3(light->position) - intersectionPoint);
+
+        double rSquared = glm::dot(lightVector, lightVector);
+        double lightDotNormal = glm::dot(normalizedLightVector, intersect.getNormalizedNormal());
+        double attenuationFactor = glm::dot(glm::dvec3(light->falloff[0], light->falloff[1], light->falloff[2]), glm::dvec3(1.0, sqrt(rSquared), rSquared));
+
+        glm::dvec3 reflectedVector = -normalizedLightVector + 2 * lightDotNormal * intersect.getNormalizedNormal();
 
         // difuse
-        lightOut += maxWithZero(material.getKD() * lightDotNormal * glm::dvec3(light->colour));
-
+        lightOut += maxWithZero(material.getKD() * lightDotNormal * (1 / attenuationFactor) * glm::dvec3(light->colour));
 
         // specular
         lightOut += maxWithZero(
             pow(glm::dot(reflectedVector, glm::normalize(glm::dvec3(ray.getEyePoint()) - intersectionPoint)),
-                material.getShininess()) *
-            material.getKS() * glm::dvec3(light->colour));
+                material.getShininess()) * (1 / attenuationFactor) * material.getKS() * glm::dvec3(light->colour));
     }
 
     return lightOut;
