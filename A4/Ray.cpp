@@ -1,6 +1,10 @@
 #include "Ray.hpp"
 // constructors
-Ray::Ray(const glm::dvec4 &eye, const glm::dvec4 &pixel) : m_eye{eye}, m_pixel{pixel} {}
+Ray::Ray(const glm::dvec4 &eye, const glm::dvec4 &pixel) : m_eye{eye}, m_pixel{pixel}
+{
+    double epsilon = 0.1;
+    m_minThreshold = epsilon / glm::length(pixel - eye);
+}
 
 // member functions
 glm::dvec4 Ray::getEyePoint() const
@@ -16,4 +20,9 @@ glm::dvec4 Ray::getPixelPoint() const
 glm::dvec4 Ray::getDirection() const
 {
     return m_pixel - m_eye;
+}
+
+double Ray::getMinThreshold() const
+{
+    return m_minThreshold;
 }

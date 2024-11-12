@@ -7,6 +7,7 @@
 class Ray {
     glm::dvec4 m_eye;
     glm::dvec4 m_pixel;
+    double m_minThreshold;
 
     public:
       Ray();
@@ -15,6 +16,7 @@ class Ray {
       glm::dvec4 getEyePoint() const;
       glm::dvec4 getPixelPoint() const;
       glm::dvec4 getDirection() const;
+      double getMinThreshold() const;
 };
 
 // evaluates the ray formula:
