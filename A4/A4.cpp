@@ -18,6 +18,7 @@
 #include "debug.hpp"
 #include "Ray.hpp"
 #include "Intersection.hpp"
+#include "Helpers.hpp"
 
 // ------------------- constants ----------------------
 const glm::dvec3 c_botScreenColour = {0.89411764705, 0.58823529411, 0.80392156862};
@@ -92,7 +93,7 @@ intersect(Primitive *primitive, const Ray & ray)
 
 static inline glm::dvec3 calculateNormalLighting(const Intersection &intersect)
 {
-    return intersect.getNormalizedNormal();
+    return (intersect.getNormalizedNormal() + glm::dvec3{1.0, 1.0, 1.0}) * 0.5;
 }
 
 static inline glm::dvec3 calculatePhongLighting(const Ray &ray,
@@ -100,25 +101,24 @@ static inline glm::dvec3 calculatePhongLighting(const Ray &ray,
                                           const PhongMaterial &material,
                                           const glm::vec3 &ambient,
                                           const std::list<Light *> &lights) {
-    glm::dvec3 lightOut = glm::dvec3(ambient) * material.getKD();
+    glm::dvec3 lightOut = material.getKD() * glm::dvec3(ambient); //TODO
 
     glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
 
     for (const Light *light : lights) {
         glm::dvec3 lightVector = glm::normalize(glm::dvec3(light->position) - intersectionPoint);
         double lightDotNormal = glm::dot(lightVector, intersect.getNormalizedNormal());
-        glm::dvec3 reflectedVector =
-            -lightVector + 2 * lightDotNormal * intersect.getNormalizedNormal();
+        glm::dvec3 reflectedVector = -lightVector + 2 * lightDotNormal * intersect.getNormalizedNormal();
 
         // difuse
-        lightOut += material.getKD() * lightDotNormal * glm::dvec3(light->colour);
+        lightOut += maxWithZero(material.getKD() * lightDotNormal * glm::dvec3(light->colour));
+
 
         // specular
-        lightOut +=
-            pow(glm::dot(reflectedVector, glm::normalize(glm::dvec3(ray.getEyePoint()) -
-                                                         intersectionPoint)),
+        lightOut += maxWithZero(
+            pow(glm::dot(reflectedVector, glm::normalize(glm::dvec3(ray.getEyePoint()) - intersectionPoint)),
                 material.getShininess()) *
-            material.getKS() * glm::dvec3(light->colour);
+            material.getKS() * glm::dvec3(light->colour));
     }
 
     return lightOut;
