@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Intersection.hpp"
+
 class Ray {
     glm::dvec4 m_eye;
     glm::dvec4 m_pixel;

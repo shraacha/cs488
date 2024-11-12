@@ -21,7 +21,7 @@ ProgressBar& ProgressBar::operator++()
 }
 
 void ProgressBar::initOutput() {
-    std::cout << std::string(m_width + m_spacer.length() + 4, m_emptyChar) << std::endl;
+    std::cout << '\r';
 }
 
 std::ostream& ProgressBar::conditionalOut(std::ostream& os)
@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, const ProgressBar & progressBar)
 {
     double percentDone = (double)progressBar.m_current / (double)progressBar.m_total;
 
-    os << std::string(progressBar.m_width + progressBar.m_spacer.length() + 4 + 1, '\b');
+    os << '\r';
     os << std::string((unsigned int)((double)progressBar.m_width * percentDone), progressBar.m_fillChar)
        << std::string((unsigned int)((double)progressBar.m_width * (1.0 -percentDone)), progressBar.m_emptyChar)
        << progressBar.m_spacer

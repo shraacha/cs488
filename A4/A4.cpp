@@ -81,18 +81,50 @@ intersect(Primitive *primitive, const Ray & ray)
         result = findRayMeshIntersection(ray, *mesh);
     }
 
+    if (result.has_value())
+    {
+        result->setPosition(evaluate(ray, result->getT()));
+    }
+
     return result;
 }
 
-static inline glm::dvec3 getColour(Material *material)
-{
+static inline glm::dvec3 calculatePhongLighting(const Ray &ray,
+                                          const Intersection &intersect,
+                                          const PhongMaterial &material,
+                                          const glm::vec3 &ambient,
+                                          const std::list<Light *> &lights) {
+    glm::dvec3 lightOut = glm::dvec3(ambient) * material.getKD();
+
+    glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
+
+    for (const Light *light : lights) {
+        glm::dvec3 lightVector = glm::normalize(glm::dvec3(light->position) - intersectionPoint);
+        double lightDotNormal = glm::dot(lightVector, intersect.getNormalizedNormal());
+        glm::dvec3 reflectedVector =
+            -lightVector + 2 * lightDotNormal * intersect.getNormalizedNormal();
+
+        lightOut += lightDotNormal * material.getKD() * glm::dvec3(light->colour);
+        lightOut +=
+            pow(glm::dot(reflectedVector, glm::normalize(glm::dvec3(ray.getEyePoint()) -
+                                                         intersectionPoint)),
+                material.getShininess()) *
+            material.getKS() * glm::dvec3(light->colour);
+    }
+
+    return lightOut;
+}
+
+static inline glm::dvec3 calculateColour(const Ray &ray, const Intersection &intersect,
+                                   Material *material, const glm::vec3 &ambient,
+                                   const std::list<Light *> &lights) {
     glm::dvec3 colour{1.0, 1.0, 1.0};
 
     // casting to derived primitive
     PhongMaterial *phongMaterial = dynamic_cast<PhongMaterial *>(material);
 
     if (phongMaterial) {
-        colour = phongMaterial->getKD();
+        colour = calculatePhongLighting(ray, intersect, *phongMaterial, ambient, lights);
     }
 
     return colour;
@@ -176,6 +208,7 @@ void A4_Render(
     glm::mat4 viewMatrix = glm::lookAt(eye, eye + view, up);
 
     ProgressBar progressBar(h * w);
+    std::cout << progressBar;
 
     for (uint y = 0; y < h; ++y) {
         basePixel.y = getScreenPosition(h, y, true);
@@ -183,8 +216,8 @@ void A4_Render(
         for (uint x = 0; x < w; ++x) {
             basePixel.x = getScreenPosition(w, x);
 
-            double t = std::numeric_limits<double>::max();
-            glm::dvec4 normal;
+            Intersection intersectionWorldCoordinates{std::numeric_limits<double>::max(), glm::dvec4()};
+
             Material *material = nullptr;
 
             for (SceneManager::PreOrderTraversalIterator nodeIt = sceneManager.begin();
@@ -195,27 +228,28 @@ void A4_Render(
 
                 const GeometryNode *geometryNode = nodeIt.asGeometryNode();
 
-                glm::dvec4 transformedPixel =
-                    geometryNode->get_inverse() *
-                    glm::inverse(nodeIt.getInheritedTransformation()) *
-                    glm::inverse(viewMatrix) * basePixel;
-                glm::dvec4 transformedEye =
-                    geometryNode->get_inverse() *
-                    glm::inverse(nodeIt.getInheritedTransformation()) *
-                    glm::inverse(viewMatrix) * baseEye;
+                glm::mat4 transformationStack = viewMatrix *
+                                                nodeIt.getInheritedTransformation() *
+                                                geometryNode->get_transform();
+
+                glm::dvec4 transformedPixel = glm::inverse(transformationStack) * basePixel;
+                glm::dvec4 transformedEye = glm::inverse(transformationStack) * baseEye;
 
                 auto result = intersect(geometryNode->getPrimitive(),
                                         Ray(transformedEye, transformedPixel));
 
-                if (result && result->getT() < t && result->getT() >= 0.0) {
-                    t = result->getT();
-                    normal = result->getNormal();
+                if (result && result->getT() < intersectionWorldCoordinates.getT() && result->getT() >= 0.0) {
+                    intersectionWorldCoordinates = Intersection(
+                        result->getT(),
+                        transformationStack * result->getPosition(),
+                        result->getNormal() * glm::inverse(transformationStack));
                     material = geometryNode->getMaterial();
                 }
             }
 
-            if (t != std::numeric_limits<double>::max()) {
-                setPixelColour(image, x, y, getColour(material));
+
+            if (intersectionWorldCoordinates.getT() != std::numeric_limits<double>::max()) {
+                setPixelColour(image, x, y, calculateColour({baseEye, basePixel}, intersectionWorldCoordinates, material, ambient, lights));
             } else {
                 setPixelColour(image, x, y,
                                getBackgroundColour(glm::dvec3(basePixel),

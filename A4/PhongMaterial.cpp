@@ -12,7 +12,17 @@ PhongMaterial::PhongMaterial(
 PhongMaterial::~PhongMaterial()
 {}
 
-glm::dvec3 PhongMaterial::getKD()
+glm::dvec3 PhongMaterial::getKD() const
 {
 	return m_kd;
+}
+
+glm::dvec3 PhongMaterial::getKS() const
+{
+	return m_ks;
+}
+
+double PhongMaterial::getShininess() const
+{
+	return m_shininess;
 }
