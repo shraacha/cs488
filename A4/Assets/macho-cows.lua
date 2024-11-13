@@ -103,6 +103,6 @@ for i = 1, 6 do
 end
 
 gr.render(scene,
-	  'bounded-macho-cows.png', 512, 512,
+	  'macho-cows.png', 512, 512,
 	  {0, 2, 30}, {0, 0, -1}, {0, 1, 0}, 50,
 	  {0.4, 0.4, 0.4}, {gr.light({200, 202, 430}, {0.8, 0.8, 0.8}, {1, 0, 0})})

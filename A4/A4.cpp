@@ -3,6 +3,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <cstdlib>
 
 #include <glm/ext.hpp>
 
@@ -51,7 +52,7 @@ static inline double getScreenPosition(const double &sideLength,
 
 static inline std::vector<glm::dvec4>
 generateSubScreenPositions(const glm::vec4 &screenPosition, unsigned int wSubDivs = 2,
-                           unsigned int hSubDivs = 2) {
+                           unsigned int hSubDivs = 2, bool jitter = true) {
     std::vector<glm::dvec4> positions;
 
     glm::vec4 bottomLeft(screenPosition.x - 0.5, screenPosition.y - 0.5, screenPosition.z, 1.0);
@@ -59,17 +60,20 @@ generateSubScreenPositions(const glm::vec4 &screenPosition, unsigned int wSubDiv
     double wStep = 1.0 / (double)(wSubDivs);
     double hStep = 1.0 / (double)(hSubDivs);
 
-    double wStart = wStep / 2.0;
-    double hStart = hStep / 2.0;
+    double wHalfStep = wStep / 2.0;
+    double hHalfStep = hStep / 2.0;
 
-    glm::vec4 startLocation(bottomLeft.x + wStep/2.0, bottomLeft.y + hStep/2.0, bottomLeft.z, bottomLeft.w);
+    glm::vec4 startLocation(bottomLeft.x + wHalfStep, bottomLeft.y + hHalfStep, bottomLeft.z, bottomLeft.w);
     double row = startLocation.y;
     double startCol = startLocation.x;
 
     for (unsigned int i = 0; i < hSubDivs; ++i) {
         double col = startCol;
         for (unsigned int j = 0; j < wSubDivs; ++j) {
-            positions.emplace_back(col, row, startLocation.z,  startLocation.w);
+            double wJitter = jitter ? ((static_cast<double>(std::rand()) / RAND_MAX) * wStep) - wHalfStep : 0;
+            double hJitter = jitter ? ((static_cast<double>(std::rand()) / RAND_MAX) * hStep) - hHalfStep : 0;
+
+            positions.emplace_back(col + hJitter, row + wJitter, startLocation.z,  startLocation.w);
 
             row += wStep;
         }

@@ -9,6 +9,7 @@
 // #include "cs488-framework/ObjFileDecoder.hpp"
 #include "Mesh.hpp"
 #include "Primitive.hpp"
+#include "debug.hpp"
 
 static BoundingBox generateBoundingBox(const Mesh &mesh)
 {
@@ -32,6 +33,40 @@ static BoundingBox generateBoundingBox(const Mesh &mesh)
     return BoundingBox(minCorner, maxCorner - minCorner);
 }
 
+size_t readFaceVertEatRest(std::ifstream & ifs) {
+    static unsigned int count = 0;
+    size_t faceVert;
+    size_t dump;
+
+    // read vert info
+    ifs >> faceVert;
+
+    if (ifs.peek() == '/') {
+        ifs.get();
+    } else {
+        // no tex or normal info
+        return faceVert;
+    }
+
+    if (ifs.peek() == '/') {
+        ifs.get();
+        ifs >> dump;
+    } else {
+        ifs >> dump;
+
+        if (ifs.peek() == '/') {
+            ifs.get();
+            ifs >> dump;
+        }
+    }
+
+    if (count++ < 10) {
+        DLOG("faceVert %lu", faceVert);
+    }
+
+    return faceVert;
+}
+
 Mesh::Mesh(const std::string &fname) : m_vertices(), m_faces() {
     std::string code;
     double vx, vy, vz;
@@ -43,7 +78,10 @@ Mesh::Mesh(const std::string &fname) : m_vertices(), m_faces() {
             ifs >> vx >> vy >> vz;
             m_vertices.push_back(glm::vec3(vx, vy, vz));
         } else if (code == "f") {
-            ifs >> s1 >> s2 >> s3;
+            s1 = readFaceVertEatRest(ifs);
+            s2 = readFaceVertEatRest(ifs);
+            s3 = readFaceVertEatRest(ifs);
+
             m_faces.push_back(Triangle(s1 - 1, s2 - 1, s3 - 1));
         }
     }
