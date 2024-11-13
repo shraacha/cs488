@@ -29,7 +29,7 @@ The image uses a 3x3 pixel subdivision.
 ![macho_cows_antialiased](./Assets/SampleImages/macho-cows.png)
 
 ## Unique Scene
-My unique scene `Assets/scene.lua` contains my puppet from A3, and the cow model. It pictures Alphonse transmuting a white cow sculpture (hence why its floating).
+My unique scene `Assets/scene.lua` contains my puppet from A3, and the cow model. It pictures Alphonse transmuting a white cow sculpture (hence why its floating). The picture is included below as `screenshot.png`.
 
 # Images
 
