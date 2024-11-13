@@ -34,6 +34,7 @@ static inline double getScreenDepth(const double & height, const double & fovy)
   return (height / 2) / std::tan(degreesToRadians(fovy) / 2);
 }
 
+
 // paramaeters:
 // - flip
 //   whether to flip the position, this is needed when supplying an device coordinate index
@@ -46,6 +47,36 @@ static inline double getScreenPosition(const double &sideLength,
     } else {
         return (double)index - sideLength / 2 + 0.5;
     }
+}
+
+static inline std::vector<glm::dvec4>
+generateSubScreenPositions(const glm::vec4 &screenPosition, unsigned int wSubDivs = 2,
+                           unsigned int hSubDivs = 2) {
+    std::vector<glm::dvec4> positions;
+
+    glm::vec4 bottomLeft(screenPosition.x - 0.5, screenPosition.y - 0.5, screenPosition.z, 1.0);
+
+    double wStep = 1.0 / (double)(wSubDivs);
+    double hStep = 1.0 / (double)(hSubDivs);
+
+    double wStart = wStep / 2.0;
+    double hStart = hStep / 2.0;
+
+    glm::vec4 startLocation(bottomLeft.x + wStep/2.0, bottomLeft.y + hStep/2.0, bottomLeft.z, bottomLeft.w);
+    double row = startLocation.y;
+    double startCol = startLocation.x;
+
+    for (unsigned int i = 0; i < hSubDivs; ++i) {
+        double col = startCol;
+        for (unsigned int j = 0; j < wSubDivs; ++j) {
+            positions.emplace_back(col, row, startLocation.z,  startLocation.w);
+
+            row += wStep;
+        }
+        col += hStep;
+    }
+
+    return positions;
 }
 
 static inline std::optional<Intersection>
@@ -265,35 +296,52 @@ void A4_Render(
         for (uint x = 0; x < w; ++x) {
             viewSpacePixel.x = getScreenPosition(w, x);
 
-            glm::dvec4 worldSpaceEye = glm::inverse(viewMatrix) * viewSpaceEye;
-            glm::dvec4 worldSpacePixel = glm::inverse(viewMatrix) * viewSpacePixel;
+            // get vector of subpixels
+            std::vector<glm::dvec4> subPixels = generateSubScreenPositions(viewSpacePixel, 1, 1);
 
-            auto eyeRayIntersectionAndMaterial = intersect(sceneManager, Ray(worldSpaceEye, worldSpacePixel));
+            glm::dvec3 pixelColour = glm::dvec3(0.0, 0.0, 0.0);
 
-            if (eyeRayIntersectionAndMaterial.has_value()) {
-                std::vector<const Light *> contributingLights;
+            // iterate over subpixels, add to total
+            for (auto subPixel : subPixels)
+            {
+                glm::dvec4 worldSpaceEye = glm::inverse(viewMatrix) * viewSpaceEye;
+                glm::dvec4 worldSpacePixel = glm::inverse(viewMatrix) * subPixel;
 
-                for (const Light *light : lights) {
-                    auto shadowRayIntersectionAndMaterial = intersect(
-                        sceneManager, Ray(eyeRayIntersectionAndMaterial->first.getPosition(),
-                                       glm::vec4(light->position, 1.0)));
+                auto eyeRayIntersectionAndMaterial =
+                    intersect(sceneManager, Ray(worldSpaceEye, worldSpacePixel));
 
-                    if (!shadowRayIntersectionAndMaterial.has_value()) {
-                        contributingLights.emplace_back(light);
+                if (eyeRayIntersectionAndMaterial.has_value()) {
+                    std::vector<const Light *> contributingLights;
+
+                    for (const Light *light : lights) {
+                        auto shadowRayIntersectionAndMaterial = intersect(
+                            sceneManager,
+                            Ray(eyeRayIntersectionAndMaterial->first.getPosition(),
+                                glm::vec4(light->position, 1.0)));
+
+                        if (!shadowRayIntersectionAndMaterial.has_value()) {
+                            contributingLights.emplace_back(light);
+                        }
                     }
-                }
 
-                // must include view matrix to transfrom pixel & eye from view space
-                setPixelColour(image, x, y,
-                               calculateColour({worldSpaceEye, worldSpacePixel},
-                                               eyeRayIntersectionAndMaterial->first, eyeRayIntersectionAndMaterial->second,
-                                               ambient, contributingLights));
-            } else {
-                setPixelColour(image, x, y,
-                               getBackgroundColour(glm::dvec3(viewSpacePixel),
-                                                   c_topScreenColour, c_botScreenColour,
-                                                   fovy));
+                    // must include view matrix to transfrom pixel & eye from view space
+                   pixelColour += calculateColour({worldSpaceEye, worldSpacePixel},
+                                                   eyeRayIntersectionAndMaterial->first,
+                                                   eyeRayIntersectionAndMaterial->second,
+                                                   ambient, contributingLights);
+                } else {
+                   pixelColour += getBackgroundColour(glm::dvec3(subPixel),
+                                                       c_topScreenColour,
+                                                       c_botScreenColour, fovy);
+                }
             }
+
+            // average pixel vals
+            pixelColour *= 1.0 / (double)subPixels.size();
+
+            // set colour
+            setPixelColour(image, x, y, pixelColour);
+
             ++progressBar;
             progressBar.conditionalOut(std::cout);
         }
