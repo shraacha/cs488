@@ -78,7 +78,13 @@ intersect(Primitive *primitive, const Ray & ray)
     }
 
     if (mesh) {
-        result = findRayMeshIntersection(ray, *mesh);
+        #ifdef RENDER_BOUNDING_VOLUMES
+            result = findRayMeshBoundingBoxIntersection(ray, *mesh);
+        #else
+        if((result = findRayMeshBoundingBoxIntersection(ray, *mesh)).has_value()) {
+            result = findRayMeshIntersection(ray, *mesh);
+        }
+        #endif
     }
 
     if (result.has_value())

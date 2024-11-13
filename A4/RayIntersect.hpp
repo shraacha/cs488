@@ -36,13 +36,19 @@ bool doesRayIntersectSphere(const Ray & ray,
  *      - t (time for parameterized line function)
  *      - normal vec
  */
+
 std::optional<Intersection>
-findRayBoxIntersection(const Ray & ray,
-                             const glm::dvec4 &corner = {0.0, 0.0, 0.0, 1.0},
-                             const double &width = 1.0);
+findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const glm::dvec3 &width);
+
+std::optional<Intersection>
+findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner = {0.0, 0.0, 0.0, 1.0},
+                       const double &width = 1.0);
 
 std::optional<Intersection>
 findRayMeshIntersection(const Ray & ray, const Mesh & mesh);
+
+std::optional<Intersection>
+findRayMeshBoundingBoxIntersection(const Ray & ray, const Mesh & mesh);
 
 /* desc:
  *

@@ -63,10 +63,9 @@ static inline bool isDeterminantPositive(const double & a, const double & b, con
 }
 
 // -------------------------------------------------
-std::optional<Intersection>
-findRaySphereIntersection(const Ray & ray,
-                                const glm::dvec4 &centre, const double &radius)
-{
+std::optional<Intersection> findRaySphereIntersection(const Ray &ray,
+                                                      const glm::dvec4 &centre,
+                                                      const double &radius) {
 
     glm::dvec4 pixelDelta = ray.getDirection();
     glm::dvec4 eyeToCentre = ray.getEyePoint() - centre;
@@ -108,62 +107,62 @@ bool doesRayIntersectSphere(const Ray & ray,
 
 // -------------------------------------------------
 static inline std::vector<glm::dvec4>
-getBoxFaceVertices(const glm::dvec4 &corner, const double &width,
+getBoxFaceVertices(const glm::dvec4 &corner, const glm::dvec3 &width,
                    const size_t &face)
 {
     switch (face) {
     case 0: // back face
         return {glm::dvec4(corner.x, corner.y, corner.z, 1.0),
-                glm::dvec4(corner.x, corner.y + width, corner.z, 1.0),
-                glm::dvec4(corner.x + width, corner.y + width, corner.z, 1.0),
-                glm::dvec4(corner.x + width, corner.y, corner.z, 1.0)};
+                glm::dvec4(corner.x, corner.y + width.y, corner.z, 1.0),
+                glm::dvec4(corner.x + width.x, corner.y + width.y, corner.z, 1.0),
+                glm::dvec4(corner.x + width.x, corner.y, corner.z, 1.0)};
         break;
     case 1: // left face
         return {glm::dvec4(corner.x, corner.y, corner.z, 1.0),
-                glm::dvec4(corner.x, corner.y, corner.z + width, 1.0),
-                glm::dvec4(corner.x, corner.y + width, corner.z + width, 1.0),
-                glm::dvec4(corner.x, corner.y + width, corner.z, 1.0)};
+                glm::dvec4(corner.x, corner.y, corner.z + width.z, 1.0),
+                glm::dvec4(corner.x, corner.y + width.y, corner.z + width.z, 1.0),
+                glm::dvec4(corner.x, corner.y + width.y, corner.z, 1.0)};
         break;
     case 2: // bottom face
         return {glm::dvec4(corner.x, corner.y, corner.z, 1.0),
-                glm::dvec4(corner.x + width, corner.y, corner.z, 1.0),
-                glm::dvec4(corner.x + width, corner.y, corner.z + width, 1.0),
-                glm::dvec4(corner.x, corner.y, corner.z + width, 1.0)};
+                glm::dvec4(corner.x + width.x, corner.y, corner.z, 1.0),
+                glm::dvec4(corner.x + width.x, corner.y, corner.z + width.z, 1.0),
+                glm::dvec4(corner.x, corner.y, corner.z + width.z, 1.0)};
         break;
     case 3: // front face
-        return {glm::dvec4(corner.x + width, corner.y + width, corner.z + width,
+        return {glm::dvec4(corner.x + width.x, corner.y + width.y, corner.z + width.z,
                            1.0),
-                glm::dvec4(corner.x, corner.y + width, corner.z + width, 1.0),
-                glm::dvec4(corner.x, corner.y, corner.z + width, 1.0),
-                glm::dvec4(corner.x + width, corner.y, corner.z + width, 1.0)};
+                glm::dvec4(corner.x, corner.y + width.y, corner.z + width.z, 1.0),
+                glm::dvec4(corner.x, corner.y, corner.z + width.z, 1.0),
+                glm::dvec4(corner.x + width.x, corner.y, corner.z + width.z, 1.0)};
         break;
     case 4: // right face
-        return {glm::dvec4(corner.x + width, corner.y + width, corner.z + width,
+        return {glm::dvec4(corner.x + width.x, corner.y + width.y, corner.z + width.z,
                            1.0),
-                glm::dvec4(corner.x + width, corner.y, corner.z + width, 1.0),
-                glm::dvec4(corner.x + width, corner.y, corner.z, 1.0),
-                glm::dvec4(corner.x + width, corner.y + width, corner.z, 1.0)};
+                glm::dvec4(corner.x + width.x, corner.y, corner.z + width.z, 1.0),
+                glm::dvec4(corner.x + width.x, corner.y, corner.z, 1.0),
+                glm::dvec4(corner.x + width.x, corner.y + width.y, corner.z, 1.0)};
         break;
     default: // top face
-        return {glm::dvec4(corner.x + width, corner.y + width, corner.z + width,
+        return {glm::dvec4(corner.x + width.x, corner.y + width.y, corner.z + width.z,
                            1.0),
-                glm::dvec4(corner.x + width, corner.y + width, corner.z, 1.0),
-                glm::dvec4(corner.x, corner.y + width, corner.z, 1.0),
-                glm::dvec4(corner.x, corner.y + width, corner.z + width, 1.0)};
+                glm::dvec4(corner.x + width.x, corner.y + width.y, corner.z, 1.0),
+                glm::dvec4(corner.x, corner.y + width.y, corner.z, 1.0),
+                glm::dvec4(corner.x, corner.y + width.y, corner.z + width.z, 1.0)};
         break;
     }
 }
 
 std::optional<Intersection>
-findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const double &width) {
+findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const glm::dvec3 &width) {
     double t = std::numeric_limits<double>::max();
     glm::dvec4 normal;
 
     for (size_t i = 0; i < 6; ++i) {
         std::optional<Intersection> result{std::nullopt};
 
-        result =
-            findRayPolygonIntersection(ray, getBoxFaceVertices(corner, width, i));
+        result = findRayPolygonIntersection(
+            ray, getBoxFaceVertices(corner, width, i));
 
         if (result.has_value() && result->getT() < t && result->getT() >= 0.0) {
             t = result->getT();
@@ -179,6 +178,12 @@ findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const double &w
     }
 }
 
+std::optional<Intersection>
+findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const double &width) {
+    return findRayBoxIntersection(ray, corner, glm::dvec3(width, width, width));
+}
+
+// -------------------------------------------------
 std::optional<Intersection>
 findRayMeshIntersection(const Ray & ray, const Mesh & mesh)
 {
@@ -204,6 +209,12 @@ findRayMeshIntersection(const Ray & ray, const Mesh & mesh)
     } else {
         return std::nullopt;
     }
+}
+
+std::optional<Intersection>
+findRayMeshBoundingBoxIntersection(const Ray & ray, const Mesh & mesh)
+{
+    return findRayBoxIntersection(ray, glm::dvec4(mesh.getBoundingBox().getPos(), 1.0), mesh.getBoundingBox().getSize());
 }
 
 // -------------------------------------------------
