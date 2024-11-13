@@ -297,7 +297,7 @@ void A4_Render(
             viewSpacePixel.x = getScreenPosition(w, x);
 
             // get vector of subpixels
-            std::vector<glm::dvec4> subPixels = generateSubScreenPositions(viewSpacePixel, 1, 1);
+            std::vector<glm::dvec4> subPixels = generateSubScreenPositions(viewSpacePixel, 3, 3);
 
             glm::dvec3 pixelColour = glm::dvec3(0.0, 0.0, 0.0);
 
