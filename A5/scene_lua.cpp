@@ -55,7 +55,7 @@
 #include "Primitive.hpp"
 #include "Material.hpp"
 #include "PhongMaterial.hpp"
-#include "A4.hpp"
+#include "A5.hpp"
 
 typedef std::map<std::string,Mesh*> MeshMap;
 static MeshMap mesh_map;

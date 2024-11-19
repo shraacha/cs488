@@ -10,7 +10,7 @@
 #include "ProgressBar.hpp"
 #include "cs488-framework/MathUtils.hpp"
 
-#include "A4.hpp"
+#include "A5.hpp"
 #include "PhongMaterial.hpp"
 #include "Primitive.hpp"
 #include "RayIntersect.hpp"
