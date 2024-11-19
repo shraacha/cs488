@@ -141,22 +141,21 @@ std::optional<Intersection> Mesh::intersectDirectlyWithMesh(const Ray & ray) con
     }
 }
 
-std::optional<Intersection> Mesh::intersect(const Ray & ray) const
-{
+std::optional<Intersection> Mesh::intersect(const Ray & ray) const {
 #ifdef RENDER_BOUNDING_VOLUMES
     std::optional<Intersection> result = m_boundingBox.intersect(ray);
 #else
-    std::optional<Intersection> result {std::nullopt};
+    std::optional<Intersection> result{std::nullopt};
     auto boundingBoxIntersection = m_boundingBox.intersect(ray);
-    if (boundingBoxIntersection.has_value()) {
+    if (boundingBoxIntersection.has_value() &&
+        boundingBoxIntersection->getT() >= 0) {
         result = intersectDirectlyWithMesh(ray);
     } else {
         result = std::nullopt;
     }
 #endif
 
-    if (result.has_value())
-    {
+    if (result.has_value()) {
         result->setPosition(evaluate(ray, result->getT()));
     }
 
