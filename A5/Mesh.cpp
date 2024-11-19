@@ -127,7 +127,8 @@ std::optional<Intersection> Mesh::intersectDirectlyWithMesh(const Ray & ray) con
                   glm::dvec4(meshVerts[face.v2], 1.0),
                   glm::dvec4(meshVerts[face.v3], 1.0)});
 
-        if (result.has_value() && result->getT() < t && result->getT() >= 0.0) {
+        if (result.has_value() && result->getT() < t &&
+            result->getT() >= ray.getMinThreshold()) {
             t = result->getT();
             normal = result->getNormal();
         }
