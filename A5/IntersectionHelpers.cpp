@@ -1,5 +1,5 @@
-#include "RayIntersect.hpp"
 #include "Intersection.hpp"
+#include "IntersectionHelpers.hpp"
 #include "debug.hpp"
 
 #include <optional>
@@ -181,40 +181,6 @@ findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const glm::dvec
 std::optional<Intersection>
 findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const double &width) {
     return findRayBoxIntersection(ray, corner, glm::dvec3(width, width, width));
-}
-
-// -------------------------------------------------
-std::optional<Intersection>
-findRayMeshIntersection(const Ray & ray, const Mesh & mesh)
-{
-    double t = std::numeric_limits<double>::max();
-    glm::dvec4 normal;
-    const std::vector<glm::vec3> & meshVerts = mesh.getVertices();
-    std::optional<Intersection> result{std::nullopt};
-
-    for (const Triangle & face : mesh.getFaces()) {
-        result = findRayPolygonIntersection(ray, {glm::dvec4(meshVerts[face.v1], 1.0),
-                                                  glm::dvec4(meshVerts[face.v2], 1.0),
-                                                  glm::dvec4(meshVerts[face.v3], 1.0)});
-
-        if (result.has_value() && result->getT() < t && result->getT() >= 0.0) {
-            t = result->getT();
-            normal = result->getNormal();
-        }
-    }
-
-    if (t != std::numeric_limits<double>::max())
-    {
-        return Intersection(t, normal);
-    } else {
-        return std::nullopt;
-    }
-}
-
-std::optional<Intersection>
-findRayMeshBoundingBoxIntersection(const Ray & ray, const Mesh & mesh)
-{
-    return findRayBoxIntersection(ray, glm::dvec4(mesh.getBoundingBox().getPos(), 1.0), mesh.getBoundingBox().getSize());
 }
 
 // -------------------------------------------------

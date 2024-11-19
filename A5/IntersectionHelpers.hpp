@@ -6,7 +6,6 @@
 
 #include <glm/glm.hpp>
 
-#include "Mesh.hpp"
 #include "Ray.hpp"
 #include "Intersection.hpp"
 
@@ -43,12 +42,6 @@ findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const glm::dvec
 std::optional<Intersection>
 findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner = {0.0, 0.0, 0.0, 1.0},
                        const double &width = 1.0);
-
-std::optional<Intersection>
-findRayMeshIntersection(const Ray & ray, const Mesh & mesh);
-
-std::optional<Intersection>
-findRayMeshBoundingBoxIntersection(const Ray & ray, const Mesh & mesh);
 
 /* desc:
  *

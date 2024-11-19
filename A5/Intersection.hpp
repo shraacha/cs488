@@ -11,6 +11,10 @@ class Intersection {
         Intersection();
         Intersection(const double & t, const glm::dvec4 normal);
         Intersection(const double & t, const glm::dvec4 position, const glm::dvec4 normal);
+        Intersection(Intersection & other) = default;
+        Intersection(Intersection && other) = default;
+        Intersection& operator=(Intersection & other) = default;
+        Intersection& operator=(Intersection && other) = default;
 
         double getT() const;
         glm::dvec4 getNormal() const;

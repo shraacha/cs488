@@ -28,6 +28,10 @@ class Mesh : public Primitive {
   public:
     Mesh(const std::string & fname);
 
+    // other
+    std::optional<Intersection> intersect(const Ray & ray) const override;
+
+    // getters and accessors
     const std::vector<glm::vec3> & getVertices() const;
     const std::vector<Triangle> & getFaces() const;
     BoundingBox getBoundingBox() const;
@@ -39,4 +43,7 @@ class Mesh : public Primitive {
     BoundingBox m_boundingBox;
 
     friend std::ostream & operator<<(std::ostream & out, const Mesh & mesh);
+
+    // other
+    std::optional<Intersection> intersectDirectlyWithMesh(const Ray & ray) const;
 };

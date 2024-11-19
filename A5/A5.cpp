@@ -13,7 +13,6 @@
 #include "A5.hpp"
 #include "PhongMaterial.hpp"
 #include "Primitive.hpp"
-#include "RayIntersect.hpp"
 #include "SceneManager.hpp"
 #include "ImageHelpers.hpp"
 #include "debug.hpp"
@@ -83,57 +82,10 @@ generateSubScreenPositions(const glm::vec4 &screenPosition, unsigned int wSubDiv
     return positions;
 }
 
-static inline std::optional<Intersection>
-intersect(Primitive *primitive, const Ray & ray)
-{
-    std::optional<Intersection> result{std::nullopt};
-
-    // casting to derived primitive for further intersection calculation
-    NonhierSphere * nhSphere = dynamic_cast<NonhierSphere *>(primitive);
-    Sphere * sphere = dynamic_cast<Sphere *>(primitive);
-    NonhierBox * nhBox = dynamic_cast<NonhierBox *>(primitive);
-    Cube * cube = dynamic_cast<Cube *>(primitive);
-    Mesh * mesh = dynamic_cast<Mesh *>(primitive);
-
-    if (nhSphere) {
-        result = findRaySphereIntersection(
-            ray, nhSphere->getPosAsDvec4(), nhSphere->getRadius());
-    }
-
-    if (sphere) {
-        result = findRaySphereIntersection(ray);
-    }
-
-    if (nhBox) {
-        result = findRayBoxIntersection(ray, nhBox->getPosAsDvec4(), nhBox->getSize());
-    }
-
-    if (cube) {
-        result = findRayBoxIntersection(ray);
-    }
-
-    if (mesh) {
-        #ifdef RENDER_BOUNDING_VOLUMES
-            result = findRayMeshBoundingBoxIntersection(ray, *mesh);
-        #else
-        if((result = findRayMeshBoundingBoxIntersection(ray, *mesh)).has_value()) {
-            result = findRayMeshIntersection(ray, *mesh);
-        }
-        #endif
-    }
-
-    if (result.has_value())
-    {
-        result->setPosition(evaluate(ray, result->getT()));
-    }
-
-    return result;
-}
-
-static inline std::optional<std::pair<Intersection, Material*>>
-intersect(const SceneManager & sceneManager, const Ray & ray)
-{
-    std::optional<std::pair<Intersection, Material*>> intersectionAndMaterial{std::nullopt};
+static inline std::optional<std::pair<Intersection, Material *>>
+intersect(const SceneManager & sceneManager, const Ray & ray) {
+    std::optional<std::pair<Intersection, Material *>> intersectionAndMaterial{
+        std::nullopt};
 
     for (SceneManager::PreOrderTraversalIterator nodeIt = sceneManager.begin();
          nodeIt != sceneManager.end(); ++nodeIt) {
@@ -146,16 +98,23 @@ intersect(const SceneManager & sceneManager, const Ray & ray)
         glm::mat4 transformationStack =
             nodeIt.getInheritedTransformation() * geometryNode->get_transform();
 
-        glm::dvec4 transformedEye = glm::inverse(transformationStack) * ray.getEyePoint();
-        glm::dvec4 transformedPixel = glm::inverse(transformationStack) * ray.getPixelPoint();
+        glm::dvec4 transformedEye =
+            glm::inverse(transformationStack) * ray.getEyePoint();
+        glm::dvec4 transformedPixel =
+            glm::inverse(transformationStack) * ray.getPixelPoint();
 
-        auto result = intersect(geometryNode->getPrimitive(),
-                                Ray(transformedEye, transformedPixel));
+        auto result = geometryNode->getPrimitive()->intersect(
+            Ray(transformedEye, transformedPixel));
 
-        if (result.has_value() && (!intersectionAndMaterial.has_value() || (result->getT() < intersectionAndMaterial->first.getT())) &&
+        if (result.has_value() &&
+            (!intersectionAndMaterial.has_value() ||
+             (result->getT() < intersectionAndMaterial->first.getT())) &&
             result->getT() >= ray.getMinThreshold()) {
-            intersectionAndMaterial = std::make_pair<Intersection, Material *>(Intersection(result->getT(), transformationStack * result->getPosition(),
-                             result->getNormal() * glm::inverse(transformationStack)), geometryNode->getMaterial());
+            intersectionAndMaterial = std::make_pair<Intersection, Material *>(
+                Intersection(
+                    result->getT(), transformationStack * result->getPosition(),
+                    result->getNormal() * glm::inverse(transformationStack)),
+                geometryNode->getMaterial());
         }
     }
 

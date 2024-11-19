@@ -9,8 +9,10 @@
 // #include "cs488-framework/ObjFileDecoder.hpp"
 #include "Mesh.hpp"
 #include "Primitive.hpp"
+#include "IntersectionHelpers.hpp"
 #include "debug.hpp"
 
+// helpers
 static BoundingBox generateBoundingBox(const Mesh &mesh)
 {
     glm::dvec3 minCorner(std::numeric_limits<double>::max());
@@ -67,6 +69,8 @@ size_t readFaceVertEatRest(std::ifstream & ifs) {
     return faceVert;
 }
 
+
+// ctors
 Mesh::Mesh(const std::string &fname) : m_vertices(), m_faces() {
     std::string code;
     double vx, vy, vz;
@@ -109,6 +113,56 @@ std::ostream &operator<<(std::ostream &out, const Mesh &mesh) {
     return out;
 }
 
+//  ~~~ other ~~~
+std::optional<Intersection> Mesh::intersectDirectlyWithMesh(const Ray & ray) const
+{
+    double t = std::numeric_limits<double>::max();
+    glm::dvec4 normal;
+    const std::vector<glm::vec3> & meshVerts = m_vertices;
+    std::optional<Intersection> result{std::nullopt};
+
+    for (const Triangle & face : m_faces) {
+        result = findRayPolygonIntersection(
+            ray, {glm::dvec4(meshVerts[face.v1], 1.0),
+                  glm::dvec4(meshVerts[face.v2], 1.0),
+                  glm::dvec4(meshVerts[face.v3], 1.0)});
+
+        if (result.has_value() && result->getT() < t && result->getT() >= 0.0) {
+            t = result->getT();
+            normal = result->getNormal();
+        }
+    }
+
+    if (t != std::numeric_limits<double>::max()) {
+        return Intersection(t, normal);
+    } else {
+        return std::nullopt;
+    }
+}
+
+std::optional<Intersection> Mesh::intersect(const Ray & ray) const
+{
+#ifdef RENDER_BOUNDING_VOLUMES
+    std::optional<Intersection> result = m_boundingBox.intersect(ray);
+#else
+    std::optional<Intersection> result {std::nullopt};
+    auto boundingBoxIntersection = m_boundingBox.intersect(ray);
+    if (boundingBoxIntersection.has_value()) {
+        result = intersectDirectlyWithMesh(ray);
+    } else {
+        result = std::nullopt;
+    }
+#endif
+
+    if (result.has_value())
+    {
+        result->setPosition(evaluate(ray, result->getT()));
+    }
+
+    return result;
+}
+
+// ~~~ getters and accessors ~~~
 const std::vector<glm::vec3> &Mesh::getVertices() const { return m_vertices; }
 
 const std::vector<Triangle> &Mesh::getFaces() const { return m_faces; }
