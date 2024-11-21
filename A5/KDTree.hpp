@@ -74,10 +74,8 @@ template <typename Key> class KDTree {
         unsigned int axis) {
         // sort
         std::vector<Key *> keys = inputKeys;
-        std::sort(keys.begin(), keys.end(), comparisonFunctors[axis]);
-
-        // get midpoint
         size_t midpoint = keys.size() / 2;
+        std::nth_element(keys.begin(), keys.begin() + midpoint, keys.end(), comparisonFunctors[axis]);
 
         // set midpoint as item for current node
         std::unique_ptr<KDNode<Key>> node = std::make_unique<KDNode<Key>>(keys[midpoint]);
