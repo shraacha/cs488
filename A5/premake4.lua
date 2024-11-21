@@ -53,7 +53,7 @@ solution "CS488-Projects"
         links (linkLibs)
         linkoptions (linkOptionList)
         includedirs (includeDirList)
-        files { "*.cpp" }
+        files { "./src/*.cpp" }
 
     configuration "Debug"
         defines { "DEBUG" }
