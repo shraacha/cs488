@@ -4,11 +4,13 @@ includeDirList = {
     "../shared",
     "../shared/include",
     "../shared/gl3w",
-    "../shared/imgui"
+    "../shared/imgui",
+    "include"
 }
 
 libDirectories = { 
-    "../lib"
+    "../lib",
+    "lib"
 }
 
 
@@ -53,7 +55,7 @@ solution "CS488-Projects"
         links (linkLibs)
         linkoptions (linkOptionList)
         includedirs (includeDirList)
-        files { "./src/*.cpp" }
+        files { "src/*.cpp", "include/*.hpp" }
 
     configuration "Debug"
         defines { "DEBUG" }
@@ -62,3 +64,32 @@ solution "CS488-Projects"
     configuration "Release"
         defines { "NDEBUG" }
         flags { "Optimize" }
+
+    project "Tests"
+        kind "ConsoleApp"
+        language "C++"
+        location "build"
+        targetdir "."
+        objdir "build"
+        files { "tests/**.cpp", "tests/**.h" }
+        includedirs { "include", "third_party/googletest/googletest/include" }
+
+        links { "googletest" }
+        libdirs { "lib", "third_party/googletest/build/lib" }
+
+    configuration "Debug"
+        defines { "DEBUG" }
+        flags { "Symbols" }
+
+    configuration "Release"
+        defines { "NDEBUG" }
+        flags { "Optimize" }
+
+    project "googletest"
+        kind "StaticLib"
+        language "C++"
+        location "build"
+        objdir "build"
+        targetdir "lib"
+        files { "third_party/googletest/googletest/src/**.cc" }
+        includedirs { "third_party/googletest/googletest/include", "third_party/googletest/googletest/" }
