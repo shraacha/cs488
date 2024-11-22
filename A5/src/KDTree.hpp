@@ -6,11 +6,14 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <tuple>
 #include <vector>
+
+#include "KPriorityQueue.hpp"
 
 // helpers
 template <typename T, typename R>
-std::function<R(T *, T *)>
+static std::function<R(T *, T *)>
 dereferenceWrapper(const std::function<R(const T &, const T &)> & func)
 {
     return [func](T *t1, T *t2) -> R { return func(*t1, *t2); };
@@ -19,12 +22,31 @@ dereferenceWrapper(const std::function<R(const T &, const T &)> & func)
 // KD Tree
 template <typename T> struct KDNode
 {
-    KDNode(T *item) : m_item{item}, m_left{nullptr}, m_right{nullptr} {}
+    KDNode(T *item) : m_item{item}, m_left{nullptr}, m_right{nullptr}
+    {
+        if (item == nullptr) {
+            throw std::runtime_error("Attempting to construct KDNode with nullptr.");
+        }
+    }
 
     T *m_item; // pointer into KDTree vec
     std::shared_ptr<KDNode<T>> m_left;
     std::shared_ptr<KDNode<T>> m_right;
+
+    T& operator*() const {
+        return *m_item;
+    }
 };
+
+template <typename T, typename R>
+static std::function<R(std::shared_ptr<KDNode<T>>, std::shared_ptr<KDNode<T>>)>
+sharedPointerDereferenceWrapperKDNode(
+    const std::function<R(const T &, const T &)> & func)
+{
+    return [func](std::shared_ptr<KDNode<T>> t1,
+                  std::shared_ptr<KDNode<T>> t2) -> R
+    { return func(**t1, **t2); };
+}
 
 /* desc:
  * - A KD tree stucture to store K-dimensional data.
@@ -35,7 +57,7 @@ template <typename T_Key, typename T_Distance> class KDTree
 {
     using depth_t = unsigned int;
     using axis_t = unsigned int;
-    using node_t = KDNode<T_Key>;
+    using node_t = KDNode<const T_Key>;
 
   public:
     KDTree(
@@ -72,10 +94,26 @@ template <typename T_Key, typename T_Distance> class KDTree
             throw std::runtime_error("getNearest error.");
         }
 
-        return *result->m_item;
+        return **result;
     };
 
-    T_Key getNNearest(const T_Key & key, unsigned int n);
+    std::vector<T_Key> getKNearest(const T_Key & key, unsigned int k)
+    {
+        KPriorityQueue<std::shared_ptr<node_t>> queue(
+            k,
+            [&](const std::shared_ptr<node_t> & k1,
+                const std::shared_ptr<node_t> & k2) -> bool
+            { return isNodeCloser(key, k1, k2); });
+
+        queue = getKNearestNodes(key, m_tree, getStartAxis(), queue);
+
+        std::vector<T_Key> returnVec;
+        for(auto & ref : queue.getQueue()) {
+            returnVec.emplace_back(**ref);
+        }
+
+        return returnVec;
+    }
 
   private:
     std::vector<T_Key> m_keys;
@@ -102,36 +140,6 @@ template <typename T_Key, typename T_Distance> class KDTree
         }
 
         return distSquared;
-    }
-
-    std::shared_ptr<node_t>
-    getNearestNode(const T_Key & target, const std::shared_ptr<node_t> & node1,
-                   const std::shared_ptr<node_t> & node2)
-    {
-        if (node1 && !node2)
-        {
-            return node1;
-        }
-        else if (node2 && !node1)
-        {
-            return node2;
-        }
-        else if (!node1 && !node2)
-        {
-            return nullptr;
-        }
-        else
-        {
-            if (distSquared(target, *node1->m_item) <=
-                distSquared(target, *node2->m_item))
-            {
-                return node1;
-            }
-            else
-            {
-                return node2;
-            }
-        }
     }
 
     // desc:
@@ -170,8 +178,52 @@ template <typename T_Key, typename T_Distance> class KDTree
         return node;
     }
 
+    bool isNodeCloser(const T_Key & target,
+                      const std::shared_ptr<node_t> & node1,
+                      const std::shared_ptr<node_t> & node2)
+    {
+
+        if (distSquared(target, **node1) <= distSquared(target, **node2))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    std::shared_ptr<node_t>
+    getNearestNode(const T_Key & target, const std::shared_ptr<node_t> & node1,
+                   const std::shared_ptr<node_t> & node2)
+    {
+        if (node1 && !node2)
+        {
+            return node1;
+        }
+        else if (node2 && !node1)
+        {
+            return node2;
+        }
+        else if (!node1 && !node2)
+        {
+            return nullptr;
+        }
+        else
+        {
+            if (isNodeCloser(target, node1, node2))
+            {
+                return node1;
+            }
+            else
+            {
+                return node2;
+            }
+        }
+    }
+
     std::shared_ptr<node_t> getNearestNode(const T_Key & target,
-                                           std::shared_ptr<node_t> root,
+                                           const std::shared_ptr<node_t> root,
                                            const depth_t & depth)
     {
         if (!root)
@@ -181,7 +233,7 @@ template <typename T_Key, typename T_Distance> class KDTree
 
         std::shared_ptr<node_t> nextBranch, otherBranch;
 
-        if (m_comparisonFunctors[getAxis(depth)](target, *root->m_item))
+        if (m_comparisonFunctors[getAxis(depth)](target, **root))
         {
             nextBranch = root->m_left;
             otherBranch = root->m_right;
@@ -196,9 +248,9 @@ template <typename T_Key, typename T_Distance> class KDTree
             getNearestNode(target, nextBranch, depth + 1);
         std::shared_ptr<node_t> best = getNearestNode(target, temp, root);
 
-        T_Distance radiusSquared = distSquared(target, *best->m_item);
+        T_Distance radiusSquared = distSquared(target, **best);
         T_Distance distToSplitPlane =
-            m_distanceFunctors[getAxis(depth)](target, *root->m_item);
+            m_distanceFunctors[getAxis(depth)](target, **root);
 
         if (radiusSquared > distToSplitPlane * distToSplitPlane)
         {
@@ -211,25 +263,63 @@ template <typename T_Key, typename T_Distance> class KDTree
         return best;
     }
 
+    KPriorityQueue<std::shared_ptr<node_t>>
+    getKNearestNodes(const T_Key & target, const std::shared_ptr<node_t> root,
+                     const depth_t & depth, KPriorityQueue<std::shared_ptr<node_t>> queue)
+    {
+        if (!root)
+        {
+            return queue;
+        }
+
+        std::shared_ptr<node_t> nextBranch, otherBranch;
+
+        if (m_comparisonFunctors[getAxis(depth)](target, **root))
+        {
+            nextBranch = root->m_left;
+            otherBranch = root->m_right;
+        }
+        else
+        {
+            nextBranch = root->m_right;
+            otherBranch = root->m_left;
+        }
+
+        queue = getKNearestNodes(target, nextBranch, depth + 1, std::move(queue));
+        queue.push(root);
+
+        T_Distance radiusSquared = distSquared(target, **queue.getTop());
+        T_Distance distToSplitPlane =
+            m_distanceFunctors[getAxis(depth)](target, **root);
+
+        if (!queue.isFull() || radiusSquared > distToSplitPlane * distToSplitPlane)
+        {
+            queue = getKNearestNodes(target, otherBranch, depth + 1, std::move(queue));
+        }
+
+        return queue;
+    }
+
+    // output
     friend std::ostream & operator<<(std::ostream & os, const KDTree & tree)
     {
-        std::deque<node_t *> thisLevel;
-        std::deque<node_t *> nextLevel;
+        std::deque<std::shared_ptr<node_t>> thisLevel;
+        std::deque<std::shared_ptr<node_t>> nextLevel;
 
-        thisLevel.push_front(tree.m_tree.get());
+        thisLevel.push_front(tree.m_tree);
 
         while (!thisLevel.empty())
         {
-            node_t *thisNode = thisLevel.front();
+            std::shared_ptr<node_t> thisNode = thisLevel.front();
             thisLevel.pop_front();
 
-            if (thisNode != nullptr)
+            if (thisNode)
             {
-                os << *thisNode->m_item << " ";
+                os << **thisNode << " ";
 
                 if (thisNode->m_left)
                 {
-                    nextLevel.push_back(thisNode->m_left.get());
+                    nextLevel.push_back(thisNode->m_left);
                 }
                 else
                 {
@@ -238,7 +328,7 @@ template <typename T_Key, typename T_Distance> class KDTree
 
                 if (thisNode->m_right)
                 {
-                    nextLevel.push_back(thisNode->m_right.get());
+                    nextLevel.push_back(thisNode->m_right);
                 }
                 else
                 {
