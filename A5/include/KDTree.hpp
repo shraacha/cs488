@@ -51,6 +51,7 @@ sharedPointerDereferenceWrapperKDNode(
 /* desc:
  * - A KD tree stucture to store K-dimensional data.
  * - each comparion should be orthogonal
+ *   This comparison should be strictly less than
  * - must provide a comparison function and a distance function for each axis
  */
 template <typename T_Key, typename T_Distance> class KDTree
@@ -127,7 +128,7 @@ template <typename T_Key, typename T_Distance> class KDTree
 
     axis_t getAxis(const depth_t & i)
     {
-        return (i + 1) % m_comparisonFunctors.size();
+        return i % m_comparisonFunctors.size();
     };
 
     T_Distance distSquared(const T_Key & key1, const T_Key & key2)
@@ -149,17 +150,17 @@ template <typename T_Key, typename T_Distance> class KDTree
     // - items
     // a list of pointers to elements, this wil be modified.
     std::shared_ptr<node_t>
-    createBalancedKDTreeNode(const std::vector<T_Key *> & inputKeys,
+    createBalancedKDTreeNode(std::vector<T_Key *> keys,
                              depth_t depth)
     {
-        if (inputKeys.size() == 0)
+        if (keys.size() == 0)
         {
             return nullptr;
         }
 
         // sort
-        std::vector<T_Key *> keys = inputKeys;
         size_t midpoint = keys.size() / 2;
+
         std::nth_element(
             keys.begin(), keys.begin() + midpoint, keys.end(),
             dereferenceWrapper(m_comparisonFunctors[getAxis(depth)]));
@@ -183,7 +184,7 @@ template <typename T_Key, typename T_Distance> class KDTree
                       const std::shared_ptr<node_t> & node2)
     {
 
-        if (distSquared(target, **node1) <= distSquared(target, **node2))
+        if (distSquared(target, **node1) < distSquared(target, **node2))
         {
             return true;
         }
@@ -247,6 +248,9 @@ template <typename T_Key, typename T_Distance> class KDTree
         std::shared_ptr<node_t> temp =
             getNearestNode(target, nextBranch, depth + 1);
         std::shared_ptr<node_t> best = getNearestNode(target, temp, root);
+        if (!best) {
+            throw std::runtime_error("Unexpected null node in getNearestNode search");
+        }
 
         T_Distance radiusSquared = distSquared(target, **best);
         T_Distance distToSplitPlane =
@@ -254,10 +258,8 @@ template <typename T_Key, typename T_Distance> class KDTree
 
         if (radiusSquared > distToSplitPlane * distToSplitPlane)
         {
-            std::shared_ptr<node_t> temp =
-                getNearestNode(target, otherBranch, depth + 1);
-            getNearestNode(target, temp, best);
-            std::shared_ptr<node_t> best = getNearestNode(target, temp, best);
+            temp = getNearestNode(target, otherBranch, depth + 1);
+            best = getNearestNode(target, temp, best);
         }
 
         return best;

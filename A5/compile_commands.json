@@ -1,0 +1,588 @@
+[
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Clipping.o",
+      "../src/Clipping.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Clipping.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Clipping.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/ProgressBar.o",
+      "../src/ProgressBar.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/ProgressBar.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/ProgressBar.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Intersection.o",
+      "../src/Intersection.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Intersection.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Intersection.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Primitive.o",
+      "../src/Primitive.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Primitive.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Primitive.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/SceneManager.o",
+      "../src/SceneManager.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/SceneManager.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/SceneManager.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/scene_lua.o",
+      "../src/scene_lua.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/scene_lua.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/scene_lua.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Main.o",
+      "../src/Main.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Main.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Main.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Light.o",
+      "../src/Light.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Light.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Light.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Ray.o",
+      "../src/Ray.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Ray.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Ray.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/IntersectionHelpers.o",
+      "../src/IntersectionHelpers.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/IntersectionHelpers.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/IntersectionHelpers.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/SceneNode.o",
+      "../src/SceneNode.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/SceneNode.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/SceneNode.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Image.o",
+      "../src/Image.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Image.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Image.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Mesh.o",
+      "../src/Mesh.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Mesh.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Mesh.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/polyroots.o",
+      "../src/polyroots.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/polyroots.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/polyroots.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/JointNode.o",
+      "../src/JointNode.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/JointNode.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/JointNode.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/GeometryNode.o",
+      "../src/GeometryNode.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/GeometryNode.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/GeometryNode.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/Material.o",
+      "../src/Material.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/Material.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/Material.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/ImageHelpers.o",
+      "../src/ImageHelpers.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/ImageHelpers.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/ImageHelpers.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/A5.o",
+      "../src/A5.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/A5.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/A5.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../../shared",
+      "-I../../shared/include",
+      "-I../../shared/gl3w",
+      "-I../../shared/imgui",
+      "-I../include",
+      "-g",
+      "-std=c++17",
+      "-c",
+      "-o",
+      "Debug/A5/PhongMaterial.o",
+      "../src/PhongMaterial.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/src/PhongMaterial.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/A5/PhongMaterial.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest_main.o",
+      "../third_party/googletest/googletest/src/gtest_main.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest_main.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest_main.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-all.o",
+      "../third_party/googletest/googletest/src/gtest-all.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-all.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-all.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-death-test.o",
+      "../third_party/googletest/googletest/src/gtest-death-test.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-death-test.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-death-test.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-assertion-result.o",
+      "../third_party/googletest/googletest/src/gtest-assertion-result.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-assertion-result.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-assertion-result.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-typed-test.o",
+      "../third_party/googletest/googletest/src/gtest-typed-test.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-typed-test.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-typed-test.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-matchers.o",
+      "../third_party/googletest/googletest/src/gtest-matchers.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-matchers.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-matchers.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-test-part.o",
+      "../third_party/googletest/googletest/src/gtest-test-part.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-test-part.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-test-part.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-port.o",
+      "../third_party/googletest/googletest/src/gtest-port.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-port.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-port.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-filepath.o",
+      "../third_party/googletest/googletest/src/gtest-filepath.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-filepath.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-filepath.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest.o",
+      "../third_party/googletest/googletest/src/gtest.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-I../third_party/googletest/googletest/include",
+      "-I../third_party/googletest/googletest",
+      "-c",
+      "-o",
+      "Debug/googletest/gtest-printers.o",
+      "../third_party/googletest/googletest/src/gtest-printers.cc"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/third_party/googletest/googletest/src/gtest-printers.cc",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/googletest/gtest-printers.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../include",
+      "-I../third_party/googletest/googletest/include",
+      "-g",
+      "-c",
+      "-o",
+      "Debug/Tests/testExample.o",
+      "../tests/testExample.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/tests/testExample.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/Tests/testExample.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/yc9q0h72rlj98y0116c4mma6k80264mv-gcc-wrapper-13.2.0/bin/g++",
+      "-DDEBUG",
+      "-I../include",
+      "-I../third_party/googletest/googletest/include",
+      "-g",
+      "-c",
+      "-o",
+      "Debug/Tests/KDTree_tests.o",
+      "../tests/KDTree_tests.cpp"
+    ],
+    "directory": "/home/anish/Documents/Github/school/cs488/A5/build",
+    "file": "/home/anish/Documents/Github/school/cs488/A5/tests/KDTree_tests.cpp",
+    "output": "/home/anish/Documents/Github/school/cs488/A5/build/Debug/Tests/KDTree_tests.o"
+  }
+]

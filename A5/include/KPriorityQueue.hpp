@@ -5,7 +5,7 @@
 #include <algorithm>
 
 // - makes a max priority queue,
-// - comp should be <=
+// - comp should be '<'
 template <typename T> class KPriorityQueue
 {
   public:
@@ -26,7 +26,7 @@ template <typename T> class KPriorityQueue
         }
         else
         {
-            // only add to heap if the provided element is <= top
+            // only add to heap if the provided element is < top
             if (m_comp(elem, getTop()))
             {
                 m_heap.push_back(elem);
