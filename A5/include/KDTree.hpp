@@ -6,7 +6,6 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
-#include <tuple>
 #include <vector>
 
 #include "KPriorityQueue.hpp"
