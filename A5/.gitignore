@@ -3,9 +3,9 @@
 *.log
 tmp/
 
-./A5
-./Test
-./bin/*
-./cache
-./cache/*
-./Assets/*.png
+./A5/A5
+./A5/Test
+./A5/bin/*
+./A5/cache
+./A5/cache/*
+./A5/Assets/*.png
