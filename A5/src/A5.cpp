@@ -190,7 +190,8 @@ calculateCookTorranceLighting(const Ray & ray, const Intersection & intersect,
     glm::dvec3 surfaceNormal = glm::normalize(glm::dvec3(intersect.getNormal()));
 
     double f0 = 0.004;
-    double scaleFactor = 2.5;
+    double scaleFactor = 2.5; // not sure exactly why I need this scale factor,
+                              // but otherwise the objects are too dim
 
     for (const Light *light : lights)
     {
@@ -218,8 +219,10 @@ calculateCookTorranceLighting(const Ray & ray, const Intersection & intersect,
                                 halfway, material.getRoughness());
         double F = calculateFresnelSchlick(f0, halfway, outVector);
 
-        glm::dvec3 kS (F);
-        glm::dvec3 kD (1 - F);
+        glm::dvec3 kS(F); // Technically the numerator calculation already
+                          // accounts for fresnel, but otherwise the specular
+                          // contributions are too bright
+        glm::dvec3 kD(1 - F);
 
         glm::dvec3 numerator(F * NDF * G);
         double denominator =
