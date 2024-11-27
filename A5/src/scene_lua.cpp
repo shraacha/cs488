@@ -55,6 +55,7 @@
 #include "Primitive.hpp"
 #include "Material.hpp"
 #include "PhongMaterial.hpp"
+#include "CookTorranceMaterial.hpp"
 #include "A5.hpp"
 
 typedef std::map<std::string,Mesh*> MeshMap;
@@ -378,6 +379,31 @@ int gr_material_cmd(lua_State* L)
   return 1;
 }
 
+extern "C"
+int gr_material_cook_torrance_cmd(lua_State *L)
+{
+    GRLUA_DEBUG_CALL;
+
+    gr_material_ud *data =
+        (gr_material_ud *)lua_newuserdata(L, sizeof(gr_material_ud));
+    data->material = 0;
+
+    double albedo[3], ks[3];
+    get_tuple(L, 1, albedo, 3);
+    get_tuple(L, 2, ks, 3);
+
+    double roughness = luaL_checknumber(L, 3);
+
+    data->material =
+        new CookTorranceMaterial(glm::vec3(albedo[0], albedo[1], albedo[2]),
+                                 glm::vec3(ks[0], ks[1], ks[2]), roughness);
+
+    luaL_newmetatable(L, "gr.material");
+    lua_setmetatable(L, -2);
+
+    return 1;
+}
+
 // Add a Child to a node
 extern "C"
 int gr_node_add_child_cmd(lua_State* L)
@@ -521,6 +547,7 @@ static const luaL_Reg grlib_functions[] = {
   {"sphere", gr_sphere_cmd},
   {"joint", gr_joint_cmd},
   {"material", gr_material_cmd},
+  {"material_cook_torrance", gr_material_cook_torrance_cmd},
   // New for assignment 4
   {"cube", gr_cube_cmd},
   {"nh_sphere", gr_nh_sphere_cmd},

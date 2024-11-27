@@ -1,9 +1,9 @@
 #include "CookTorranceMaterial.hpp"
 
-CookTorranceMaterial::CookTorranceMaterial(const glm::vec3 & ks,
-                                           const glm::vec3 & albedo,
+CookTorranceMaterial::CookTorranceMaterial(const glm::vec3 & albedo,
+                                           const glm::vec3 & ks,
                                            double roughness)
-    : m_ks(ks), m_albedo{albedo}, m_roughness(roughness)
+    : m_albedo{albedo}, m_ks(ks), m_roughness(roughness)
 {
 }
 

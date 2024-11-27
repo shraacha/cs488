@@ -6,7 +6,7 @@
 
 class CookTorranceMaterial : public Material {
 public:
-  CookTorranceMaterial(const glm::vec3& kd, const glm::vec3& ks, double shininess);
+  CookTorranceMaterial(const glm::vec3& albedo, const glm::vec3& ks, double roughness);
   virtual ~CookTorranceMaterial();
 
   glm::dvec3 getKD() const;
@@ -15,7 +15,7 @@ public:
   double getRoughness() const;
 
 private:
-  glm::dvec3 m_ks;
   glm::dvec3 m_albedo;
+  glm::dvec3 m_ks;
   double m_roughness;
 };
