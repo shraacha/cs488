@@ -1,16 +1,12 @@
-// Termm--Fall 2024
-
 #pragma once
-
-#include <glm/glm.hpp>
 
 #include "Material.hpp"
 
-class PhongMaterial : public Material
+class NormalMaterial : public Material
 {
   public:
-    PhongMaterial(const glm::vec3 & kd, const glm::vec3 & ks, double shininess);
-    virtual ~PhongMaterial();
+    NormalMaterial();
+    virtual ~NormalMaterial();
 
     virtual glm::dvec3
     getRadiance(const Ray & ray, const Intersection & intersect,
@@ -30,14 +26,4 @@ class PhongMaterial : public Material
         const glm::dvec3 & reflectionDir, const glm::dvec3 & reflectionRadiance,
         const glm::dvec3 & refractionDir,
         const glm::dvec3 & refractionRadiance) const override;
-
-    glm::dvec3 getKD() const;
-    glm::dvec3 getKS() const;
-    double getShininess() const;
-
-  private:
-    glm::vec3 m_kd;
-    glm::vec3 m_ks;
-
-    double m_shininess;
 };

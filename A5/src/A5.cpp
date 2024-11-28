@@ -7,20 +7,22 @@
 
 #include <glm/ext.hpp>
 
-#include "CookTorranceMaterial.hpp"
 #include "ProgressBar.hpp"
 #include "cs488-framework/MathUtils.hpp"
 
 #include "A5.hpp"
-#include "PhongMaterial.hpp"
 #include "Primitive.hpp"
 #include "SceneManager.hpp"
-#include "ImageHelpers.hpp"
-#include "LightingHelpers.hpp"
 #include "debug.hpp"
 #include "Ray.hpp"
 #include "Intersection.hpp"
+#include "PhongMaterial.hpp"
+#include "CookTorranceMaterial.hpp"
+#include "NormalMaterial.hpp"
+
 #include "Helpers.hpp"
+#include "ImageHelpers.hpp"
+#include "LightingHelpers.hpp"
 
 // ------------------- constants ----------------------
 const glm::dvec3 c_botScreenColour = {0.89411764705, 0.58823529411, 0.80392156862};
@@ -123,141 +125,18 @@ intersect(const SceneManager & sceneManager, const Ray & ray) {
     return intersectionAndMaterial;
 }
 
-static inline glm::dvec3 calculateNormalLighting(const Intersection &intersect)
-{
-    return (intersect.getNormalizedNormal() + glm::dvec3{1.0, 1.0, 1.0}) * 0.5;
-}
-
-static inline glm::dvec3
-calculatePhongLighting(const Ray & ray, const Intersection & intersect,
-                       const PhongMaterial & material,
-                       const glm::vec3 & ambient,
-                       const std::vector<const Light *> & lights)
-{
-    // ambient
-    glm::dvec3 lightOut = material.getKD() * glm::dvec3(ambient);
-
-    glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
-
-    for (const Light *light : lights)
-    {
-        glm::dvec3 lightVector =
-            glm::dvec3(light->position) - intersectionPoint;
-        glm::dvec3 normalizedLightVector =
-            glm::normalize(glm::dvec3(light->position) - intersectionPoint);
-
-        double rSquared = glm::dot(lightVector, lightVector);
-        double lightDotNormal =
-            glm::dot(normalizedLightVector, intersect.getNormalizedNormal());
-        double attenuationFactor = glm::dot(
-            glm::dvec3(light->falloff[0], light->falloff[1], light->falloff[2]),
-            glm::dvec3(1.0, sqrt(rSquared), rSquared));
-
-        glm::dvec3 reflectedVector =
-            -normalizedLightVector +
-            2 * lightDotNormal * intersect.getNormalizedNormal();
-
-        // difuse
-        lightOut +=
-            maxWithZero(material.getKD() * lightDotNormal *
-                        (1 / attenuationFactor) * glm::dvec3(light->colour));
-
-        // specular
-        lightOut += maxWithZero(
-            pow(glm::dot(reflectedVector,
-                         glm::normalize(glm::dvec3(ray.getEyePoint()) -
-                                        intersectionPoint)),
-                material.getShininess()) *
-            (1 / attenuationFactor) * material.getKS() *
-            glm::dvec3(light->colour));
-    }
-
-    return lightOut;
-}
-
-static inline glm::dvec3
-calculateCookTorranceLighting(const Ray & ray, const Intersection & intersect,
-                              const CookTorranceMaterial & material,
-                              const std::vector<const Light *> & lights)
-{
-    // ambient
-    glm::dvec3 lightOut{0, 0, 0};
-
-    glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
-    glm::dvec3 outVector =
-        glm::normalize(glm::dvec3(ray.getEyePoint()) - intersectionPoint);
-
-    glm::dvec3 surfaceNormal = glm::normalize(glm::dvec3(intersect.getNormal()));
-
-    double f0 = 0.004;
-    double scaleFactor = 2.5; // not sure exactly why I need this scale factor,
-                              // but otherwise the objects are too dim
-
-    for (const Light *light : lights)
-    {
-        glm::dvec3 lightVector =
-            glm::dvec3(light->position) - intersectionPoint;
-        glm::dvec3 normalizedLightVector =
-            glm::normalize(glm::dvec3(light->position) - intersectionPoint);
-
-        double rSquared = glm::dot(lightVector, lightVector);
-        double lightDotNormal =
-            glm::dot(normalizedLightVector, intersect.getNormalizedNormal());
-        double attenuationFactor = glm::dot(
-            glm::dvec3(light->falloff[0], light->falloff[1], light->falloff[2]),
-            glm::dvec3(1.0, sqrt(rSquared), rSquared));
-
-        glm::dvec3 radiance = light->colour * attenuationFactor;
-
-        glm::dvec3 halfway = glm::normalize(outVector + normalizedLightVector);
-
-        // cook-torrance brdf
-        double NDF = evaluateDistributionGGX(surfaceNormal, halfway,
-                                             material.getRoughness());
-        double G =
-            evaluateGeometryGGX(normalizedLightVector, outVector, surfaceNormal,
-                                halfway, material.getRoughness());
-        double F = calculateFresnelSchlick(f0, halfway, outVector);
-
-        glm::dvec3 kS(F); // Technically the numerator calculation already
-                          // accounts for fresnel, but otherwise the specular
-                          // contributions are too bright
-        glm::dvec3 kD(1 - F);
-
-        glm::dvec3 numerator(F * NDF * G);
-        double denominator =
-            4.0 *
-            std::max(glm::dot(surfaceNormal, outVector) *
-                         glm::dot(surfaceNormal, normalizedLightVector),
-                     0.0) *
-            + 0.0001;
-        glm::dvec3 specular = numerator / denominator;
-
-        // add to outgoing radiance Lo
-        double NdotL =
-            std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0);
-        lightOut += scaleFactor * (kD * material.getAlbedo() / M_PI + kS * specular) *
-                    radiance * NdotL;
-    }
-
-    return lightOut;
-}
-
 static inline glm::dvec3 calculateColour(const Ray &ray, const Intersection &intersect,
                                    Material *material, const glm::vec3 &ambient,
                                    const std::vector<const Light *> &lights) {
     glm::dvec3 colour{1.0, 1.0, 1.0};
 
-    // casting to derived primitive
-    PhongMaterial *phongMaterial = dynamic_cast<PhongMaterial *>(material);
-    CookTorranceMaterial *cookTorranceMaterial = dynamic_cast<CookTorranceMaterial *>(material);
-
-    if (phongMaterial) {
-        colour = calculatePhongLighting(ray, intersect, *phongMaterial, ambient, lights);
-    }
-
-    if (cookTorranceMaterial) {
-        colour = calculateCookTorranceLighting(ray, intersect, *cookTorranceMaterial, lights);
+    if (material->isReflective() && material->isRefractive())
+    {
+        colour = material->getRadiance(ray, intersect, ambient, lights);
+    } else if (material->isReflective()) {
+        colour = material->getRadiance(ray, intersect, ambient, lights);
+    } else {
+        colour = material->getRadiance(ray, intersect, ambient, lights);
     }
 
     return colour;
@@ -320,7 +199,8 @@ void A4_Render(
     double fovy,
 
     // Lighting parameters
-    const glm::vec3 & ambient, const std::list<Light *> & lights) {
+    const glm::vec3 & ambient, const std::list<Light *> & lights)
+{
     printSceneInfo(image.width(), image.height(), *root, eye, view, up, fovy,
                    ambient, lights);
 
@@ -334,15 +214,17 @@ void A4_Render(
     glm::dvec4 viewSpacePixel{0.0, 0.0, -zval, 1.0};
     glm::dvec4 viewSpaceEye{0.0, 0.0, 0.0, 1.0};
 
-    glm::mat4 viewMatrix = glm::lookAt(eye, eye + view, up);
+    glm::mat4 viewMatrix = glm::lookAt(eye, view, up);
 
     ProgressBar progressBar(h * w);
     std::cout << progressBar;
 
-    for (uint y = 0; y < h; ++y) {
+    for (uint y = 0; y < h; ++y)
+    {
         viewSpacePixel.y = getScreenPosition(h, y, true);
 
-        for (uint x = 0; x < w; ++x) {
+        for (uint x = 0; x < w; ++x)
+        {
             viewSpacePixel.x = getScreenPosition(w, x);
 
             // get vector of subpixels
@@ -352,7 +234,8 @@ void A4_Render(
             glm::dvec3 pixelColour = glm::dvec3(0.0, 0.0, 0.0);
 
             // iterate over subpixels, add to total
-            for (auto subPixel : subPixels) {
+            for (auto subPixel : subPixels)
+            {
                 glm::dvec4 worldSpaceEye =
                     glm::inverse(viewMatrix) * viewSpaceEye;
                 glm::dvec4 worldSpacePixel =
@@ -361,16 +244,21 @@ void A4_Render(
                 auto eyeRayIntersectionAndMaterial = intersect(
                     sceneManager, Ray(worldSpaceEye, worldSpacePixel));
 
-                if (eyeRayIntersectionAndMaterial.has_value()) {
+                if (eyeRayIntersectionAndMaterial.has_value())
+                {
                     std::vector<const Light *> contributingLights;
 
-                    for (const Light *light : lights) {
+                    for (const Light *light : lights)
+                    {
                         auto shadowRayIntersectionAndMaterial = intersect(
                             sceneManager, Ray(eyeRayIntersectionAndMaterial
                                                   ->first.getPosition(),
                                               glm::vec4(light->position, 1.0)));
 
-                        if (!shadowRayIntersectionAndMaterial.has_value()) {
+                        if (!(shadowRayIntersectionAndMaterial.has_value() &&
+                              shadowRayIntersectionAndMaterial->first.getT() <
+                                  eyeRayIntersectionAndMaterial->first.getT()))
+                        {
                             contributingLights.emplace_back(light);
                         }
                     }
@@ -382,7 +270,9 @@ void A4_Render(
                                         eyeRayIntersectionAndMaterial->first,
                                         eyeRayIntersectionAndMaterial->second,
                                         ambient, contributingLights);
-                } else {
+                }
+                else
+                {
                     pixelColour += getBackgroundColour(glm::dvec3(subPixel),
                                                        c_topScreenColour,
                                                        c_botScreenColour, fovy);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <glm/glm.hpp>
 
 /*
@@ -41,3 +43,11 @@ double calculateFresnelSchlick(double f0, const glm::dvec3 & v1,
 
 glm::dvec3 calculateFresnelSchlick(const glm::dvec3 & f0, const glm::dvec3 & v1,
                                    const glm::dvec3 & v2);
+
+inline glm::dvec3 getReflectedVector(const glm::dvec3 vin, const glm::dvec3 n)
+{
+    return vin - 2 * glm::dot(n, vin) * n;
+}
+
+std::optional<glm::dvec3> getRefractedVector(const glm::dvec3 vin, glm::dvec3 n,
+                              double ior2, double ior1 = 1);

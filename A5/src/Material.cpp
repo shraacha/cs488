@@ -5,5 +5,14 @@
 Material::Material()
 {}
 
+Material::Material(int flags, double ior) : m_typeFlags(flags), m_ior(ior) {}
+
 Material::~Material()
 {}
+
+bool Material::isReflective() const {
+    return m_typeFlags | MaterialTypeFlags::Reflective;
+}
+bool Material::isRefractive() const {
+    return m_typeFlags | MaterialTypeFlags::Refractive;
+}
