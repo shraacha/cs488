@@ -1,11 +1,14 @@
 #include "CookTorranceMaterial.hpp"
 
 #include "LightingHelpers.hpp"
+#include "Material.hpp"
 
 CookTorranceMaterial::CookTorranceMaterial(const glm::vec3 & albedo,
                                            const glm::vec3 & ks,
                                            double roughness)
-    : m_albedo{albedo}, m_ks(ks), m_roughness(roughness)
+    // TODO make reflective
+    : Material(MaterialTypeFlags::Direct, 1.0), m_albedo{albedo}, m_ks(ks),
+      m_roughness(roughness)
 {
 }
 
@@ -30,17 +33,17 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
     glm::dvec3 outVector =
         glm::normalize(glm::dvec3(ray.getEyePoint()) - intersectionPoint);
 
-    glm::dvec3 surfaceNormal =
-        glm::normalize(glm::dvec3(intersect.getNormal()));
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
 
-    double f0 = 0.004;
-    double scaleFactor = 2.5; // not sure exactly why I need this scale factor,
+    double f0 = 0.04;
+    double scaleFactor = 2.0; // not sure exactly why I need this scale factor,
                               // but otherwise the objects are too dim
 
     for (const Light *light : lights)
     {
         glm::dvec3 normalizedLightVector =
             glm::normalize(glm::dvec3(light->position) - intersectionPoint);
+        glm::dvec3 halfway = glm::normalize(outVector + normalizedLightVector);
 
         double lightDotNormal =
             glm::dot(normalizedLightVector, intersect.getNormalizedNormal());
@@ -49,55 +52,66 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
 
         glm::dvec3 radiance = glm::dvec3(light->colour) * attenuationFactor;
 
-        glm::dvec3 halfway = glm::normalize(outVector + normalizedLightVector);
 
         // cook-torrance brdf
-        double NDF =
+        double ndf =
             evaluateDistributionGGX(surfaceNormal, halfway, getRoughness());
-        double G = evaluateGeometryGGX(normalizedLightVector, outVector,
-                                       surfaceNormal, halfway, getRoughness());
-        double F = calculateFresnelSchlick(f0, halfway, outVector);
+        double g = evaluateGeometrySmith(surfaceNormal, outVector,
+                                         normalizedLightVector, getRoughness());
+        double f = calculateFresnelSchlick(f0, halfway, outVector);
 
-        // glm::dvec3 kS(F); // Technically the numerator calculation already
-        //                   // accounts for fresnel, but otherwise the specular
-        //                   // contributions are too bright
-        // glm::dvec3 kD(1 - F);
+        glm::dvec3 kS (f);
+        glm::dvec3 kD(1 - f);
 
-        glm::dvec3 kS = getKS();
-        glm::dvec3 kD = getKD();
-
-        glm::dvec3 numerator(F * NDF * G);
+        glm::dvec3 numerator(f * ndf * g);
         double denominator =
-            4.0 *
-            std::max(glm::dot(surfaceNormal, outVector) *
-                         glm::dot(surfaceNormal, normalizedLightVector),
-                     0.0) *
-            +0.0001;
+            4.0 * std::max(glm::dot(surfaceNormal, outVector), 0.0) *
+                std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0) +
+            0.001;
         glm::dvec3 specular = numerator / denominator;
 
         // add to outgoing radiance Lo
-        double NdotL =
+        double nDotL =
             std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0);
-        lightOut += scaleFactor * (kD * getAlbedo() / M_PI + kS * specular) *
-                    radiance * NdotL;
+        lightOut += scaleFactor * (kD * getAlbedo() / M_PI + specular) *
+                    radiance * nDotL;
     }
 
     return lightOut;
 }
 
-glm::dvec3 CookTorranceMaterial::getRadiance(
-    const Ray & ray, const Intersection & intersect, const glm::vec3 & ambient,
-    const std::vector<const Light *> & lights, const glm::dvec3 & reflectionDir,
+glm::dvec3 CookTorranceMaterial::getReflectedRadiance(
+    const Ray & ray, const Intersection & intersect,
+    const glm::dvec3 & reflectionDir,
     const glm::dvec3 & reflectionRadiance) const
 {
-    return getRadiance(ray, intersect, ambient, lights);
+    return glm::dvec3(0);
 }
 
-glm::dvec3 CookTorranceMaterial::getRadiance(
-    const Ray & ray, const Intersection & intersect, const glm::vec3 & ambient,
-    const std::vector<const Light *> & lights, const glm::dvec3 & reflectionDir,
-    const glm::dvec3 & reflectionRadiance, const glm::dvec3 & refractionDir,
+glm::dvec3 CookTorranceMaterial::getRefractedRadiance(
+    const Ray & ray, const Intersection & intersect,
+    const glm::dvec3 & refractionDir,
     const glm::dvec3 & refractionRadiance) const
 {
-    return getRadiance(ray, intersect, ambient, lights);
+    return glm::dvec3(0);
+}
+
+MaterialAction CookTorranceMaterial::russianRouletteAction() const
+{
+    // TODO
+    return MaterialAction::Absorb;
+}
+
+std::pair<glm::dvec3, double> CookTorranceMaterial::sampleReflectionDirection(
+    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+{
+    // TODO
+    // sample based on roughness
+    return std::make_pair(glm::dvec3(0.0), 0.0);
+}
+
+std::pair<glm::dvec3, double> CookTorranceMaterial::sampleRefractionDirection(
+    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+{
+    return std::make_pair(glm::dvec3(0.0), 0.0);
 }

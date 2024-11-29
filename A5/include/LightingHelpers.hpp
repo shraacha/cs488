@@ -34,6 +34,10 @@ inline glm::dvec3 evaluateLambertBRDF(const glm::dvec3 & c)
 double evaluateGeometryPartialGGX(const glm::dvec3 & w, const glm::dvec3 & n,
                                   const glm::dvec3 & h, double a);
 
+float evaluateGeometrySchlickGGX(double nDotV, double k);
+
+float evaluateGeometrySmith(const glm::dvec3 & n, const glm::dvec3 & v, const glm::dvec3 & l, double k);
+
 double evaluateGeometryGGX(const glm::dvec3 & wi, const glm::dvec3 & wo,
                            const glm::dvec3 & n, const glm::dvec3 & h,
                            double a);

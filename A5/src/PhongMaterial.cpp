@@ -70,19 +70,40 @@ PhongMaterial::getRadiance(const Ray & ray, const Intersection & intersect,
     return lightOut;
 }
 
-glm::dvec3 PhongMaterial::getRadiance(
-    const Ray & ray, const Intersection & intersect, const glm::vec3 & ambient,
-    const std::vector<const Light *> & lights, const glm::dvec3 & reflectionDir,
-    const glm::dvec3 & reflectionRadiance) const
+glm::dvec3
+PhongMaterial::getReflectedRadiance(const Ray & ray,
+                                    const Intersection & intersect,
+                                    const glm::dvec3 & reflectionDir,
+                                    const glm::dvec3 & reflectionRadiance) const
 {
-    return getRadiance(ray, intersect, ambient, lights);
+    return glm::dvec3(0);
 }
 
-glm::dvec3 PhongMaterial::getRadiance(
-    const Ray & ray, const Intersection & intersect, const glm::vec3 & ambient,
-    const std::vector<const Light *> & lights, const glm::dvec3 & reflectionDir,
-    const glm::dvec3 & reflectionRadiance, const glm::dvec3 & refractionDir,
-    const glm::dvec3 & refractionRadiance) const
+glm::dvec3
+PhongMaterial::getRefractedRadiance(const Ray & ray,
+                                    const Intersection & intersect,
+                                    const glm::dvec3 & refractionDir,
+                                    const glm::dvec3 & refractionRadiance) const
 {
-    return getRadiance(ray, intersect, ambient, lights);
+    return glm::dvec3(0);
+}
+
+MaterialAction PhongMaterial::russianRouletteAction() const
+{
+    // TODO
+    return MaterialAction::Absorb;
+}
+
+std::pair<glm::dvec3, double> PhongMaterial::sampleReflectionDirection(
+    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+{
+    // TODO
+    // sample based on roughness
+    return std::make_pair(glm::dvec3(0.0), 0.0);
+}
+
+std::pair<glm::dvec3, double> PhongMaterial::sampleRefractionDirection(
+    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+{
+    return std::make_pair(glm::dvec3(0.0), 0.0);
 }

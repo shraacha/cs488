@@ -27,7 +27,7 @@ std::ostream& operator<<(std::ostream& out, const Light& l)
   return out;
 }
 
-double Light::calculateAttenuation( const glm::dvec3 & surfacePosition) const
+double Light::calculateAttenuation(const glm::dvec3 & surfacePosition) const
 {
     glm::dvec3 lightVector = glm::dvec3(position) - surfacePosition;
 

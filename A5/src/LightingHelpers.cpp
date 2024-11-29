@@ -8,14 +8,24 @@
 double evaluateDistributionGGX(const glm::dvec3 & n, const glm::dvec3 & h,
                                double a)
 {
-    double hdotn = std::max(glm::dot(h, n), 0.0001);
-    double hdotn2 = hdotn * hdotn;
-    double numer = a * a * calculateChi(hdotn);
+    double a2 = (a * a) * (a * a);
+    double nDotH = std::max(glm::dot(n, h), 0.0);
+    double nDotH2 = nDotH * nDotH;
 
-    double term = hdotn2 * a * a + (1.0 - hdotn2);
-    double denom = M_PI * term * term;
+    double num = a2;
+    double denom = (nDotH2 * (a2 - 1.0) + 1.0);
+    denom = M_PI * denom * denom;
 
-    return numer / denom;
+    return num / denom;
+
+    // double hdotn = std::max(glm::dot(h, n), 0.0001);
+    // double hdotn2 = hdotn * hdotn;
+    // double numer = a * a * calculateChi(hdotn);
+
+    // double term = hdotn2 * a * a + (1.0 - hdotn2);
+    // double denom = M_PI * term * term;
+
+    // return numer / denom;
 }
 
 double evaluateGeometryPartialGGX(const glm::dvec3 & w, const glm::dvec3 & n,
@@ -23,9 +33,10 @@ double evaluateGeometryPartialGGX(const glm::dvec3 & w, const glm::dvec3 & n,
 {
     double wDotH = std::max(glm::dot(w, h), 0.0001);
     double wDotH2 = wDotH * wDotH;
-    double denom = 1 + std::sqrt(1 + a * a * ((1 - wDotH2) / wDotH2));
+    double tan2 = (1 - wDotH2) / wDotH2;
+    double denom = 1 + std::sqrt(1 + a * a * tan2);
 
-    return calculateChi(wDotH / glm::dot(w, n)) * (2 / denom);
+    return (calculateChi(wDotH / glm::dot(w, n)) * 2) / denom;
 }
 
 double evaluateGeometryGGX(const glm::dvec3 & wi, const glm::dvec3 & wo,
@@ -33,6 +44,28 @@ double evaluateGeometryGGX(const glm::dvec3 & wi, const glm::dvec3 & wo,
 {
     return evaluateGeometryPartialGGX(wi, n, h, a) *
            evaluateGeometryPartialGGX(wo, n, h, a);
+}
+
+// from https://learnopengl.com/PBR/Lighting
+float evaluateGeometrySchlickGGX(double nDotV, double a)
+{
+    double r = (a + 1.0);
+    double k = (r * r) / 8.0;
+
+    double num = nDotV;
+    double denom = nDotV * (1.0 - k) + k;
+
+    return num / denom;
+}
+
+float evaluateGeometrySmith(const glm::dvec3 & n, const glm::dvec3 & v, const glm::dvec3 & l, double a)
+{
+    float nDotV = std::max(dot(n, v), 0.0);
+    float nDotL = std::max(dot(n, l), 0.0);
+    float ggx1 = evaluateGeometrySchlickGGX(nDotV, a);
+    float ggx2 = evaluateGeometrySchlickGGX(nDotL, a);
+
+    return ggx1 * ggx2;
 }
 
 double calculateFresnelSchlick(double f0, const glm::dvec3 & v1,

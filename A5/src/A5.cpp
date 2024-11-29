@@ -23,6 +23,7 @@
 #include "Helpers.hpp"
 #include "ImageHelpers.hpp"
 #include "LightingHelpers.hpp"
+#include "glm/detail/type_vec.hpp"
 
 // ------------------- constants ----------------------
 const glm::dvec3 c_botScreenColour = {0.89411764705, 0.58823529411, 0.80392156862};
@@ -156,6 +157,112 @@ static inline glm::dvec3 getBackgroundColour(glm::dvec3 rayDirection,
     return  t * topColour + (1.0 - t) * botColour;
 }
 
+static glm::dvec3
+intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
+                      const std::vector<const Light *> & lights,
+                      const glm::dvec3 & ambient, unsigned int currDepth, unsigned int maxDepth)
+{
+    glm::dvec3 fragmentColour = glm::dvec3(0.0, 0.0, 0.0);
+
+    auto eyeRayIntersectionAndMaterial = intersect(sceneManager, ray);
+
+    if (eyeRayIntersectionAndMaterial.has_value())
+    {
+        std::vector<const Light *> contributingLights;
+
+        for (const Light *light : lights)
+        {
+            auto shadowRayIntersectionAndMaterial = intersect(
+                sceneManager,
+                Ray(eyeRayIntersectionAndMaterial->first.getPosition(),
+                    glm::vec4(light->position, 1.0)));
+
+            if (!shadowRayIntersectionAndMaterial.has_value())
+            {
+                contributingLights.emplace_back(light);
+            }
+            else
+            {
+                double lenToShadowing = glm::length(
+                    glm::dvec3(
+                        shadowRayIntersectionAndMaterial->first.getPosition()) -
+                    glm::dvec3(
+                        eyeRayIntersectionAndMaterial->first.getPosition()));
+                double lenToLight = glm::length(
+                    glm::dvec3(light->position) -
+                    glm::dvec3(
+                        eyeRayIntersectionAndMaterial->first.getPosition()));
+
+                if (lenToLight < lenToShadowing)
+                {
+                    contributingLights.emplace_back(light);
+                }
+            }
+        }
+
+        int sampleNum = 0;
+        Intersection & intersect = eyeRayIntersectionAndMaterial->first;
+        Material * material = eyeRayIntersectionAndMaterial->second;
+
+        if (currDepth == maxDepth)
+        {
+            // direct lighting if max depth or if there are no
+            // reflective/refractive properties
+            fragmentColour += material->getRadiance(ray, intersect, ambient,
+                                                    contributingLights);
+        }
+
+        if (material->isDirect())
+        {
+            // direct lighting
+            fragmentColour +=
+                material->getRadiance(ray, intersect, ambient, contributingLights);
+
+            ++sampleNum;
+        }
+
+        if (material->isReflective())
+        {
+
+            glm::dvec3 reflectionDir =
+                material
+                    ->sampleReflectionDirection(
+                        glm::normalize(glm::dvec3(ray.getDirection())),
+                        intersect.getNormalizedNormal())
+                    .first;
+
+            glm::dvec3 reflectionColour = intersectAndGetColour(
+                sceneManager,
+                Ray(intersect.getPosition(),
+                    intersect.getPosition() + glm::dvec4(reflectionDir, 0.0)),
+                lights, ambient, currDepth + 1, maxDepth);
+
+            fragmentColour += material->getReflectedRadiance(
+                ray, intersect, reflectionDir, reflectionColour);
+
+            ++sampleNum;
+        }
+
+        if (material->isRefractive())
+        {
+            fragmentColour += material->getRadiance(ray, intersect, ambient,
+                                                    contributingLights);
+
+            ++sampleNum;
+        }
+
+        fragmentColour = fragmentColour / sampleNum;
+    }
+    else
+    {
+        fragmentColour +=
+            getBackgroundColour(glm::dvec3(ray.getDirection()),
+                                c_topScreenColour, c_botScreenColour);
+    }
+
+    return fragmentColour;
+}
+
 static inline void printSceneInfo(const uint &imgWidth, const uint &imgHeight,
                                   const SceneNode &root, const glm::vec3 &eye,
                                   const glm::vec3 &view, const glm::vec3 &up,
@@ -201,6 +308,13 @@ void A4_Render(
     // Lighting parameters
     const glm::vec3 & ambient, const std::list<Light *> & lights)
 {
+    std::vector<const Light *> lightVector;
+
+    for (const Light *light : lights)
+    {
+        lightVector.emplace_back(light);
+    }
+
     printSceneInfo(image.width(), image.height(), *root, eye, view, up, fovy,
                    ambient, lights);
 
@@ -241,42 +355,9 @@ void A4_Render(
                 glm::dvec4 worldSpacePixel =
                     glm::inverse(viewMatrix) * subPixel;
 
-                auto eyeRayIntersectionAndMaterial = intersect(
-                    sceneManager, Ray(worldSpaceEye, worldSpacePixel));
-
-                if (eyeRayIntersectionAndMaterial.has_value())
-                {
-                    std::vector<const Light *> contributingLights;
-
-                    for (const Light *light : lights)
-                    {
-                        auto shadowRayIntersectionAndMaterial = intersect(
-                            sceneManager, Ray(eyeRayIntersectionAndMaterial
-                                                  ->first.getPosition(),
-                                              glm::vec4(light->position, 1.0)));
-
-                        if (!(shadowRayIntersectionAndMaterial.has_value() &&
-                              shadowRayIntersectionAndMaterial->first.getT() <
-                                  eyeRayIntersectionAndMaterial->first.getT()))
-                        {
-                            contributingLights.emplace_back(light);
-                        }
-                    }
-
-                    // must include view matrix to transfrom pixel & eye from
-                    // view space
-                    pixelColour +=
-                        calculateColour({worldSpaceEye, worldSpacePixel},
-                                        eyeRayIntersectionAndMaterial->first,
-                                        eyeRayIntersectionAndMaterial->second,
-                                        ambient, contributingLights);
-                }
-                else
-                {
-                    pixelColour += getBackgroundColour(glm::dvec3(subPixel),
-                                                       c_topScreenColour,
-                                                       c_botScreenColour, fovy);
-                }
+                pixelColour += intersectAndGetColour(
+                    sceneManager, Ray(worldSpaceEye, worldSpacePixel), lightVector,
+                    ambient, 0, 2);
             }
 
             // average pixel vals
