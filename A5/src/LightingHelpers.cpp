@@ -77,7 +77,7 @@ double calculateFresnelSchlick(double f0, const glm::dvec3 & v1,
 std::optional<glm::dvec3> getRefractedVector(const glm::dvec3 vin, glm::dvec3 n, double ior2,
                               double ior1)
 {
-    double cos1 = clampValue(-1.0, 1.0, glm::dot(vin, n));
+    double cos1 = clampValue(glm::dot(vin, n), 1.0, -1.0);
     if (cos1 < 0)
     {
         // If we have a negative val, that means the ray is intersecting from

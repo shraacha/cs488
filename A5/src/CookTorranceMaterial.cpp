@@ -24,7 +24,9 @@ double CookTorranceMaterial::getRoughness() const { return m_roughness; }
 
 glm::dvec3 CookTorranceMaterial::getRadiance(
     const Ray & ray, const Intersection & intersect, const glm::vec3 & ambient,
-    const std::vector<const Light *> & lights) const
+    const std::vector<const Light *> & lights, const glm::dvec3 & reflectionDir,
+    const glm::dvec3 & reflectionRadiance, const glm::dvec3 & refractionDir,
+    const glm::dvec3 & refractionRadiance) const
 {
     // ambient
     glm::dvec3 lightOut{0, 0, 0};
@@ -36,7 +38,7 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
 
     double f0 = 0.04;
-    double scaleFactor = 2.0; // not sure exactly why I need this scale factor,
+    double scaleFactor = 1.5; // not sure exactly why I need this scale factor,
                               // but otherwise the objects are too dim
 
     for (const Light *light : lights)
@@ -52,7 +54,6 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
 
         glm::dvec3 radiance = glm::dvec3(light->colour) * attenuationFactor;
 
-
         // cook-torrance brdf
         double ndf =
             evaluateDistributionGGX(surfaceNormal, halfway, getRoughness());
@@ -60,7 +61,7 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
                                          normalizedLightVector, getRoughness());
         double f = calculateFresnelSchlick(f0, halfway, outVector);
 
-        glm::dvec3 kS (f);
+        glm::dvec3 kS(40.0); // idk why I need to scale so much
         glm::dvec3 kD(1 - f);
 
         glm::dvec3 numerator(f * ndf * g);
@@ -73,27 +74,11 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
         // add to outgoing radiance Lo
         double nDotL =
             std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0);
-        lightOut += scaleFactor * (kD * getAlbedo() / M_PI + specular) *
+        lightOut += scaleFactor * (kD * getAlbedo() / M_PI + kS * specular) *
                     radiance * nDotL;
     }
 
     return lightOut;
-}
-
-glm::dvec3 CookTorranceMaterial::getReflectedRadiance(
-    const Ray & ray, const Intersection & intersect,
-    const glm::dvec3 & reflectionDir,
-    const glm::dvec3 & reflectionRadiance) const
-{
-    return glm::dvec3(0);
-}
-
-glm::dvec3 CookTorranceMaterial::getRefractedRadiance(
-    const Ray & ray, const Intersection & intersect,
-    const glm::dvec3 & refractionDir,
-    const glm::dvec3 & refractionRadiance) const
-{
-    return glm::dvec3(0);
 }
 
 MaterialAction CookTorranceMaterial::russianRouletteAction() const
@@ -111,7 +96,7 @@ std::pair<glm::dvec3, double> CookTorranceMaterial::sampleReflectionDirection(
 }
 
 std::pair<glm::dvec3, double> CookTorranceMaterial::sampleRefractionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+    const glm::dvec3 vin, const glm::dvec3 surfaceNormal, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
 }

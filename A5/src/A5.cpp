@@ -24,6 +24,7 @@
 #include "ImageHelpers.hpp"
 #include "LightingHelpers.hpp"
 #include "glm/detail/type_vec.hpp"
+#include "glm/gtx/string_cast.hpp"
 
 // ------------------- constants ----------------------
 const glm::dvec3 c_botScreenColour = {0.89411764705, 0.58823529411, 0.80392156862};
@@ -160,7 +161,8 @@ static inline glm::dvec3 getBackgroundColour(glm::dvec3 rayDirection,
 static glm::dvec3
 intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
                       const std::vector<const Light *> & lights,
-                      const glm::dvec3 & ambient, unsigned int currDepth, unsigned int maxDepth)
+                      const glm::dvec3 & ambient, const double & ior,
+                      unsigned int currDepth, unsigned int maxDepth)
 {
     glm::dvec3 fragmentColour = glm::dvec3(0.0, 0.0, 0.0);
 
@@ -200,58 +202,60 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
             }
         }
 
-        int sampleNum = 0;
         Intersection & intersect = eyeRayIntersectionAndMaterial->first;
         Material * material = eyeRayIntersectionAndMaterial->second;
 
-        if (currDepth == maxDepth)
+        if (currDepth >= maxDepth)
         {
             // direct lighting if max depth or if there are no
             // reflective/refractive properties
             fragmentColour += material->getRadiance(ray, intersect, ambient,
                                                     contributingLights);
         }
-
-        if (material->isDirect())
+        else
         {
-            // direct lighting
-            fragmentColour +=
-                material->getRadiance(ray, intersect, ambient, contributingLights);
+            glm::dvec3 reflectionDir, reflectionRadiance, refractionDir,
+                refractionRadiance;
 
-            ++sampleNum;
+            if (material->isReflective())
+            {
+                reflectionDir =
+                    material
+                        ->sampleReflectionDirection(
+                            glm::normalize(glm::dvec3(ray.getDirection())),
+                            intersect.getNormalizedNormal())
+                        .first;
+
+                reflectionRadiance = intersectAndGetColour(
+                    sceneManager,
+                    Ray(intersect.getPosition(),
+                        intersect.getPosition() +
+                            glm::dvec4(reflectionDir, 0.0)),
+                    lights, ambient, ior, currDepth + 1, maxDepth);
+            }
+
+            if (material->isRefractive())
+            {
+                refractionDir =
+                    material
+                        ->sampleRefractionDirection(
+                            glm::normalize(glm::dvec3(ray.getDirection())),
+                            intersect.getNormalizedNormal(), ior)
+                        .first;
+
+                refractionRadiance = intersectAndGetColour(
+                    sceneManager,
+                    Ray(intersect.getPosition(),
+                        intersect.getPosition() +
+                            glm::dvec4(refractionDir, 0.0)),
+                    lights, ambient, ior, currDepth + 1,
+                    maxDepth);
+            }
+
+            fragmentColour += material->getRadiance(
+                ray, intersect, ambient, contributingLights, reflectionDir,
+                reflectionRadiance, refractionDir, refractionRadiance);
         }
-
-        if (material->isReflective())
-        {
-
-            glm::dvec3 reflectionDir =
-                material
-                    ->sampleReflectionDirection(
-                        glm::normalize(glm::dvec3(ray.getDirection())),
-                        intersect.getNormalizedNormal())
-                    .first;
-
-            glm::dvec3 reflectionColour = intersectAndGetColour(
-                sceneManager,
-                Ray(intersect.getPosition(),
-                    intersect.getPosition() + glm::dvec4(reflectionDir, 0.0)),
-                lights, ambient, currDepth + 1, maxDepth);
-
-            fragmentColour += material->getReflectedRadiance(
-                ray, intersect, reflectionDir, reflectionColour);
-
-            ++sampleNum;
-        }
-
-        if (material->isRefractive())
-        {
-            fragmentColour += material->getRadiance(ray, intersect, ambient,
-                                                    contributingLights);
-
-            ++sampleNum;
-        }
-
-        fragmentColour = fragmentColour / sampleNum;
     }
     else
     {
@@ -357,7 +361,7 @@ void A4_Render(
 
                 pixelColour += intersectAndGetColour(
                     sceneManager, Ray(worldSpaceEye, worldSpacePixel), lightVector,
-                    ambient, 0, 2);
+                    ambient, 1.0, 0, 2);
             }
 
             // average pixel vals

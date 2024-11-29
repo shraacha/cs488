@@ -2,7 +2,7 @@
 // constructors
 Ray::Ray(const glm::dvec4 &eye, const glm::dvec4 &pixel) : m_eye{eye}, m_pixel{pixel}
 {
-    double epsilon = 0.05;
+    double epsilon = 0.005;
     m_minThreshold = epsilon / glm::length(pixel - eye);
 }
 

@@ -1,16 +1,14 @@
-// Termm--Fall 2024
-
 #pragma once
 
 #include <glm/glm.hpp>
 
 #include "Material.hpp"
 
-class PhongMaterial : public Material
+class RefractiveMaterial : public Material
 {
   public:
-    PhongMaterial(const glm::vec3 & kd, const glm::vec3 & ks, double shininess);
-    virtual ~PhongMaterial();
+    RefractiveMaterial(const glm::vec3 & albedo, double roughness, double ior);
+    virtual ~RefractiveMaterial();
 
     virtual glm::dvec3 getRadiance(
         const Ray & ray, const Intersection & intersect,
@@ -20,22 +18,20 @@ class PhongMaterial : public Material
         const glm::dvec3 & refractionDir = glm::dvec3(0.0),
         const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const override;
 
-    glm::dvec3 getKD() const;
-    glm::dvec3 getKS() const;
-    double getShininess() const;
-
     virtual MaterialAction russianRouletteAction() const override;
 
     virtual std::pair<glm::dvec3, double>
     sampleReflectionDirection(const glm::dvec3 vin,
                               const glm::dvec3 surfaceNormal) const override;
+
     virtual std::pair<glm::dvec3, double>
     sampleRefractionDirection(const glm::dvec3 vin,
                               const glm::dvec3 surfaceNormal,
                               double ior1) const override;
-  private:
-    glm::vec3 m_kd;
-    glm::vec3 m_ks;
 
-    double m_shininess;
+    glm::dvec3 getAlbedo() const;
+    double getRoughness() const;
+  private:
+    glm::dvec3 m_albedo;
+    double m_roughness;
 };

@@ -54,4 +54,4 @@ inline glm::dvec3 getReflectedVector(const glm::dvec3 vin, const glm::dvec3 n)
 }
 
 std::optional<glm::dvec3> getRefractedVector(const glm::dvec3 vin, glm::dvec3 n,
-                              double ior2, double ior1 = 1);
+                              double ior2, double ior1 = 1.0);

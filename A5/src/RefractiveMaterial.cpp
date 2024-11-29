@@ -1,21 +1,23 @@
-#include "ReflectiveMaterial.hpp"
+#include "RefractiveMaterial.hpp"
 
 #include "LightingHelpers.hpp"
+#include "glm/detail/type_vec.hpp"
 
-ReflectiveMaterial::ReflectiveMaterial(const glm::vec3 & albedo,
-                                       double roughness)
-    : Material(MaterialTypeFlags::Reflective, 1.0), m_albedo(albedo),
-      m_roughness(roughness)
+RefractiveMaterial::RefractiveMaterial(const glm::vec3 & albedo,
+                                       double roughness, double ior)
+    : Material(MaterialTypeFlags::Reflective | MaterialTypeFlags::Refractive,
+               ior),
+      m_albedo(albedo), m_roughness(roughness)
 {
 }
 
-ReflectiveMaterial::~ReflectiveMaterial() {}
+RefractiveMaterial::~RefractiveMaterial() {}
 
-glm::dvec3 ReflectiveMaterial::getAlbedo() const { return m_albedo; }
+glm::dvec3 RefractiveMaterial::getAlbedo() const { return m_albedo; }
 
-double ReflectiveMaterial::getRoughness() const { return m_roughness; }
+double RefractiveMaterial::getRoughness() const { return m_roughness; }
 
-glm::dvec3 ReflectiveMaterial::getRadiance(
+glm::dvec3 RefractiveMaterial::getRadiance(
     const Ray & ray, const Intersection & intersect, const glm::vec3 & ambient,
     const std::vector<const Light *> & lights, const glm::dvec3 & reflectionDir,
     const glm::dvec3 & reflectionRadiance, const glm::dvec3 & refractionDir,
@@ -31,7 +33,7 @@ glm::dvec3 ReflectiveMaterial::getRadiance(
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
 
     double f0 = 0.04;
-    double scaleFactor = 2.0; // not sure exactly why I need this scale factor,
+    double scaleFactor = 1.5; // not sure exactly why I need this scale factor,
                               // but otherwise the objects are too dim
     glm::dvec3 normalizedLightVector =
         glm::normalize(reflectionDir);
@@ -63,18 +65,18 @@ glm::dvec3 ReflectiveMaterial::getRadiance(
     double nDotL =
         std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0);
     lightOut +=
-        scaleFactor * (kD * getAlbedo() / M_PI + kS * specular) * radiance * nDotL;
+        scaleFactor * (kD * refractionRadiance + kS * specular * reflectionRadiance) * nDotL;
 
     return lightOut;
 }
 
-MaterialAction ReflectiveMaterial::russianRouletteAction() const
+MaterialAction RefractiveMaterial::russianRouletteAction() const
 {
     // TODO
     return MaterialAction::Absorb;
 }
 
-std::pair<glm::dvec3, double> ReflectiveMaterial::sampleReflectionDirection(
+std::pair<glm::dvec3, double> RefractiveMaterial::sampleReflectionDirection(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
 {
     // TODO
@@ -82,8 +84,18 @@ std::pair<glm::dvec3, double> ReflectiveMaterial::sampleReflectionDirection(
     return std::make_pair(getReflectedVector(vin, surfaceNormal), 1.0);
 }
 
-std::pair<glm::dvec3, double> ReflectiveMaterial::sampleRefractionDirection(
+std::pair<glm::dvec3, double> RefractiveMaterial::sampleRefractionDirection(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal, double ior1) const
 {
-    return std::make_pair(glm::dvec3(0.0), 0.0);
+    // TODO
+    // sample based on roughness
+    auto refractedVector = getRefractedVector(vin, surfaceNormal, m_ior, ior1);
+    if (refractedVector)
+    {
+        return std::make_pair(refractedVector.value(), 1.0);
+    }
+    else
+    {
+        return std::make_pair(glm::dvec3(0.0), 0.0);
+    }
 }

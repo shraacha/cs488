@@ -57,6 +57,7 @@
 #include "PhongMaterial.hpp"
 #include "CookTorranceMaterial.hpp"
 #include "ReflectiveMaterial.hpp"
+#include "RefractiveMaterial.hpp"
 #include "A5.hpp"
 
 typedef std::map<std::string,Mesh*> MeshMap;
@@ -428,6 +429,30 @@ int gr_material_reflective_cmd(lua_State *L)
     return 1;
 }
 
+extern "C"
+int gr_material_refractive_cmd(lua_State *L)
+{
+    GRLUA_DEBUG_CALL;
+
+    gr_material_ud *data =
+        (gr_material_ud *)lua_newuserdata(L, sizeof(gr_material_ud));
+    data->material = 0;
+
+    double albedo[3];
+    get_tuple(L, 1, albedo, 3);
+
+    double roughness = luaL_checknumber(L, 2);
+    double ior = luaL_checknumber(L, 3);
+
+    data->material =
+        new RefractiveMaterial(glm::vec3(albedo[0], albedo[1], albedo[2]), roughness, ior);
+
+    luaL_newmetatable(L, "gr.material");
+    lua_setmetatable(L, -2);
+
+    return 1;
+}
+
 // Add a Child to a node
 extern "C"
 int gr_node_add_child_cmd(lua_State* L)
@@ -573,7 +598,7 @@ static const luaL_Reg grlib_functions[] = {
   {"material", gr_material_cmd},
   {"material_cook_torrance", gr_material_cook_torrance_cmd},
   {"material_reflective", gr_material_reflective_cmd},
-  // New for assignment 4
+  {"material_refractive", gr_material_refractive_cmd},
   {"cube", gr_cube_cmd},
   {"nh_sphere", gr_nh_sphere_cmd},
   {"nh_box", gr_nh_box_cmd},

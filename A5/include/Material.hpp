@@ -30,21 +30,19 @@ class Material {
   public:
     virtual ~Material();
 
-    virtual glm::dvec3 getRadiance(const Ray & ray, const Intersection & intersect,
-                           const glm::vec3 & ambient,
-                           const std::vector<const Light *> & lights) const = 0;
-
-    virtual glm::dvec3 getReflectedRadiance(const Ray & ray, const Intersection & intersect,
-                           const glm::dvec3 & reflectionDir,
-                           const glm::dvec3 & reflectionRadiance) const = 0;
-
-    virtual glm::dvec3 getRefractedRadiance(const Ray & ray, const Intersection & intersect,
-                           const glm::dvec3 & refractionDir,
-                           const glm::dvec3 & refractionRadiance) const = 0;
+    virtual glm::dvec3 getRadiance(
+        const Ray & ray, const Intersection & intersect,
+        const glm::vec3 & ambient, const std::vector<const Light *> & lights,
+        const glm::dvec3 & reflectionDir = glm::dvec3(0.0),
+        const glm::dvec3 & reflectionRadiance = glm::dvec3(0.0),
+        const glm::dvec3 & refractionDir = glm::dvec3(0.0),
+        const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const = 0;
 
     bool isDirect() const;
     bool isReflective() const;
     bool isRefractive() const;
+
+    double getIOR() const;
 
     virtual MaterialAction russianRouletteAction() const = 0;
 
@@ -53,7 +51,8 @@ class Material {
                               const glm::dvec3 surfaceNormal) const = 0;
     virtual std::pair<glm::dvec3, double>
     sampleRefractionDirection(const glm::dvec3 vin,
-                              const glm::dvec3 surfaceNormal) const = 0;
+                              const glm::dvec3 surfaceNormal,
+                              double ior1) const = 0;
 
   protected:
     Material();
