@@ -90,12 +90,12 @@ double calculateFresnelSchlick(double f0, const glm::dvec3 & v1,
 std::optional<glm::dvec3> getRefractedVector(const glm::dvec3 vin, glm::dvec3 n, double ior2,
                               double ior1)
 {
-    double cos1 = clampValue(glm::dot(vin, n), 1.0, -1.0);
-    if (cos1 < 0)
+    double cosTheta = clampValue(glm::dot(vin, n), 1.0, -1.0);
+    if (cosTheta < 0)
     {
         // If we have a negative val, that means the ray is intersecting from
         // outside the surface. We should work with positive cos, so we flip.
-        cos1 = -cos1;
+        cosTheta = -cosTheta;
     }
     else
     {
@@ -105,7 +105,7 @@ std::optional<glm::dvec3> getRefractedVector(const glm::dvec3 vin, glm::dvec3 n,
         n = -n;
     }
     double eta = ior1 / ior2;
-    double c = 1 - eta * eta * (1 - cos1 * cos1);
+    double c = 1 - eta * eta * (1 - cosTheta * cosTheta);
     // if c < 0, then we have total internal reflection
-    return c < 0.0 ? std::nullopt : std::make_optional(eta * vin + (eta * cos1 - sqrt(c)) * n);
+    return c < 0.0 ? std::nullopt : std::make_optional(eta * vin + (eta * cosTheta - sqrt(c)) * n);
 }

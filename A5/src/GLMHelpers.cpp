@@ -5,6 +5,7 @@ glm::dmat3 getChangeOfBasis(glm::dvec3 up, glm::dvec3 coplanar)
     if (acos(glm::dot(up, coplanar))) {
         coplanar = -coplanar;
     }
+
     glm::dvec3 z = glm::normalize(glm::cross(up, coplanar));
     glm::dvec3 x = glm::normalize(glm::cross(up, z));
 
