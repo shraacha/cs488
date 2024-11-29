@@ -312,6 +312,8 @@ void A4_Render(
     // Lighting parameters
     const glm::vec3 & ambient, const std::list<Light *> & lights)
 {
+    unsigned int numSamples = 5;
+
     std::vector<const Light *> lightVector;
 
     for (const Light *light : lights)
@@ -359,13 +361,15 @@ void A4_Render(
                 glm::dvec4 worldSpacePixel =
                     glm::inverse(viewMatrix) * subPixel;
 
-                pixelColour += intersectAndGetColour(
-                    sceneManager, Ray(worldSpaceEye, worldSpacePixel), lightVector,
-                    ambient, 1.0, 0, 2);
+                for (unsigned int i = 0; i < numSamples; i++) {
+                    pixelColour += intersectAndGetColour(
+                        sceneManager, Ray(worldSpaceEye, worldSpacePixel),
+                        lightVector, ambient, 1.0, 0, 2);
+                }
             }
 
             // average pixel vals
-            pixelColour *= 1.0 / (double)subPixels.size();
+            pixelColour *= 1.0 / ((double)subPixels.size() * (double)numSamples);
 
             // set colour
             setPixelColour(image, x, y, pixelColour);

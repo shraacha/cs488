@@ -24,6 +24,9 @@ inline double calculateChi(double v1dotv2) { return v1dotv2 > 0.0 ? 1.0 : 0.0; }
 double evaluateDistributionGGX(const glm::dvec3 & n, const glm::dvec3 & h,
                                double a);
 
+std::pair<glm::dvec3, double> sampleNormalGGX(const glm::dvec3 & vout,
+                                              const glm::dvec3 & n, double a);
+
 inline double evaluateLambertBRDF(double c) { return c * M_1_PI; }
 
 inline glm::dvec3 evaluateLambertBRDF(const glm::dvec3 & c)

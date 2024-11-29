@@ -6,7 +6,7 @@ blue_rough = gr.material_cook_torrance({0.1, 0.1, 0.7}, {0.01, 0.01, 0.01}, 0.9)
 white_rough = gr.material_cook_torrance({1.0, 1.0, 1.0}, {0.01, 0.01, 0.01}, 0.9)
 black_rough = gr.material_cook_torrance({0.0, 0.0, 0.0}, {0.01, 0.01, 0.01}, 0.9)
 
-white_reflective = gr.material_reflective({1.0, 1.0, 1.0}, 0.1)
+white_reflective = gr.material_reflective({1.0, 1.0, 1.0}, 0.05)
 green_reflective = gr.material_reflective({0.1, 1.0, 0.1}, 0.1)
 
 -- green_rough = gr.material({0.1, 0.7, 0.1}, {0.5, 0.5, 0.5}, 10)

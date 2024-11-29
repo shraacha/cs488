@@ -79,20 +79,18 @@ MaterialAction RefractiveMaterial::russianRouletteAction() const
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleReflectionDirection(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
 {
-    // TODO
-    // sample based on roughness
-    return std::make_pair(getReflectedVector(vin, surfaceNormal), 1.0);
+    auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
+    return std::make_pair(getReflectedVector(vin, normalSample.first), normalSample.second);
 }
 
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleRefractionDirection(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal, double ior1) const
 {
-    // TODO
-    // sample based on roughness
-    auto refractedVector = getRefractedVector(vin, surfaceNormal, m_ior, ior1);
+    auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
+    auto refractedVector = getRefractedVector(vin, normalSample.first, m_ior, ior1);
     if (refractedVector)
     {
-        return std::make_pair(refractedVector.value(), 1.0);
+        return std::make_pair(refractedVector.value(), normalSample.second);
     }
     else
     {

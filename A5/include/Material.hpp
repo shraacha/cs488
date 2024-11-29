@@ -49,6 +49,7 @@ class Material {
     virtual std::pair<glm::dvec3, double>
     sampleReflectionDirection(const glm::dvec3 vin,
                               const glm::dvec3 surfaceNormal) const = 0;
+
     virtual std::pair<glm::dvec3, double>
     sampleRefractionDirection(const glm::dvec3 vin,
                               const glm::dvec3 surfaceNormal,

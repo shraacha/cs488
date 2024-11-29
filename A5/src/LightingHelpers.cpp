@@ -1,9 +1,12 @@
 #include <cmath>
 #include <algorithm>
 #include <optional>
+#include <iostream>
 
 #include "LightingHelpers.hpp"
+#include "GLMHelpers.hpp"
 #include "Helpers.hpp"
+#include "glm/gtx/string_cast.hpp"
 
 double evaluateDistributionGGX(const glm::dvec3 & n, const glm::dvec3 & h,
                                double a)
@@ -17,15 +20,25 @@ double evaluateDistributionGGX(const glm::dvec3 & n, const glm::dvec3 & h,
     denom = M_PI * denom * denom;
 
     return num / denom;
+}
 
-    // double hdotn = std::max(glm::dot(h, n), 0.0001);
-    // double hdotn2 = hdotn * hdotn;
-    // double numer = a * a * calculateChi(hdotn);
+std::pair<glm::dvec3, double> sampleNormalGGX(const glm::dvec3 & vout,
+                                              const glm::dvec3 & n, double a)
+{
+    glm::dmat3 sampleToWorld = getChangeOfBasis(n, vout);
 
-    // double term = hdotn2 * a * a + (1.0 - hdotn2);
-    // double denom = M_PI * term * term;
+    double e1 = getRand0To1();
+    double e2 = getRand0To1();
 
-    // return numer / denom;
+    double theta = atan((a * sqrt(e1)) / (sqrt (1 - e1)));
+    double phi = 2 * M_PI * e2;
+
+    glm::dvec3 sample = sphericalToCartesianYUp(theta, phi);
+
+    glm::dvec3 h = glm::normalize(vout + sampleToWorld * sample);
+
+    return std::make_pair(sampleToWorld * sample,
+                          evaluateDistributionGGX(n, h, a));
 }
 
 double evaluateGeometryPartialGGX(const glm::dvec3 & w, const glm::dvec3 & n,

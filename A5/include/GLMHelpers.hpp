@@ -1,4 +1,7 @@
 #pragma once
+
+#include <cmath>
+
 #include <glm/glm.hpp>
 
 inline glm::dvec3 maxWithZero(const glm::dvec3 & vec)
@@ -19,3 +22,10 @@ inline glm::dvec3 maxWithZero(const glm::dvec3 & vec)
 
     return returnVec;
 }
+
+glm::dmat3 getChangeOfBasis(glm::dvec3 up, glm::dvec3 coplanar);
+
+// y up, -z forward
+inline glm::dvec3 sphericalToCartesianYUp(const double &theta, const double &phi) {
+    return glm::dvec3(sin(phi) * sin(theta), cos(theta), cos(phi) * sin(theta));
+};
