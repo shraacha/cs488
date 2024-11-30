@@ -19,8 +19,9 @@ class CookTorranceMaterial : public Material
         const glm::dvec3 & refractionDir = glm::dvec3(0.0),
         const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const override;
 
-    virtual MaterialAction russianRouletteAction(
-        const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const override;
+    virtual MaterialAction
+    russianRouletteAction(const glm::dvec3 vin,
+                          const glm::dvec3 surfaceNormal) const override;
 
     virtual std::pair<glm::dvec3, double>
     sampleReflectionDirection(const glm::dvec3 vin,

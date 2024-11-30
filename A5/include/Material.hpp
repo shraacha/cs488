@@ -11,6 +11,7 @@
 
 #include <glm/glm.hpp>
 
+const double c_f0 = 0.04;
 
 enum MaterialTypeFlags
 {
@@ -26,6 +27,8 @@ enum struct MaterialAction
     Transmit,
     Absorb
 };
+
+MaterialAction decideMaterialAction(double reflect, double transmit);
 
 static glm::dvec3 c_defaultDVec3(0.0);
 static std::pair<glm::dvec3, double> c_defaultDVec3DoublePair(glm::dvec3(0.0), 0);

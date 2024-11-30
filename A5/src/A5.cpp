@@ -1,9 +1,11 @@
 // Termm--Fall 2024
 
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <optional>
 #include <cstdlib>
+#include <algorithm>
 
 #include <glm/ext.hpp>
 #include "Material.hpp"
@@ -26,6 +28,7 @@
 #include "Ray.hpp"
 #include "SceneManager.hpp"
 #include "ScreenHelpers.hpp"
+#include "ThreadPool.hpp"
 #include "debug.hpp"
 
 #include "ImageHelpers.hpp"
@@ -315,10 +318,10 @@ getCausticPhotonMap(const SceneManager & sceneManager,
 }
 
 static KDTree<Photon, double>
-testPhotonMap(const SceneManager & sceneManager,
+globalPhotonMap(const SceneManager & sceneManager,
                     const std::vector<const Light *> & lights,
                     const glm::dvec3 & ambient, const double & ior,
-                    unsigned int maxDepth, unsigned int numSamples = 300)
+                    unsigned int maxDepth, unsigned int numSamples = 100)
 {
     std::vector<Photon> photons;
 
@@ -376,10 +379,12 @@ static inline void printSceneInfo(const uint &imgWidth, const uint &imgHeight,
     std::cout << ")" << std::endl;
 }
 
-void render(SceneManager & sceneManager, Image & image, const Camera & camera,
-            const glm::vec3 & ambient, std::vector<const Light *> lights,
-            unsigned int numSamples)
+
+void renderDispatch(const SceneManager & sceneManager, Image & image, const Camera & camera,
+            const glm::vec3 & ambient, const std::vector<const Light *> & lights,
+            unsigned int numSamples, unsigned int startY, unsigned int endY, unsigned int startX, unsigned int endX, ProgressBar & progressBar)
 {
+
     size_t h = image.height();
     size_t w = image.width();
 
@@ -390,15 +395,11 @@ void render(SceneManager & sceneManager, Image & image, const Camera & camera,
     glm::mat4 viewMatrix =
         glm::lookAt(camera.m_eye, camera.m_view, camera.m_up);
 
-    ProgressBar progressBar(h * w);
-
-    std::cout << progressBar;
-
-    for (uint y = 0; y < h; ++y)
+    for (unsigned int y = startY; y < endY; ++y)
     {
         viewSpacePixel.y = getScreenPosition(h, y, true);
 
-        for (uint x = 0; x < w; ++x)
+        for (unsigned int x = startX; x < endX; ++x)
         {
             viewSpacePixel.x = getScreenPosition(w, x);
 
@@ -432,9 +433,54 @@ void render(SceneManager & sceneManager, Image & image, const Camera & camera,
             setPixelColour(image, x, y, pixelColour);
 
             ++progressBar;
-            progressBar.conditionalOut(std::cout);
         }
     }
+}
+
+void render(const SceneManager & sceneManager, Image & image, const Camera & camera,
+            const glm::vec3 & ambient, const std::vector<const Light *> & lights,
+            unsigned int numSamples)
+{
+
+    ProgressBar progressBar(image.height() * image.width());
+    std::atomic<bool> b;
+    ThreadPool threadPool(std::max(std::thread::hardware_concurrency(), 1u));
+
+    DLOG("num threads: %d", std::max(std::thread::hardware_concurrency(), 1u));
+
+    std::cout << progressBar;
+
+    // split up work to thread pool
+    size_t h = image.height();
+    size_t w = image.width();
+
+    DLOG("h, w: %zu, %zu", h, w);
+    for (unsigned int y = 0; y < h; y++)
+    {
+        // add row of pixels to queue
+        // threadPool.queueJob(std::bind(&));
+
+        threadPool.queueJob(
+            [&, y]()
+            {
+                renderDispatch(sceneManager, image, camera, ambient, lights,
+                               numSamples, y, y + 1, 0, w, progressBar);
+            });
+    }
+
+    DLOG("thread start");
+    threadPool.start();
+
+    // while thread pool is busy, update the progress bar output
+    while (threadPool.isBusy())
+    {
+        progressBar.conditionalOut(std::cout);
+    }
+
+    DLOG("thread stop");
+    threadPool.stop();
+
+
     std::cout << progressBar;
 }
 
@@ -462,10 +508,10 @@ void A5_Render(
     SceneManager sceneManager;
     sceneManager.importSceneGraph(root);
 
-    auto kdTree = testPhotonMap(sceneManager, lightVector, ambient, 1, 3);
+    auto kdTree = globalPhotonMap(sceneManager, lightVector, ambient, 1, 10, 500);
     SceneManager photonManager;
     photonManager.importSceneGraph(createPhotonScene(kdTree));
 
-    render(photonManager, image, Camera(eye, view, up, fovy), ambient,
+    render(sceneManager, image, Camera(eye, view, up, fovy), ambient,
            lightVector, numSamples);
 }

@@ -30,7 +30,6 @@ glm::dvec3 ReflectiveMaterial::getRadiance(
 
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
 
-    double f0 = 0.04;
     double scaleFactor = 2.0; // not sure exactly why I need this scale factor,
                               // but otherwise the objects are too dim
     glm::dvec3 normalizedLightVector =
@@ -47,7 +46,7 @@ glm::dvec3 ReflectiveMaterial::getRadiance(
     //     evaluateDistributionGGX(surfaceNormal, halfway, getRoughness());
     double g = evaluateGeometrySmith(surfaceNormal, outVector,
                                      normalizedLightVector, getRoughness());
-    double f = calculateFresnelSchlick(f0, halfway, outVector);
+    double f = calculateFresnelSchlick(c_f0, halfway, outVector);
 
     glm::dvec3 kS(1.0);
     glm::dvec3 kD(1 - f);

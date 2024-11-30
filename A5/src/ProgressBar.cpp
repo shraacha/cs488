@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+ProgressBar::ProgressBar() {}
 // ~~~~~~ constructors ~~~~~~
 ProgressBar::ProgressBar(unsigned int total, unsigned int width)
     : m_current{0},
@@ -15,7 +16,7 @@ ProgressBar::ProgressBar(unsigned int total, unsigned int width)
 // ~~~~~~ member functions ~~~~~~
 ProgressBar& ProgressBar::operator++()
 {
-    if(m_current < m_total) ++m_current;
+    ++m_current;
 
     return *this;
 }

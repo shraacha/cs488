@@ -4,6 +4,7 @@
 
 struct Camera
 {
+    Camera();
     Camera(const glm::dvec3 & eye, const glm::dvec3 & view,
            const glm::dvec3 & up, double fovy);
 

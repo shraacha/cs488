@@ -1,10 +1,11 @@
 #pragma once
 
 #include <iostream>
+#include <atomic>
 #include <string>
 
 class ProgressBar {
-    unsigned int m_current;
+    std::atomic<unsigned int> m_current;
     unsigned int m_total;
     unsigned int m_width;
     unsigned int m_updateThreshold;
@@ -16,6 +17,7 @@ class ProgressBar {
     const std::string m_spacer = "  ";
 
   public:
+    ProgressBar();
     ProgressBar(unsigned int total, unsigned int width = 50);
 
     std::ostream& conditionalOut(std::ostream& os);

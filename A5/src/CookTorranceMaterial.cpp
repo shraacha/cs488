@@ -44,7 +44,6 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
 
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
 
-    double f0 = 0.04;
     double scaleFactor = 1.0; // not sure exactly why I need this scale factor,
                               // but otherwise the objects are too dim
 
@@ -66,7 +65,7 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
             evaluateDistributionGGX(surfaceNormal, halfway, getRoughness());
         double g = evaluateGeometrySmith(surfaceNormal, outVector,
                                          normalizedLightVector, getRoughness());
-        double f = calculateFresnelSchlick(f0, halfway, outVector);
+        double f = calculateFresnelSchlick(c_f0, halfway, outVector);
 
         glm::dvec3 kS(1);
         glm::dvec3 kD(1-f);
@@ -95,8 +94,14 @@ MaterialAction CookTorranceMaterial::russianRouletteAction(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
 {
     // TODO add reflection/transmission
-    // auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
-    return MaterialAction::Absorb;
+    auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
+
+    glm::dvec3 halfway = glm::normalize(-vin + getReflectedVector(vin, normalSample.first));
+    double f = calculateFresnelSchlick(c_f0, halfway, -vin);
+
+    // DLOG("f: %f", f); // TESTING
+
+    return decideMaterialAction(f * 0.9, (1 - f) * 0.9);
 }
 
 std::pair<glm::dvec3, double> CookTorranceMaterial::sampleReflectionDirection(
