@@ -178,11 +178,11 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
     {
         Material *material = intersectionResult.value().second;
         Intersection & intersection = intersectionResult.value().first;
-        MaterialAction action = material->russianRouletteAction(
+        MaterialActionAndConstants materialAction = material->russianRouletteAction(
             ray.getNormalizedDirection(), intersection.getNormalizedNormal());
         std::pair<glm::dvec3, double> newDirection;
 
-        if (action == MaterialAction::Absorb || currDepth == maxDepth)
+        if (materialAction.action == MaterialAction::Absorb || currDepth == maxDepth)
         {
             photon.setIncidenceDir(
                 glm::normalize(glm::dvec3(-ray.getDirection())));
@@ -190,7 +190,7 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
 
             return photon;
         }
-        else if (action == MaterialAction::Reflect)
+        else if (materialAction.action == MaterialAction::Reflect)
         {
             // sample direction
             newDirection = material->sampleReflectionDirection(
@@ -198,9 +198,9 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
                 intersection.getNormalizedNormal());
 
             // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(material->getKS());
+            photon.piecewiseAverageScale(materialAction.kS);
         }
-        else if (action == MaterialAction::Transmit && material->isRefractive())
+        else if (materialAction.action == MaterialAction::Transmit && material->isRefractive())
         {
             newDirection = material->sampleRefractionDirection(
                 ray.getNormalizedDirection(),
@@ -208,9 +208,9 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
 
             // scale photon power otherwise it may blow up the scene
             photon.piecewiseAverageScale(material->getAlbedo() *
-                                         material->getKD());
+                                         materialAction.kS);
         }
-        else if (action == MaterialAction::Transmit)
+        else if (materialAction.action == MaterialAction::Transmit)
         {
             // sample diffusely
             newDirection = material->sampleDiffuseDirection(
@@ -219,7 +219,7 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
 
             // scale photon power otherwise it may blow up the scene
             photon.piecewiseAverageScale(material->getAlbedo() *
-                                         material->getKD());
+                                         materialAction.kD);
         }
 
         return castPhoton(sceneManager,
@@ -250,15 +250,15 @@ castCausticPhoton(const SceneManager & sceneManager, const Ray & ray,
     } else {
         Material * material = intersectionResult.value().second;
         Intersection & intersection = intersectionResult.value().first;
-        MaterialAction action = material->russianRouletteAction(
+        MaterialActionAndConstants materialAction = material->russianRouletteAction(
             ray.getNormalizedDirection(), intersection.getNormalizedNormal());
 
         std::pair<glm::dvec3, double> newDirection;
 
-        if (!(action == MaterialAction::Reflect || (action == MaterialAction::Transmit && material->isRefractive()))) {
+        if (!(materialAction.action == MaterialAction::Reflect || (materialAction.action == MaterialAction::Transmit && material->isRefractive()))) {
             return std::nullopt;
         }
-        if (action == MaterialAction::Reflect)
+        if (materialAction.action == MaterialAction::Reflect)
         {
             // sample direction
             newDirection = material->sampleReflectionDirection(
@@ -266,16 +266,16 @@ castCausticPhoton(const SceneManager & sceneManager, const Ray & ray,
                 intersection.getNormalizedNormal());
 
             // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(material->getKS());
+            photon.piecewiseAverageScale(materialAction.kS);
         }
-        else if (action == MaterialAction::Transmit && material->isRefractive())
+        else if (materialAction.action == MaterialAction::Transmit && material->isRefractive())
         {
             newDirection = material->sampleRefractionDirection(
                 ray.getNormalizedDirection(),
                 intersection.getNormalizedNormal(), ior);
 
             // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(material->getAlbedo() * material->getKD());
+            photon.piecewiseAverageScale(material->getAlbedo() * materialAction.kD);
         }
 
         return castPhoton(sceneManager,
@@ -508,10 +508,10 @@ void A5_Render(
     SceneManager sceneManager;
     sceneManager.importSceneGraph(root);
 
-    auto kdTree = globalPhotonMap(sceneManager, lightVector, ambient, 1, 10, 500);
+    auto kdTree = globalPhotonMap(sceneManager, lightVector, ambient, 1, 10, 800);
     SceneManager photonManager;
-    photonManager.importSceneGraph(createPhotonScene(kdTree));
+    photonManager.importSceneGraph(createPhotonScene(kdTree, 2));
 
-    render(sceneManager, image, Camera(eye, view, up, fovy), ambient,
+    render(photonManager, image, Camera(eye, view, up, fovy), ambient,
            lightVector, numSamples);
 }

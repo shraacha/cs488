@@ -8,6 +8,7 @@
 #include "Material.hpp"
 
 #include "debug.hpp"
+#include "glm/detail/type_vec.hpp"
 
 
 CookTorranceMaterial::CookTorranceMaterial(const glm::vec3 & albedo,
@@ -90,10 +91,10 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
     return lightOut;
 }
 
-MaterialAction CookTorranceMaterial::russianRouletteAction(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+MaterialActionAndConstants
+CookTorranceMaterial::russianRouletteAction(
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
 {
-    // TODO add reflection/transmission
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
 
     glm::dvec3 halfway = glm::normalize(-vin + getReflectedVector(vin, normalSample.first));
@@ -101,25 +102,26 @@ MaterialAction CookTorranceMaterial::russianRouletteAction(
 
     // DLOG("f: %f", f); // TESTING
 
-    return decideMaterialAction(f * 0.9, (1 - f) * 0.9);
+    return {decideMaterialAction(f * 0.9, (1 - f) * 0.9), glm::dvec3(f * 0.9),
+            glm::dvec3((1 - f) * 0.9)};
 }
 
 std::pair<glm::dvec3, double> CookTorranceMaterial::sampleReflectionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
 {
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     return std::make_pair(getReflectedVector(vin, normalSample.first), 1.0);
 }
 
 std::pair<glm::dvec3, double> CookTorranceMaterial::sampleRefractionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal, double ior1) const
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
 }
 
 std::pair<glm::dvec3, double>
-CookTorranceMaterial::sampleDiffuseDirection(const glm::dvec3 vin,
-                       const glm::dvec3 surfaceNormal) const
+CookTorranceMaterial::sampleDiffuseDirection(const glm::dvec3 & vin,
+                       const glm::dvec3 & surfaceNormal) const
 {
     return sampleCosineWeightedHemisphere(-vin, surfaceNormal);
 }

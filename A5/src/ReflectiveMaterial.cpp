@@ -67,22 +67,37 @@ glm::dvec3 ReflectiveMaterial::getRadiance(
     return lightOut;
 }
 
+MaterialActionAndConstants
+ReflectiveMaterial::russianRouletteAction(const glm::dvec3 & vin,
+                                          const glm::dvec3 & surfaceNormal) const
+{
+    auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
+
+    glm::dvec3 halfway = glm::normalize(-vin + getReflectedVector(vin, normalSample.first));
+    double f = calculateFresnelSchlick(c_f0, halfway, -vin);
+
+    // DLOG("f: %f", f); // TESTING
+
+    return {decideMaterialAction(f * 0.9, (1 - f) * 0.9), glm::dvec3(f * 0.9),
+            glm::dvec3((1 - f) * 0.9)};
+}
+
 std::pair<glm::dvec3, double> ReflectiveMaterial::sampleReflectionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
 {
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     return std::make_pair(getReflectedVector(vin, normalSample.first), 1.0);
 }
 
 std::pair<glm::dvec3, double> ReflectiveMaterial::sampleRefractionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal, double ior1) const
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
 }
 
 std::pair<glm::dvec3, double>
-ReflectiveMaterial::sampleDiffuseDirection(const glm::dvec3 vin,
-                       const glm::dvec3 surfaceNormal) const
+ReflectiveMaterial::sampleDiffuseDirection(const glm::dvec3 & vin,
+                       const glm::dvec3 & surfaceNormal) const
 {
     // pure reflective materials do not have a diffuse component
     return sampleReflectionDirection(vin, surfaceNormal);

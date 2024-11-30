@@ -4,4 +4,4 @@
 #include "KDTree.hpp"
 #include "Photon.hpp"
 
-SceneNode * createPhotonScene(const KDTree<Photon, double> & kdTree);
+SceneNode * createPhotonScene(const KDTree<Photon, double> & kdTree, double radius = 1);

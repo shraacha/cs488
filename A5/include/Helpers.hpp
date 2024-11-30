@@ -8,12 +8,10 @@ inline auto clampValue(const T & value, const T & upper, const T & lower) -> T
     return (value <= upper) ? ((value >= lower) ? value : lower) : upper;
 }
 
-inline double getRand0To1()
-{
-    return (double)rand() / (double)RAND_MAX;
-}
+int intRand(const int & min, const int & max);
 
-inline double getRandNeg1To1()
-{
-    return getRand0To1() * 2 - 1;
-}
+double getRand0To1();
+
+double getRandNeg1To1();
+
+int intRand(const int & min, const int & max);

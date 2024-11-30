@@ -30,6 +30,13 @@ enum struct MaterialAction
 
 MaterialAction decideMaterialAction(double reflect, double transmit);
 
+struct MaterialActionAndConstants
+{
+    MaterialAction action;
+    glm::dvec3 kS;
+    glm::dvec3 kD;
+};
+
 static glm::dvec3 c_defaultDVec3(0.0);
 static std::pair<glm::dvec3, double> c_defaultDVec3DoublePair(glm::dvec3(0.0), 0);
 
@@ -66,26 +73,26 @@ class Material {
         return c_defaultDVec3;
     }
 
-    virtual MaterialAction
-    russianRouletteAction(const glm::dvec3 vin,
-                          const glm::dvec3 surfaceNormal) const
+    virtual MaterialActionAndConstants
+    russianRouletteAction(const glm::dvec3 & vin,
+                          const glm::dvec3 & surfaceNormal) const
     {
         DLOG("base russianRouletteAction called");
-        return MaterialAction::Absorb;
+        return {MaterialAction::Absorb, glm::dvec3(0.0), glm::dvec3(0.0)};
     }
 
     virtual std::pair<glm::dvec3, double>
-    sampleReflectionDirection(const glm::dvec3 vin,
-                              const glm::dvec3 surfaceNormal) const = 0;
+    sampleReflectionDirection(const glm::dvec3 & vin,
+                              const glm::dvec3 & surfaceNormal) const = 0;
 
     virtual std::pair<glm::dvec3, double>
-    sampleRefractionDirection(const glm::dvec3 vin,
-                              const glm::dvec3 surfaceNormal,
+    sampleRefractionDirection(const glm::dvec3 & vin,
+                              const glm::dvec3 & surfaceNormal,
                               double ior1) const = 0;
 
     virtual std::pair<glm::dvec3, double>
-    sampleDiffuseDirection(const glm::dvec3 vin,
-                           const glm::dvec3 surfaceNormal) const
+    sampleDiffuseDirection(const glm::dvec3 & vin,
+                           const glm::dvec3 & surfaceNormal) const
 
     {
         DLOG("base sampleDiffuseDirection called");
