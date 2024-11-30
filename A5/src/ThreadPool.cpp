@@ -1,7 +1,7 @@
 #include "ThreadPool.hpp"
 #include <mutex>
 
-ThreadPool::ThreadPool(unsigned int numThreads) : m_numThreads(numThreads) {}
+ThreadPool::ThreadPool(unsigned int numThreads) : m_numThreads(numThreads), m_terminate(false) {}
 
 void ThreadPool::start()
 {
