@@ -265,8 +265,8 @@ castCausticPhoton(const SceneManager & sceneManager, const Ray & ray,
                 ray.getNormalizedDirection(),
                 intersection.getNormalizedNormal());
 
-            // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(materialAction.kS);
+            // TODO scale photon power otherwise it may blow up the scene
+            // photon.piecewiseAverageScale(materialAction.kS);
         }
         else if (materialAction.action == MaterialAction::Transmit && material->isRefractive())
         {
@@ -285,7 +285,7 @@ castCausticPhoton(const SceneManager & sceneManager, const Ray & ray,
 }
 
 static KDTree<Photon, double>
-getCausticPhotonMap(const SceneManager & sceneManager,
+createCausticPhotonMap(const SceneManager & sceneManager,
                     const std::vector<const Light *> & lights,
                     const glm::dvec3 & ambient, const double & ior,
                     unsigned int maxDepth, unsigned int numSamples = 100)
@@ -318,7 +318,7 @@ getCausticPhotonMap(const SceneManager & sceneManager,
 }
 
 static KDTree<Photon, double>
-globalPhotonMap(const SceneManager & sceneManager,
+createGlobalPhotonMap(const SceneManager & sceneManager,
                     const std::vector<const Light *> & lights,
                     const glm::dvec3 & ambient, const double & ior,
                     unsigned int maxDepth, unsigned int numSamples = 100)
@@ -437,9 +437,9 @@ void renderDispatch(const SceneManager & sceneManager, Image & image, const Came
     }
 }
 
-void render(const SceneManager & sceneManager, Image & image, const Camera & camera,
-            const glm::vec3 & ambient, const std::vector<const Light *> & lights,
-            unsigned int numSamples)
+void render(const SceneManager & sceneManager, Image & image,
+            const Camera & camera, const glm::vec3 & ambient,
+            const std::vector<const Light *> & lights, unsigned int numSamples)
 {
 
     ProgressBar progressBar(image.height() * image.width());
@@ -480,7 +480,6 @@ void render(const SceneManager & sceneManager, Image & image, const Camera & cam
     DLOG("thread stop");
     threadPool.stop();
 
-
     std::cout << progressBar;
 }
 
@@ -493,7 +492,8 @@ void A5_Render(
     double fovy,
     // Lighting parameters
     const glm::vec3 & ambient, const std::list<Light *> & lights,
-    unsigned int numSamples)
+    unsigned int numSamples,
+    double photonRadiusVisualization)
 {
     std::vector<const Light *> lightVector;
 
@@ -508,9 +508,9 @@ void A5_Render(
     SceneManager sceneManager;
     sceneManager.importSceneGraph(root);
 
-    auto kdTree = globalPhotonMap(sceneManager, lightVector, ambient, 1, 10, 800);
+    auto kdTree = createCausticPhotonMap(sceneManager, lightVector, ambient, 1, 10, 800);
     SceneManager photonManager;
-    photonManager.importSceneGraph(createPhotonScene(kdTree, 2));
+    photonManager.importSceneGraph(createPhotonScene(kdTree, photonRadiusVisualization));
 
     render(photonManager, image, Camera(eye, view, up, fovy), ambient,
            lightVector, numSamples);

@@ -349,10 +349,12 @@ int gr_render_cmd(lua_State* L)
     lua_pop(L, 1);
   }
 
-  double numSamples = luaL_checknumber(L, 11);
+  unsigned int numSamples = luaL_checknumber(L, 11);
+
+  double photonRadiusVisualization = luaL_checknumber(L, 12);
 
 	Image im( width, height);
-	A5_Render(root->node, im, eye, view, up, fov, ambient, lights, numSamples);
+	A5_Render(root->node, im, eye, view, up, fov, ambient, lights, numSamples, photonRadiusVisualization);
     im.savePng( filename );
 
 	return 0;

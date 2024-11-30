@@ -19,12 +19,12 @@ class RefractiveMaterial : public Material
         const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const override;
 
     virtual std::pair<glm::dvec3, double>
-    sampleReflectionDirection(const glm::dvec3 vin,
-                              const glm::dvec3 surfaceNormal) const override;
+    sampleReflectionDirection(const glm::dvec3 & vin,
+                              const glm::dvec3 & surfaceNormal) const override;
 
     virtual std::pair<glm::dvec3, double>
-    sampleRefractionDirection(const glm::dvec3 vin,
-                              const glm::dvec3 surfaceNormal,
+    sampleRefractionDirection(const glm::dvec3 & vin,
+                              const glm::dvec3 & surfaceNormal,
                               double ior1) const override;
 
     // TODO

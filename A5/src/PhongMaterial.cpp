@@ -72,7 +72,7 @@ glm::dvec3 PhongMaterial::getRadiance(
 }
 
 std::pair<glm::dvec3, double> PhongMaterial::sampleReflectionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
 {
     // TODO
     // sample based on roughness
@@ -80,7 +80,7 @@ std::pair<glm::dvec3, double> PhongMaterial::sampleReflectionDirection(
 }
 
 std::pair<glm::dvec3, double> PhongMaterial::sampleRefractionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal, double ior1) const
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
 }

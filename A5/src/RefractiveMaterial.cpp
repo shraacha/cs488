@@ -70,14 +70,14 @@ glm::dvec3 RefractiveMaterial::getRadiance(
 }
 
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleReflectionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
 {
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     return std::make_pair(getReflectedVector(vin, normalSample.first), normalSample.second);
 }
 
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleRefractionDirection(
-    const glm::dvec3 vin, const glm::dvec3 surfaceNormal, double ior1) const
+    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
 {
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     auto refractedVector = getRefractedVector(vin, normalSample.first, m_ior, ior1);
