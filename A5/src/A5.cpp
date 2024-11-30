@@ -439,14 +439,18 @@ void renderDispatch(const SceneManager & sceneManager, Image & image, const Came
 
 void render(const SceneManager & sceneManager, Image & image,
             const Camera & camera, const glm::vec3 & ambient,
-            const std::vector<const Light *> & lights, unsigned int numSamples)
+            const std::vector<const Light *> & lights, unsigned int numSamples,
+            unsigned int numThreads)
 {
 
     ProgressBar progressBar(image.height() * image.width());
     std::atomic<bool> b;
-    ThreadPool threadPool(std::max(std::thread::hardware_concurrency(), 1u));
+    numThreads =
+        std::max(std::min(std::thread::hardware_concurrency(), numThreads), 1u);
 
-    DLOG("num threads: %d", std::max(std::thread::hardware_concurrency(), 1u));
+    ThreadPool threadPool(numThreads);
+
+    DLOG("num threads: %d", numThreads);
 
     std::cout << progressBar;
 
@@ -493,7 +497,7 @@ void A5_Render(
     // Lighting parameters
     const glm::vec3 & ambient, const std::list<Light *> & lights,
     unsigned int numSamples, double photonRadiusVisualization,
-    unsigned int numPhotons)
+    unsigned int numPhotons, unsigned int numThreads)
 {
     std::vector<const Light *> lightVector;
 
@@ -513,5 +517,5 @@ void A5_Render(
     photonManager.importSceneGraph(createPhotonScene(kdTree, photonRadiusVisualization));
 
     render(photonManager, image, Camera(eye, view, up, fovy), ambient,
-           lightVector, numSamples);
+           lightVector, numSamples, numThreads);
 }
