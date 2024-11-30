@@ -492,8 +492,8 @@ void A5_Render(
     double fovy,
     // Lighting parameters
     const glm::vec3 & ambient, const std::list<Light *> & lights,
-    unsigned int numSamples,
-    double photonRadiusVisualization)
+    unsigned int numSamples, double photonRadiusVisualization,
+    unsigned int numPhotons)
 {
     std::vector<const Light *> lightVector;
 
@@ -508,7 +508,7 @@ void A5_Render(
     SceneManager sceneManager;
     sceneManager.importSceneGraph(root);
 
-    auto kdTree = createCausticPhotonMap(sceneManager, lightVector, ambient, 1, 10, 800);
+    auto kdTree = createCausticPhotonMap(sceneManager, lightVector, ambient, 1, 10, numPhotons);
     SceneManager photonManager;
     photonManager.importSceneGraph(createPhotonScene(kdTree, photonRadiusVisualization));
 

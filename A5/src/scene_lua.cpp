@@ -353,11 +353,14 @@ int gr_render_cmd(lua_State* L)
 
   double photonRadiusVisualization = luaL_checknumber(L, 12);
 
-	Image im( width, height);
-	A5_Render(root->node, im, eye, view, up, fov, ambient, lights, numSamples, photonRadiusVisualization);
-    im.savePng( filename );
+  unsigned int numPhotons = luaL_checknumber(L, 13);
 
-	return 0;
+	Image im( width, height);
+        A5_Render(root->node, im, eye, view, up, fov, ambient, lights,
+                  numSamples, photonRadiusVisualization, numPhotons);
+        im.savePng(filename);
+
+        return 0;
 }
 
 // Create a Material
