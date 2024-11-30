@@ -6,25 +6,32 @@
 #include <cstdlib>
 
 #include <glm/ext.hpp>
+#include "Material.hpp"
+#include "glm/detail/type_vec.hpp"
+#include "glm/gtx/string_cast.hpp"
 
-#include "ProgressBar.hpp"
 #include "cs488-framework/MathUtils.hpp"
 
 #include "A5.hpp"
-#include "Primitive.hpp"
-#include "SceneManager.hpp"
-#include "debug.hpp"
-#include "Ray.hpp"
-#include "Intersection.hpp"
-#include "PhongMaterial.hpp"
+#include "Camera.hpp"
 #include "CookTorranceMaterial.hpp"
+#include "Intersection.hpp"
+#include "KDTree.hpp"
 #include "NormalMaterial.hpp"
+#include "PhongMaterial.hpp"
+#include "Photon.hpp"
+#include "PhotonMapHelpers.hpp"
+#include "Primitive.hpp"
+#include "ProgressBar.hpp"
+#include "Ray.hpp"
+#include "SceneManager.hpp"
+#include "ScreenHelpers.hpp"
+#include "debug.hpp"
 
-#include "Helpers.hpp"
 #include "ImageHelpers.hpp"
 #include "LightingHelpers.hpp"
-#include "glm/detail/type_vec.hpp"
-#include "glm/gtx/string_cast.hpp"
+
+#include "IntersectionRoutines.hpp"
 
 // ------------------- constants ----------------------
 const glm::dvec3 c_botScreenColour = {0.89411764705, 0.58823529411, 0.80392156862};
@@ -32,117 +39,6 @@ const glm::dvec3 c_topScreenColour = {0.013725490196, 0.003529411764, 0.00117647
 
 
 // ------------------- helpers ----------------------
-// paramaeters:
-// - fovy
-//   fov in DEGREES
-static inline double getScreenDepth(const double & height, const double & fovy)
-{
-  return (height / 2) / std::tan(degreesToRadians(fovy) / 2);
-}
-
-
-// paramaeters:
-// - flip
-//   whether to flip the position, this is needed when supplying an device coordinate index
-static inline double getScreenPosition(const double &sideLength,
-                                       const uint &index, const bool &flip = false)
-{
-    if (flip)
-    {
-        return - (double)index + sideLength / 2 - 0.5;
-    } else {
-        return (double)index - sideLength / 2 + 0.5;
-    }
-}
-
-static inline std::vector<glm::dvec4>
-generateSubScreenPositions(const glm::vec4 &screenPosition, unsigned int wSubDivs = 1,
-                           unsigned int hSubDivs = 1, bool jitter = true) {
-    std::vector<glm::dvec4> positions;
-
-    glm::vec4 bottomLeft(screenPosition.x - 0.5, screenPosition.y - 0.5, screenPosition.z, 1.0);
-
-    double wStep = 1.0 / (double)(wSubDivs);
-    double hStep = 1.0 / (double)(hSubDivs);
-
-    double wHalfStep = wStep / 2.0;
-    double hHalfStep = hStep / 2.0;
-
-    glm::vec4 startLocation(bottomLeft.x + wHalfStep, bottomLeft.y + hHalfStep, bottomLeft.z, bottomLeft.w);
-    double row = startLocation.y;
-    double startCol = startLocation.x;
-
-    for (unsigned int i = 0; i < hSubDivs; ++i) {
-        double col = startCol;
-        for (unsigned int j = 0; j < wSubDivs; ++j) {
-            double wJitter = jitter ? ((static_cast<double>(std::rand()) / RAND_MAX) * wStep) - wHalfStep : 0;
-            double hJitter = jitter ? ((static_cast<double>(std::rand()) / RAND_MAX) * hStep) - hHalfStep : 0;
-
-            positions.emplace_back(col + hJitter, row + wJitter, startLocation.z,  startLocation.w);
-
-            row += wStep;
-        }
-        col += hStep;
-    }
-
-    return positions;
-}
-
-static inline std::optional<std::pair<Intersection, Material *>>
-intersect(const SceneManager & sceneManager, const Ray & ray) {
-    std::optional<std::pair<Intersection, Material *>> intersectionAndMaterial{
-        std::nullopt};
-
-    for (SceneManager::PreOrderTraversalIterator nodeIt = sceneManager.begin();
-         nodeIt != sceneManager.end(); ++nodeIt) {
-
-        if (nodeIt->m_nodeType != NodeType::GeometryNode)
-            continue;
-
-        const GeometryNode *geometryNode = nodeIt.asGeometryNode();
-
-        glm::mat4 transformationStack =
-            nodeIt.getInheritedTransformation() * geometryNode->get_transform();
-
-        glm::dvec4 transformedEye =
-            glm::inverse(transformationStack) * ray.getEyePoint();
-        glm::dvec4 transformedPixel =
-            glm::inverse(transformationStack) * ray.getPixelPoint();
-
-        auto result = geometryNode->getPrimitive()->intersect(
-            Ray(transformedEye, transformedPixel));
-
-        if (result.has_value() &&
-            (!intersectionAndMaterial.has_value() ||
-             (result->getT() < intersectionAndMaterial->first.getT())) &&
-            result->getT() >= ray.getMinThreshold()) {
-            intersectionAndMaterial = std::make_pair<Intersection, Material *>(
-                Intersection(
-                    result->getT(), transformationStack * result->getPosition(),
-                    result->getNormal() * glm::inverse(transformationStack)),
-                geometryNode->getMaterial());
-        }
-    }
-
-    return intersectionAndMaterial;
-}
-
-static inline glm::dvec3 calculateColour(const Ray &ray, const Intersection &intersect,
-                                   Material *material, const glm::vec3 &ambient,
-                                   const std::vector<const Light *> &lights) {
-    glm::dvec3 colour{1.0, 1.0, 1.0};
-
-    if (material->isReflective() && material->isRefractive())
-    {
-        colour = material->getRadiance(ray, intersect, ambient, lights);
-    } else if (material->isReflective()) {
-        colour = material->getRadiance(ray, intersect, ambient, lights);
-    } else {
-        colour = material->getRadiance(ray, intersect, ambient, lights);
-    }
-
-    return colour;
-}
 
 /**
  * Generates a gradient based on the normalized y-value of the ray direction.
@@ -214,24 +110,23 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
         }
         else
         {
-            glm::dvec3 reflectionDir, reflectionRadiance, refractionDir,
-                refractionRadiance;
+            std::pair<glm::dvec3, double> reflectionDir, refractionDir;
+            glm::dvec3 reflectionRadiance, refractionRadiance;
 
             if (material->isReflective())
             {
-                reflectionDir =
-                    material
+                reflectionDir = material
                         ->sampleReflectionDirection(
                             glm::normalize(glm::dvec3(ray.getDirection())),
-                            intersect.getNormalizedNormal())
-                        .first;
+                            intersect.getNormalizedNormal());
 
+                // TODO probability should be used in the calculation somewhere
                 reflectionRadiance = intersectAndGetColour(
                     sceneManager,
                     Ray(intersect.getPosition(),
                         intersect.getPosition() +
-                            glm::dvec4(reflectionDir, 0.0)),
-                    lights, ambient, ior, currDepth + 1, maxDepth);
+                            glm::dvec4(reflectionDir.first, 0.0)),
+                    lights, ambient, ior, currDepth + 1, maxDepth) * (1 / reflectionDir.second);
             }
 
             if (material->isRefractive())
@@ -240,21 +135,20 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
                     material
                         ->sampleRefractionDirection(
                             glm::normalize(glm::dvec3(ray.getDirection())),
-                            intersect.getNormalizedNormal(), ior)
-                        .first;
+                            intersect.getNormalizedNormal(), ior) ;
 
                 refractionRadiance = intersectAndGetColour(
                     sceneManager,
                     Ray(intersect.getPosition(),
                         intersect.getPosition() +
-                            glm::dvec4(refractionDir, 0.0)),
+                            glm::dvec4(refractionDir.first, 0.0)),
                     lights, ambient, ior, currDepth + 1,
                     maxDepth);
             }
 
             fragmentColour += material->getRadiance(
-                ray, intersect, ambient, contributingLights, reflectionDir,
-                reflectionRadiance, refractionDir, refractionRadiance);
+                ray, intersect, ambient, contributingLights, reflectionDir.first,
+                reflectionRadiance, refractionDir.first, refractionRadiance);
         }
     }
     else
@@ -265,6 +159,191 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
     }
 
     return fragmentColour;
+}
+static std::optional<Photon>
+castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
+           const double & ior, unsigned int currDepth, unsigned int maxDepth)
+{
+    std::optional<std::pair<Intersection, Material *>> intersectionResult =
+        intersect(sceneManager, ray);
+
+    if (!intersectionResult)
+    {
+        return std::nullopt;
+    }
+    else
+    {
+        Material *material = intersectionResult.value().second;
+        Intersection & intersection = intersectionResult.value().first;
+        MaterialAction action = material->russianRouletteAction(
+            ray.getNormalizedDirection(), intersection.getNormalizedNormal());
+        std::pair<glm::dvec3, double> newDirection;
+
+        if (action == MaterialAction::Absorb || currDepth == maxDepth)
+        {
+            photon.setIncidenceDir(
+                glm::normalize(glm::dvec3(-ray.getDirection())));
+            photon.setPosition(glm::dvec3(intersection.getPosition()));
+
+            return photon;
+        }
+        else if (action == MaterialAction::Reflect)
+        {
+            // sample direction
+            newDirection = material->sampleReflectionDirection(
+                ray.getNormalizedDirection(),
+                intersection.getNormalizedNormal());
+
+            // scale photon power otherwise it may blow up the scene
+            photon.piecewiseAverageScale(material->getKS());
+        }
+        else if (action == MaterialAction::Transmit && material->isRefractive())
+        {
+            newDirection = material->sampleRefractionDirection(
+                ray.getNormalizedDirection(),
+                intersection.getNormalizedNormal(), ior);
+
+            // scale photon power otherwise it may blow up the scene
+            photon.piecewiseAverageScale(material->getAlbedo() *
+                                         material->getKD());
+        }
+        else if (action == MaterialAction::Transmit)
+        {
+            // sample diffusely
+            newDirection = material->sampleDiffuseDirection(
+                ray.getNormalizedDirection(),
+                intersection.getNormalizedNormal());
+
+            // scale photon power otherwise it may blow up the scene
+            photon.piecewiseAverageScale(material->getAlbedo() *
+                                         material->getKD());
+        }
+
+        return castPhoton(sceneManager,
+                          Ray(intersection.getPosition(), newDirection.first),
+                          photon, ior, currDepth + 1, maxDepth);
+    }
+}
+
+static std::optional<Photon>
+castCausticPhoton(const SceneManager & sceneManager, const Ray & ray,
+                  Photon & photon, const double & ior, unsigned int maxDepth)
+{
+    // Caustics
+    // - cast photon
+    // - sample reflection direction, & calculate fresnel
+    // - if diffuse/absorb action, terminate photon
+    // - if specular continue
+    // - re-cast from intersect
+    // - if absorbed, return this
+    // - if not absorbed, get diffuse/specular dir and scale accordingly
+    // - terminate if max depth, else re-cast
+
+    std::optional<std::pair<Intersection, Material *>> intersectionResult =
+        intersect(sceneManager, ray);
+
+    if (!intersectionResult) {
+        return std::nullopt;
+    } else {
+        Material * material = intersectionResult.value().second;
+        Intersection & intersection = intersectionResult.value().first;
+        MaterialAction action = material->russianRouletteAction(
+            ray.getNormalizedDirection(), intersection.getNormalizedNormal());
+
+        std::pair<glm::dvec3, double> newDirection;
+
+        if (!(action == MaterialAction::Reflect || (action == MaterialAction::Transmit && material->isRefractive()))) {
+            return std::nullopt;
+        }
+        if (action == MaterialAction::Reflect)
+        {
+            // sample direction
+            newDirection = material->sampleReflectionDirection(
+                ray.getNormalizedDirection(),
+                intersection.getNormalizedNormal());
+
+            // scale photon power otherwise it may blow up the scene
+            photon.piecewiseAverageScale(material->getKS());
+        }
+        else if (action == MaterialAction::Transmit && material->isRefractive())
+        {
+            newDirection = material->sampleRefractionDirection(
+                ray.getNormalizedDirection(),
+                intersection.getNormalizedNormal(), ior);
+
+            // scale photon power otherwise it may blow up the scene
+            photon.piecewiseAverageScale(material->getAlbedo() * material->getKD());
+        }
+
+        return castPhoton(sceneManager,
+                          Ray(intersection.getPosition(), newDirection.first),
+                          photon, ior, 1, maxDepth);
+    }
+}
+
+static KDTree<Photon, double>
+getCausticPhotonMap(const SceneManager & sceneManager,
+                    const std::vector<const Light *> & lights,
+                    const glm::dvec3 & ambient, const double & ior,
+                    unsigned int maxDepth, unsigned int numSamples = 100)
+{
+    std::vector<Photon> photons;
+
+    for (const auto * light : lights)
+    {
+        for (int i = 0; i < numSamples; i++)
+        {
+            Photon photon;
+
+            std::optional<Photon> result = castCausticPhoton(
+                sceneManager, light->sampleRay().first, photon, ior, maxDepth);
+
+            if (result)
+            {
+                photons.emplace_back(result.value());
+            }
+            else
+            {
+                --i;
+            }
+        }
+    }
+
+    return KDTree<Photon, double>(
+        photons, {PhotonCompare1(), PhotonCompare2(), PhotonCompare3()},
+        {PhotonDistance1(), PhotonDistance2(), PhotonDistance3()});
+}
+
+static KDTree<Photon, double>
+testPhotonMap(const SceneManager & sceneManager,
+                    const std::vector<const Light *> & lights,
+                    const glm::dvec3 & ambient, const double & ior,
+                    unsigned int maxDepth, unsigned int numSamples = 300)
+{
+    std::vector<Photon> photons;
+
+    for (const auto * light : lights)
+    {
+        for (int i = 0; i < numSamples; i++)
+        {
+            Photon photon (light->colour);
+
+            if (auto result = castPhoton(sceneManager, light->sampleRay().first,
+                                         photon, ior, 0, maxDepth))
+            {
+                photons.emplace_back(result.value());
+            }
+            else
+            {
+                --i;
+            }
+        }
+    }
+
+    DLOG("Num photons: %zd", photons.size());
+    return KDTree<Photon, double>(
+        photons, {PhotonCompare1(), PhotonCompare2(), PhotonCompare3()},
+        {PhotonDistance1(), PhotonDistance2(), PhotonDistance3()});
 }
 
 static inline void printSceneInfo(const uint &imgWidth, const uint &imgHeight,
@@ -297,46 +376,22 @@ static inline void printSceneInfo(const uint &imgWidth, const uint &imgHeight,
     std::cout << ")" << std::endl;
 }
 
-// ------------------- main ----------------------
-void A4_Render(
-    // What to render
-    SceneNode *root,
-
-    // Image to write to, set to a given width and height
-    Image & image,
-
-    // Viewing parameters
-    const glm::vec3 & eye, const glm::vec3 & view, const glm::vec3 & up,
-    double fovy,
-
-    // Lighting parameters
-    const glm::vec3 & ambient, const std::list<Light *> & lights)
+void render(SceneManager & sceneManager, Image & image, const Camera & camera,
+            const glm::vec3 & ambient, std::vector<const Light *> lights,
+            unsigned int numSamples)
 {
-    unsigned int numSamples = 5;
-
-    std::vector<const Light *> lightVector;
-
-    for (const Light *light : lights)
-    {
-        lightVector.emplace_back(light);
-    }
-
-    printSceneInfo(image.width(), image.height(), *root, eye, view, up, fovy,
-                   ambient, lights);
-
-    SceneManager sceneManager;
-    sceneManager.importSceneGraph(root);
-
     size_t h = image.height();
     size_t w = image.width();
 
-    double zval = getScreenDepth(h, fovy);
+    double zval = getScreenDepth(h, camera.m_fovy);
     glm::dvec4 viewSpacePixel{0.0, 0.0, -zval, 1.0};
     glm::dvec4 viewSpaceEye{0.0, 0.0, 0.0, 1.0};
 
-    glm::mat4 viewMatrix = glm::lookAt(eye, view, up);
+    glm::mat4 viewMatrix =
+        glm::lookAt(camera.m_eye, camera.m_view, camera.m_up);
 
     ProgressBar progressBar(h * w);
+
     std::cout << progressBar;
 
     for (uint y = 0; y < h; ++y)
@@ -361,15 +416,17 @@ void A4_Render(
                 glm::dvec4 worldSpacePixel =
                     glm::inverse(viewMatrix) * subPixel;
 
-                for (unsigned int i = 0; i < numSamples; i++) {
+                for (unsigned int i = 0; i < numSamples; i++)
+                {
                     pixelColour += intersectAndGetColour(
                         sceneManager, Ray(worldSpaceEye, worldSpacePixel),
-                        lightVector, ambient, 1.0, 0, 2);
+                        lights, ambient, 1.0, 0, 2);
                 }
             }
 
             // average pixel vals
-            pixelColour *= 1.0 / ((double)subPixels.size() * (double)numSamples);
+            pixelColour *=
+                1.0 / ((double)subPixels.size() * (double)numSamples);
 
             // set colour
             setPixelColour(image, x, y, pixelColour);
@@ -379,4 +436,36 @@ void A4_Render(
         }
     }
     std::cout << progressBar;
+}
+
+// ------------------- main ----------------------
+void A5_Render(
+    // What to render
+    SceneNode *root, Image & image,
+    // Viewing parameters
+    const glm::vec3 & eye, const glm::vec3 & view, const glm::vec3 & up,
+    double fovy,
+    // Lighting parameters
+    const glm::vec3 & ambient, const std::list<Light *> & lights,
+    unsigned int numSamples)
+{
+    std::vector<const Light *> lightVector;
+
+    for (const Light *light : lights)
+    {
+        lightVector.emplace_back(light);
+    }
+
+    printSceneInfo(image.width(), image.height(), *root, eye, view, up, fovy,
+                   ambient, lights);
+
+    SceneManager sceneManager;
+    sceneManager.importSceneGraph(root);
+
+    auto kdTree = testPhotonMap(sceneManager, lightVector, ambient, 1, 3);
+    SceneManager photonManager;
+    photonManager.importSceneGraph(createPhotonScene(kdTree));
+
+    render(photonManager, image, Camera(eye, view, up, fovy), ambient,
+           lightVector, numSamples);
 }

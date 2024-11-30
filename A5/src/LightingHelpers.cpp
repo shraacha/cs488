@@ -41,6 +41,39 @@ std::pair<glm::dvec3, double> sampleNormalGGX(const glm::dvec3 & vout,
                           evaluateDistributionGGX(n, h, a));
 }
 
+std::pair<glm::dvec3, double> sampleCosineWeightedHemisphere()
+{
+    double e1 = getRand0To1();
+    double e2 = getRand0To1();
+
+    double theta = acos(sqrt(e1));
+    double phi = 2 * M_PI * e2;
+
+    glm::dvec3 sample = sphericalToCartesianYUp(theta, phi);
+
+    return std::make_pair(sample, cos(theta) * M_1_PI);
+}
+
+std::pair<glm::dvec3, double>
+sampleCosineWeightedHemisphere(const glm::dvec3 & vout, const glm::dvec3 & n)
+{
+    glm::dmat3 sampleToWorld = getChangeOfBasis(n, vout);
+
+    auto sample = sampleCosineWeightedHemisphere();
+
+    sample.first = sampleToWorld * sample.first;
+
+    return sample;
+}
+
+std::pair<glm::dvec3, double>
+sampleUniformSphere()
+{
+    glm::dvec3 sample(getRandNeg1To1(), getRandNeg1To1(), getRandNeg1To1());
+
+    return {glm::normalize(sample), 1.0};
+}
+
 double evaluateGeometryPartialGGX(const glm::dvec3 & w, const glm::dvec3 & n,
                                   const glm::dvec3 & h, double a)
 {
@@ -84,7 +117,7 @@ float evaluateGeometrySmith(const glm::dvec3 & n, const glm::dvec3 & v, const gl
 double calculateFresnelSchlick(double f0, const glm::dvec3 & v1,
                                const glm::dvec3 & v2)
 {
-    return f0 + (1 - f0) * pow(1 - std::max(glm::dot(v1, v2), 0.0), 5);
+    return f0 + (1 - f0) * pow(1 - glm::dot(v1, v2), 5);
 }
 
 std::optional<glm::dvec3> getRefractedVector(const glm::dvec3 vin, glm::dvec3 n, double ior2,

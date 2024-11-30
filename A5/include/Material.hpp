@@ -7,6 +7,7 @@
 #include "Ray.hpp"
 #include "Intersection.hpp"
 #include "Light.hpp"
+#include "debug.hpp"
 
 #include <glm/glm.hpp>
 
@@ -26,6 +27,9 @@ enum struct MaterialAction
     Absorb
 };
 
+static glm::dvec3 c_defaultDVec3(0.0);
+static std::pair<glm::dvec3, double> c_defaultDVec3DoublePair(glm::dvec3(0.0), 0);
+
 class Material {
   public:
     virtual ~Material();
@@ -43,8 +47,29 @@ class Material {
     bool isRefractive() const;
 
     double getIOR() const;
+    virtual glm::dvec3 getKS() const
+    {
+        DLOG("base getKS called");
+        return c_defaultDVec3;
+    }
+    virtual glm::dvec3 getKD() const
+    {
+        DLOG("base getKD called");
+        return c_defaultDVec3;
+    }
+    virtual glm::dvec3 getAlbedo() const
+    {
+        DLOG("base getAlbedo called");
+        return c_defaultDVec3;
+    }
 
-    virtual MaterialAction russianRouletteAction() const = 0;
+    virtual MaterialAction
+    russianRouletteAction(const glm::dvec3 vin,
+                          const glm::dvec3 surfaceNormal) const
+    {
+        DLOG("base russianRouletteAction called");
+        return MaterialAction::Absorb;
+    }
 
     virtual std::pair<glm::dvec3, double>
     sampleReflectionDirection(const glm::dvec3 vin,
@@ -54,6 +79,15 @@ class Material {
     sampleRefractionDirection(const glm::dvec3 vin,
                               const glm::dvec3 surfaceNormal,
                               double ior1) const = 0;
+
+    virtual std::pair<glm::dvec3, double>
+    sampleDiffuseDirection(const glm::dvec3 vin,
+                           const glm::dvec3 surfaceNormal) const
+
+    {
+        DLOG("base sampleDiffuseDirection called");
+        return c_defaultDVec3DoublePair;
+    }
 
   protected:
     Material();

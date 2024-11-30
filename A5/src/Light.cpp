@@ -5,6 +5,7 @@
 #include <glm/ext.hpp>
 
 #include "Light.hpp"
+#include "LightingHelpers.hpp"
 
 Light::Light()
   : colour(0.0, 0.0, 0.0),
@@ -36,4 +37,10 @@ double Light::calculateAttenuation(const glm::dvec3 & surfacePosition) const
     return glm::dot(
         glm::dvec3(falloff[0], falloff[1], falloff[2]),
         glm::dvec3(1.0, sqrt(rSquared), rSquared));
+}
+
+std::pair<Ray, double> Light::sampleRay() const
+{
+  auto sample = sampleUniformSphere();
+  return {Ray(glm::dvec4(position, 1.0), sample.first), sample.second};
 }

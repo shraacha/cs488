@@ -1,7 +1,14 @@
 #include "CookTorranceMaterial.hpp"
 
+#include <cmath>
+
+#include <glm/detail/func_exponential.hpp>
+
 #include "LightingHelpers.hpp"
 #include "Material.hpp"
+
+#include "debug.hpp"
+
 
 CookTorranceMaterial::CookTorranceMaterial(const glm::vec3 & albedo,
                                            const glm::vec3 & ks,
@@ -38,7 +45,7 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
 
     double f0 = 0.04;
-    double scaleFactor = 1.5; // not sure exactly why I need this scale factor,
+    double scaleFactor = 1.0; // not sure exactly why I need this scale factor,
                               // but otherwise the objects are too dim
 
     for (const Light *light : lights)
@@ -61,10 +68,11 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
                                          normalizedLightVector, getRoughness());
         double f = calculateFresnelSchlick(f0, halfway, outVector);
 
-        glm::dvec3 kS(40.0); // idk why I need to scale so much
-        glm::dvec3 kD(1 - f);
+        glm::dvec3 kS(1);
+        glm::dvec3 kD(1-f);
 
-        glm::dvec3 numerator(f * ndf * g);
+        // nuked fresnel since it was really attenuating things
+        glm::dvec3 numerator(ndf * g);
         double denominator =
             4.0 * std::max(glm::dot(surfaceNormal, outVector), 0.0) *
                 std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0) +
@@ -74,29 +82,39 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
         // add to outgoing radiance Lo
         double nDotL =
             std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0);
-        lightOut += scaleFactor * (kD * getAlbedo() / M_PI + kS * specular) *
-                    radiance * nDotL;
+        lightOut +=
+            radiance *
+            (kD * glm::pow(getAlbedo(), glm::dvec3(2.2)) * M_1_PI + specular) *
+            nDotL;
     }
 
     return lightOut;
 }
 
-MaterialAction CookTorranceMaterial::russianRouletteAction() const
+MaterialAction CookTorranceMaterial::russianRouletteAction(
+    const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
 {
-    // TODO
+    // TODO add reflection/transmission
+    // auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     return MaterialAction::Absorb;
 }
 
 std::pair<glm::dvec3, double> CookTorranceMaterial::sampleReflectionDirection(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
 {
-    // TODO
-    // sample based on roughness
-    return std::make_pair(glm::dvec3(0.0), 0.0);
+    auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
+    return std::make_pair(getReflectedVector(vin, normalSample.first), 1.0);
 }
 
 std::pair<glm::dvec3, double> CookTorranceMaterial::sampleRefractionDirection(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
+}
+
+std::pair<glm::dvec3, double>
+CookTorranceMaterial::sampleDiffuseDirection(const glm::dvec3 vin,
+                       const glm::dvec3 surfaceNormal) const
+{
+    return sampleCosineWeightedHemisphere(-vin, surfaceNormal);
 }

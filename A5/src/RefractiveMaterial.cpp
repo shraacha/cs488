@@ -70,12 +70,6 @@ glm::dvec3 RefractiveMaterial::getRadiance(
     return lightOut;
 }
 
-MaterialAction RefractiveMaterial::russianRouletteAction() const
-{
-    // TODO
-    return MaterialAction::Absorb;
-}
-
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleReflectionDirection(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
 {

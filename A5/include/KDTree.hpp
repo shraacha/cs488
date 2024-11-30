@@ -115,6 +115,8 @@ template <typename T_Key, typename T_Distance> class KDTree
         return returnVec;
     }
 
+    const std::vector<T_Key> & getKeys() const { return m_keys; }
+
   private:
     std::vector<T_Key> m_keys;
     std::shared_ptr<node_t> m_tree;

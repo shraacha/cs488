@@ -24,6 +24,7 @@ inline double calculateChi(double v1dotv2) { return v1dotv2 > 0.0 ? 1.0 : 0.0; }
 double evaluateDistributionGGX(const glm::dvec3 & n, const glm::dvec3 & h,
                                double a);
 
+// returns the normal in the same affine frame as the normal passed in
 std::pair<glm::dvec3, double> sampleNormalGGX(const glm::dvec3 & vout,
                                               const glm::dvec3 & n, double a);
 
@@ -33,6 +34,14 @@ inline glm::dvec3 evaluateLambertBRDF(const glm::dvec3 & c)
 {
     return M_1_PI * c;
 }
+
+std::pair<glm::dvec3, double> sampleCosineWeightedHemisphere();
+
+std::pair<glm::dvec3, double>
+sampleCosineWeightedHemisphere(const glm::dvec3 & vout, const glm::dvec3 & n);
+
+std::pair<glm::dvec3, double>
+sampleUniformSphere();
 
 double evaluateGeometryPartialGGX(const glm::dvec3 & w, const glm::dvec3 & n,
                                   const glm::dvec3 & h, double a);

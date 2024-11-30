@@ -71,12 +71,6 @@ glm::dvec3 PhongMaterial::getRadiance(
     return lightOut;
 }
 
-MaterialAction PhongMaterial::russianRouletteAction() const
-{
-    // TODO
-    return MaterialAction::Absorb;
-}
-
 std::pair<glm::dvec3, double> PhongMaterial::sampleReflectionDirection(
     const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const
 {

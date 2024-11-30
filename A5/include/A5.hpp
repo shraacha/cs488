@@ -8,7 +8,7 @@
 #include "Light.hpp"
 #include "Image.hpp"
 
-void A4_Render(
+void A5_Render(
         // What to render
         SceneNode * root,
 
@@ -23,5 +23,7 @@ void A4_Render(
 
         // Lighting parameters
         const glm::vec3 & ambient,
-        const std::list<Light *> & lights
+        const std::list<Light *> & lights,
+
+        unsigned int numSamples
 );

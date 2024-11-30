@@ -24,8 +24,6 @@ class PhongMaterial : public Material
     glm::dvec3 getKS() const;
     double getShininess() const;
 
-    virtual MaterialAction russianRouletteAction() const override;
-
     virtual std::pair<glm::dvec3, double>
     sampleReflectionDirection(const glm::dvec3 vin,
                               const glm::dvec3 surfaceNormal) const override;

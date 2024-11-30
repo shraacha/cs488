@@ -19,7 +19,8 @@ class CookTorranceMaterial : public Material
         const glm::dvec3 & refractionDir = glm::dvec3(0.0),
         const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const override;
 
-    virtual MaterialAction russianRouletteAction() const override;
+    virtual MaterialAction russianRouletteAction(
+        const glm::dvec3 vin, const glm::dvec3 surfaceNormal) const override;
 
     virtual std::pair<glm::dvec3, double>
     sampleReflectionDirection(const glm::dvec3 vin,
@@ -29,9 +30,14 @@ class CookTorranceMaterial : public Material
                               const glm::dvec3 surfaceNormal,
                               double ior1) const override;
 
-    glm::dvec3 getKD() const;
-    glm::dvec3 getKS() const;
-    glm::dvec3 getAlbedo() const;
+    virtual std::pair<glm::dvec3, double>
+    sampleDiffuseDirection(const glm::dvec3 vin,
+                           const glm::dvec3 surfaceNormal) const override;
+
+    virtual glm::dvec3 getKS() const override;
+    virtual glm::dvec3 getKD() const override;
+    virtual glm::dvec3 getAlbedo() const override;
+
     double getRoughness() const;
   private:
     glm::dvec3 m_albedo;

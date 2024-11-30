@@ -12,3 +12,8 @@ inline double getRand0To1 ()
 {
     return (double)rand() / (double)RAND_MAX;
 }
+
+inline double getRandNeg1To1 ()
+{
+    return ((double)rand() / (double)RAND_MAX) * 2 - 1;
+}

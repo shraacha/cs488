@@ -6,6 +6,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Ray.hpp"
+
 // Represents a simple point light.
 struct Light {
     Light();
@@ -15,6 +17,8 @@ struct Light {
     double falloff[3];
 
     double calculateAttenuation(const glm::dvec3 & surfacePosition) const;
+
+    std::pair<Ray, double> sampleRay() const;
 };
 
 std::ostream & operator<<(std::ostream & out, const Light & l);

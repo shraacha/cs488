@@ -349,8 +349,10 @@ int gr_render_cmd(lua_State* L)
     lua_pop(L, 1);
   }
 
+  double numSamples = luaL_checknumber(L, 11);
+
 	Image im( width, height);
-	A4_Render(root->node, im, eye, view, up, fov, ambient, lights);
+	A5_Render(root->node, im, eye, view, up, fov, ambient, lights, numSamples);
     im.savePng( filename );
 
 	return 0;

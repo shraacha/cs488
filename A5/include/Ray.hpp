@@ -12,10 +12,12 @@ class Ray {
     public:
       Ray();
       Ray(const glm::dvec4 &eye, const glm::dvec4 &pixel);
+      Ray(const glm::dvec4 &eye, const glm::dvec3 &direction);
 
       glm::dvec4 getEyePoint() const;
       glm::dvec4 getPixelPoint() const;
       glm::dvec4 getDirection() const;
+      glm::dvec3 getNormalizedDirection() const;
       double getMinThreshold() const;
 };
 

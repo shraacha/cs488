@@ -32,4 +32,4 @@ white_light = gr.light({0, 200, 200}, {0.9, 0.9, 0.9}, {1, 0, 0})
 
 gr.render(scene_root, 'sphere-roughness-test.png', 512, 512,
 	  {0, 0, 400}, {0, 0, -1}, {0, 1, 0}, 50,
-	  {0.3, 0.3, 0.3}, {white_light})
+	  {0.3, 0.3, 0.3}, {white_light}, 3)
