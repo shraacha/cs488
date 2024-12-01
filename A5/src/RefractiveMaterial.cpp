@@ -23,7 +23,6 @@ glm::dvec3 RefractiveMaterial::getRadiance(
     const glm::dvec3 & reflectionRadiance, const glm::dvec3 & refractionDir,
     const glm::dvec3 & refractionRadiance) const
 {
-    // ambient
     glm::dvec3 lightOut{0, 0, 0};
 
     glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
@@ -32,16 +31,12 @@ glm::dvec3 RefractiveMaterial::getRadiance(
 
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
 
-    double scaleFactor = 1.5; // not sure exactly why I need this scale factor,
-                              // but otherwise the objects are too dim
     glm::dvec3 normalizedLightVector =
         glm::normalize(reflectionDir);
     glm::dvec3 halfway = glm::normalize(outVector + normalizedLightVector);
 
     double lightDotNormal =
         glm::dot(normalizedLightVector, intersect.getNormalizedNormal());
-
-    glm::dvec3 radiance = reflectionRadiance;
 
     // cook-torrance brdf
     double ndf =
@@ -50,8 +45,11 @@ glm::dvec3 RefractiveMaterial::getRadiance(
                                      normalizedLightVector, getRoughness());
     double f = calculateFresnelSchlick(c_f0, halfway, outVector);
 
-    glm::dvec3 kS(1.0);
-    glm::dvec3 kD(1 - f);
+    // not sure exactly why I need to fudge ks
+    // but otherwise the specular highlights are way too bright
+    glm::dvec3 kS(0.00004);
+    glm::dvec3 kD((1 - f) * 1.5);
+    double scaleFactor = 1;
 
     glm::dvec3 numerator(f * g);
     double denominator =
@@ -63,10 +61,27 @@ glm::dvec3 RefractiveMaterial::getRadiance(
     // add to outgoing radiance Lo
     double nDotL =
         std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0);
-    lightOut +=
-        scaleFactor * (kD * refractionRadiance + kS * specular * reflectionRadiance) * nDotL;
+    lightOut += scaleFactor *
+                (kD * refractionRadiance +
+                 kS * specular * reflectionRadiance) *
+                nDotL;
 
     return lightOut;
+}
+
+MaterialActionAndConstants
+RefractiveMaterial::russianRouletteAction(const glm::dvec3 & vin,
+                                          const glm::dvec3 & surfaceNormal) const
+{
+    auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
+
+    glm::dvec3 halfway = glm::normalize(-vin + getReflectedVector(vin, normalSample.first));
+    double f = calculateFresnelSchlick(c_f0, halfway, -vin);
+
+    // DLOG("f: %f", f); // TESTING
+
+    return {decideMaterialAction(f * 0.9, (1 - f) * 0.9), glm::dvec3(f * 0.9),
+            glm::dvec3((1 - f) * 0.9)};
 }
 
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleReflectionDirection(

@@ -282,7 +282,7 @@ createCausticPhotonMap(const SceneManager & sceneManager,
                            {
                                return !(action == MaterialAction::Reflect ||
                                         action == MaterialAction::Transmit &&
-                                            material.isTransmissiveReflective()||
+                                            material.isTransmissiveRefractive()||
                                         action == MaterialAction::Transmit &&
                                             material.isTransmissiveReflective()&&
                                             !material.isTransmissiveDiffuse());
