@@ -31,10 +31,6 @@ class ReflectiveMaterial : public Material
                               const glm::dvec3 & surfaceNormal,
                               double ior1) const override;
 
-    virtual std::pair<glm::dvec3, double>
-    sampleDiffuseDirection(const glm::dvec3 & vin,
-                           const glm::dvec3 & surfaceNormal) const override;
-
     // TODO
     // virtual glm::dvec3 getKS() const override;
     // virtual glm::dvec3 getKD() const override;

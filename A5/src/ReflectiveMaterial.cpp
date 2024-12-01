@@ -4,7 +4,7 @@
 
 ReflectiveMaterial::ReflectiveMaterial(const glm::vec3 & albedo,
                                        double roughness)
-    : Material(MaterialTypeFlags::Reflective, 1.0), m_albedo(albedo),
+    : Material(MaterialTypeFlags::SpecularReflective | MaterialTypeFlags::TransmissiveReflective, 1.0), m_albedo(albedo),
       m_roughness(roughness)
 {
 }
@@ -93,12 +93,4 @@ std::pair<glm::dvec3, double> ReflectiveMaterial::sampleRefractionDirection(
     const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
-}
-
-std::pair<glm::dvec3, double>
-ReflectiveMaterial::sampleDiffuseDirection(const glm::dvec3 & vin,
-                       const glm::dvec3 & surfaceNormal) const
-{
-    // pure reflective materials do not have a diffuse component
-    return sampleReflectionDirection(vin, surfaceNormal);
 }

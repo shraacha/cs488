@@ -27,18 +27,30 @@ MaterialAction decideMaterialAction(double reflect, double transmit)
     }
 }
 
-bool Material::isReflective() const {
-    return m_typeFlags & MaterialTypeFlags::Reflective;
-}
-
-bool Material::isRefractive() const {
-    return m_typeFlags & MaterialTypeFlags::Refractive;
-}
-
-bool Material::isDirect() const {
+bool Material::isDirect() const
+{
     return m_typeFlags & MaterialTypeFlags::Direct;
 }
 
+bool Material::isSpecularReflective() const
+{
+    return m_typeFlags & MaterialTypeFlags::SpecularReflective;
+}
+
+bool Material::isTransmissiveReflective() const
+{
+    return m_typeFlags & MaterialTypeFlags::TransmissiveReflective;
+}
+
+bool Material::isTransmissiveRefractive() const
+{
+    return m_typeFlags & MaterialTypeFlags::TransmissiveRefractive;
+}
+
+bool Material::isTransmissiveDiffuse() const
+{
+    return m_typeFlags & MaterialTypeFlags::TransmissiveDiffuse;
+}
 
 double Material::getIOR() const
 {

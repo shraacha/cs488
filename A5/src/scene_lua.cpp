@@ -351,18 +351,22 @@ int gr_render_cmd(lua_State* L)
 
   unsigned int numSamples = luaL_checknumber(L, 11);
 
-  double photonRadiusVisualization = luaL_checknumber(L, 12);
+  lua_isboolean(L, 12);
+  bool visualizePhotons = lua_toboolean(L, 12);
 
-  unsigned int numPhotons = luaL_checknumber(L, 13);
+  double photonRadiusVisualization = luaL_checknumber(L, 13);
 
-  unsigned int numThreads = luaL_checknumber(L, 14);
+  unsigned int numPhotons = luaL_checknumber(L, 14);
 
-	Image im( width, height);
-        A5_Render(root->node, im, eye, view, up, fov, ambient, lights,
-                  numSamples, photonRadiusVisualization, numPhotons, numThreads);
-        im.savePng(filename);
+  unsigned int numThreads = luaL_checknumber(L, 15);
 
-        return 0;
+  Image im(width, height);
+  A5_Render(root->node, im, eye, view, up, fov, ambient, lights, numSamples,
+            visualizePhotons, photonRadiusVisualization, numPhotons,
+            numThreads);
+  im.savePng(filename);
+
+  return 0;
 }
 
 // Create a Material

@@ -9,6 +9,8 @@
 
 #include <glm/ext.hpp>
 #include "Material.hpp"
+#include "glm/detail/func_common.hpp"
+#include "glm/detail/func_vector_relational.hpp"
 #include "glm/detail/type_vec.hpp"
 #include "glm/gtx/string_cast.hpp"
 
@@ -116,7 +118,7 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
             std::pair<glm::dvec3, double> reflectionDir, refractionDir;
             glm::dvec3 reflectionRadiance, refractionRadiance;
 
-            if (material->isReflective())
+            if (material->isSpecularReflective())
             {
                 reflectionDir = material
                         ->sampleReflectionDirection(
@@ -132,7 +134,7 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
                     lights, ambient, ior, currDepth + 1, maxDepth) * (1 / reflectionDir.second);
             }
 
-            if (material->isRefractive())
+            if (material->isTransmissiveRefractive())
             {
                 refractionDir =
                     material
@@ -163,9 +165,15 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
 
     return fragmentColour;
 }
+
+bool noTermination(const MaterialAction & action, const Material & material) {
+    return false;
+}
+
 static std::optional<Photon>
 castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
-           const double & ior, unsigned int currDepth, unsigned int maxDepth)
+           const double & ior, unsigned int currDepth, unsigned int maxDepth,
+           std::function<bool(const MaterialAction &, const Material &)> earlyTerminationCriteria = &noTermination)
 {
     std::optional<std::pair<Intersection, Material *>> intersectionResult =
         intersect(sceneManager, ray);
@@ -181,6 +189,10 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
         MaterialActionAndConstants materialAction = material->russianRouletteAction(
             ray.getNormalizedDirection(), intersection.getNormalizedNormal());
         std::pair<glm::dvec3, double> newDirection;
+
+        if (earlyTerminationCriteria(materialAction.action, *material)) {
+            return std::nullopt;
+        }
 
         if (materialAction.action == MaterialAction::Absorb || currDepth == maxDepth)
         {
@@ -200,7 +212,7 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
             // scale photon power otherwise it may blow up the scene
             photon.piecewiseAverageScale(materialAction.kS);
         }
-        else if (materialAction.action == MaterialAction::Transmit && material->isRefractive())
+        else if (materialAction.action == MaterialAction::Transmit && material->isTransmissiveRefractive())
         {
             newDirection = material->sampleRefractionDirection(
                 ray.getNormalizedDirection(),
@@ -210,7 +222,18 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
             photon.piecewiseAverageScale(material->getAlbedo() *
                                          materialAction.kS);
         }
-        else if (materialAction.action == MaterialAction::Transmit)
+        else if (materialAction.action == MaterialAction::Transmit && material->isTransmissiveReflective())
+        {
+            // sample reflection direction
+            newDirection = material->sampleReflectionDirection(
+                ray.getNormalizedDirection(),
+                intersection.getNormalizedNormal());
+
+            // scale photon power otherwise it may blow up the scene
+            photon.piecewiseAverageScale(material->getAlbedo() *
+                                         materialAction.kD);
+        }
+        else
         {
             // sample diffusely
             newDirection = material->sampleDiffuseDirection(
@@ -222,65 +245,17 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
                                          materialAction.kD);
         }
 
-        return castPhoton(sceneManager,
-                          Ray(intersection.getPosition(), newDirection.first),
-                          photon, ior, currDepth + 1, maxDepth);
-    }
-}
-
-static std::optional<Photon>
-castCausticPhoton(const SceneManager & sceneManager, const Ray & ray,
-                  Photon & photon, const double & ior, unsigned int maxDepth)
-{
-    // Caustics
-    // - cast photon
-    // - sample reflection direction, & calculate fresnel
-    // - if diffuse/absorb action, terminate photon
-    // - if specular continue
-    // - re-cast from intersect
-    // - if absorbed, return this
-    // - if not absorbed, get diffuse/specular dir and scale accordingly
-    // - terminate if max depth, else re-cast
-
-    std::optional<std::pair<Intersection, Material *>> intersectionResult =
-        intersect(sceneManager, ray);
-
-    if (!intersectionResult) {
-        return std::nullopt;
-    } else {
-        Material * material = intersectionResult.value().second;
-        Intersection & intersection = intersectionResult.value().first;
-        MaterialActionAndConstants materialAction = material->russianRouletteAction(
-            ray.getNormalizedDirection(), intersection.getNormalizedNormal());
-
-        std::pair<glm::dvec3, double> newDirection;
-
-        if (!(materialAction.action == MaterialAction::Reflect || (materialAction.action == MaterialAction::Transmit && material->isRefractive()))) {
+        if (glm::any(glm::isnan(photon.getPower())))
+        {
             return std::nullopt;
         }
-        if (materialAction.action == MaterialAction::Reflect)
+        else
         {
-            // sample direction
-            newDirection = material->sampleReflectionDirection(
-                ray.getNormalizedDirection(),
-                intersection.getNormalizedNormal());
-
-            // TODO scale photon power otherwise it may blow up the scene
-            // photon.piecewiseAverageScale(materialAction.kS);
+            return castPhoton(
+                sceneManager,
+                Ray(intersection.getPosition(), newDirection.first), photon,
+                ior, currDepth + 1, maxDepth);
         }
-        else if (materialAction.action == MaterialAction::Transmit && material->isRefractive())
-        {
-            newDirection = material->sampleRefractionDirection(
-                ray.getNormalizedDirection(),
-                intersection.getNormalizedNormal(), ior);
-
-            // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(material->getAlbedo() * materialAction.kD);
-        }
-
-        return castPhoton(sceneManager,
-                          Ray(intersection.getPosition(), newDirection.first),
-                          photon, ior, 1, maxDepth);
     }
 }
 
@@ -296,13 +271,26 @@ createCausticPhotonMap(const SceneManager & sceneManager,
     {
         for (int i = 0; i < numSamples; i++)
         {
-            Photon photon;
+            Photon photon (light->colour);
+            // DLOG("photon power initial: %s", glm::to_string(photon.getPower()).c_str());
 
-            std::optional<Photon> result = castCausticPhoton(
-                sceneManager, light->sampleRay().first, photon, ior, maxDepth);
+            std::optional<Photon> result =
+                castPhoton(sceneManager, light->sampleRay().first, photon, ior,
+                           1, maxDepth,
+                           [](const MaterialAction & action,
+                              const Material & material) -> bool
+                           {
+                               return !(action == MaterialAction::Reflect ||
+                                        action == MaterialAction::Transmit &&
+                                            material.isTransmissiveReflective()||
+                                        action == MaterialAction::Transmit &&
+                                            material.isTransmissiveReflective()&&
+                                            !material.isTransmissiveDiffuse());
+                           });
 
             if (result)
             {
+                // DLOG("photon colour: %s", glm::to_string(photon.getPower()).c_str());
                 photons.emplace_back(result.value());
             }
             else
@@ -496,8 +484,9 @@ void A5_Render(
     double fovy,
     // Lighting parameters
     const glm::vec3 & ambient, const std::list<Light *> & lights,
-    unsigned int numSamples, double photonRadiusVisualization,
-    unsigned int numPhotons, unsigned int numThreads)
+    unsigned int numSamples, bool visualizePhotons,
+    double photonRadiusVisualization, unsigned int numPhotons,
+    unsigned int numThreads)
 {
     std::vector<const Light *> lightVector;
 
@@ -513,9 +502,19 @@ void A5_Render(
     sceneManager.importSceneGraph(root);
 
     auto kdTree = createCausticPhotonMap(sceneManager, lightVector, ambient, 1, 10, numPhotons);
-    SceneManager photonManager;
-    photonManager.importSceneGraph(createPhotonScene(kdTree, photonRadiusVisualization));
 
-    render(photonManager, image, Camera(eye, view, up, fovy), ambient,
-           lightVector, numSamples, numThreads);
+    if (visualizePhotons)
+    {
+        SceneManager photonManager;
+        photonManager.importSceneGraph(
+            createPhotonScene(kdTree, photonRadiusVisualization));
+
+        render(photonManager, image, Camera(eye, view, up, fovy), ambient,
+               lightVector, numSamples, numThreads);
+    }
+    else
+    {
+        render(sceneManager, image, Camera(eye, view, up, fovy), ambient,
+               lightVector, numSamples, numThreads);
+    }
 }

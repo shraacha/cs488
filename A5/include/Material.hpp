@@ -13,12 +13,16 @@
 
 const double c_f0 = 0.04;
 
+using material_type_t = unsigned int;
+
 enum MaterialTypeFlags
 {
     None = 0,
-    Reflective = 1 << 0,
-    Refractive = 1 << 1,
-    Direct = 1 << 2
+    Direct = 1 << 0,
+    SpecularReflective = 1 << 1,
+    TransmissiveReflective = 1 << 2,
+    TransmissiveDiffuse = 1 << 3,
+    TransmissiveRefractive = 1 << 4
 };
 
 enum struct MaterialAction
@@ -53,8 +57,12 @@ class Material {
         const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const = 0;
 
     bool isDirect() const;
-    bool isReflective() const;
-    bool isRefractive() const;
+    bool isSpecularReflective() const;
+    bool isTransmissiveReflective() const;
+    bool isTransmissiveRefractive() const;
+    bool isTransmissiveDiffuse() const;
+
+    material_type_t getTypeFlags() const;
 
     double getIOR() const;
     virtual glm::dvec3 getKS() const
@@ -104,6 +112,6 @@ class Material {
 
     Material(unsigned int flags, double ior);
 
-    unsigned int m_typeFlags;
+    material_type_t m_typeFlags;
     double m_ior;
 };

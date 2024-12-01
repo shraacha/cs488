@@ -22,5 +22,6 @@ void A5_Render(
     // Lighting parameters
     const glm::vec3 & ambient, const std::list<Light *> & lights,
 
-    unsigned int numSamples, double photonRadiusVisualization,
-    unsigned int numPhotons, unsigned int numThreads);
+    unsigned int numSamples, bool visualizePhotons,
+    double photonRadiusVisualization, unsigned int numPhotons,
+    unsigned int numThreads);

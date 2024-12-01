@@ -5,7 +5,7 @@
 
 RefractiveMaterial::RefractiveMaterial(const glm::vec3 & albedo,
                                        double roughness, double ior)
-    : Material(MaterialTypeFlags::Reflective | MaterialTypeFlags::Refractive,
+    : Material(MaterialTypeFlags::SpecularReflective | MaterialTypeFlags::TransmissiveRefractive,
                ior),
       m_albedo(albedo), m_roughness(roughness)
 {

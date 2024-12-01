@@ -10,13 +10,14 @@
 #include "debug.hpp"
 #include "glm/detail/type_vec.hpp"
 
-
 CookTorranceMaterial::CookTorranceMaterial(const glm::vec3 & albedo,
                                            const glm::vec3 & ks,
                                            double roughness)
     // TODO make reflective
-    : Material(MaterialTypeFlags::Direct, 1.0), m_albedo{albedo}, m_ks(ks),
-      m_roughness(roughness)
+    : Material(MaterialTypeFlags::Direct || MaterialTypeFlags::TransmissiveDiffuse||
+                   MaterialTypeFlags::SpecularReflective,
+               1.0),
+      m_albedo{albedo}, m_ks(ks), m_roughness(roughness)
 {
 }
 
