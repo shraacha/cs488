@@ -21,6 +21,12 @@ findRaySphereIntersection(const Ray &ray,
                                 const glm::dvec4 &centre = {0.0, 0.0, 0.0, 1.0},
                                 const double &radius = 1.0);
 
+// radius 1, top 1 unit above, bottom 1 unit below
+std::optional<Intersection> findRayCylinderIntersection(const Ray & ray);
+
+// radius 1, top 1 unit above, tip of cone at origin
+std::optional<Intersection> findRayConeIntersection(const Ray & ray);
+
 bool doesRayIntersectSphere(const Ray & ray,
                             const glm::dvec4 &centre = {0.0, 0.0, 0.0, 1.0},
                             const double &radius = 1.0);
@@ -56,6 +62,10 @@ findRayPolygonIntersection(const Ray & ray,
 std::optional<double> findRayPlaneIntersect(const Ray & ray,
                                             const glm::dvec4 &planeNormal,
                                             const glm::dvec4 &planePoint);
+
+std::optional<double> findRayPlaneIntersect(const Ray & ray,
+                                            const glm::dvec3 &planeNormal,
+                                            const glm::dvec3 &planePoint);
 
 inline bool doesRayIntersectPlane(const Ray & ray,
                                   const glm::dvec4 &planeNormal)

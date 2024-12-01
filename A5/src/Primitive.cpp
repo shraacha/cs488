@@ -42,6 +42,40 @@ std::optional<Intersection> Cube::intersect(const Ray & ray) const {
 }
 
 // ------------------------------
+Cylinder::Cylinder() {}
+
+Cylinder::~Cylinder() {}
+
+// other
+std::optional<Intersection> Cylinder::intersect(const Ray & ray) const {
+    auto result = findRayCylinderIntersection(ray);
+
+    if (result.has_value())
+    {
+        result->setPosition(evaluate(ray, result->getT()));
+    }
+
+    return result;
+}
+
+// ------------------------------
+Cone::Cone() {}
+
+Cone::~Cone() {}
+
+// other
+std::optional<Intersection> Cone::intersect(const Ray & ray) const {
+    auto result = findRayConeIntersection(ray);
+
+    if (result.has_value())
+    {
+        result->setPosition(evaluate(ray, result->getT()));
+    }
+
+    return result;
+}
+
+// ------------------------------
 NonhierSphere::NonhierSphere(const glm::vec3 &pos, double radius)
     : m_pos(pos), m_radius(radius)
 {

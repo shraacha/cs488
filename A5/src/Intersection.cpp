@@ -1,10 +1,10 @@
 #include "Intersection.hpp"
 
 // constructors
-Intersection::Intersection(const double &t, const glm::dvec4 normal): m_t{t}, m_normal{normal} {}
+Intersection::Intersection(const double &t, const glm::dvec4 & normal): m_t{t}, m_normal{normal} {}
 
-Intersection::Intersection(const double &t, const glm::dvec4 position,
-                           const glm::dvec4 normal)
+Intersection::Intersection(const double &t, const glm::dvec4 & position,
+                           const glm::dvec4 & normal)
     : m_t{t}, m_position{position}, m_normal{normal} {}
 
 // member functions

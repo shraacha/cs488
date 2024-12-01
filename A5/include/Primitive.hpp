@@ -37,7 +37,30 @@ class Cube : public Primitive {
     std::optional<Intersection> intersect(const Ray & ray) const override;
 };
 
-class NonhierSphere : public Primitive {
+class Cylinder : public Primitive
+{
+  public:
+    // ctors
+    Cylinder();
+    virtual ~Cylinder();
+
+    // other
+    std::optional<Intersection> intersect(const Ray & ray) const override;
+};
+
+class Cone : public Primitive
+{
+  public:
+    // ctors
+    Cone();
+    virtual ~Cone();
+
+    // other
+    std::optional<Intersection> intersect(const Ray & ray) const override;
+};
+
+class NonhierSphere : public Primitive
+{
   public:
     // ctors
     NonhierSphere(const glm::vec3 & pos, double radius);

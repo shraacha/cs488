@@ -1,11 +1,13 @@
 #include "Intersection.hpp"
 #include "IntersectionHelpers.hpp"
+#include "Ray.hpp"
 #include "debug.hpp"
 
 #include <optional>
 #include <limits>
 
 #include "Clipping.hpp"
+#include "glm/detail/func_geometric.hpp"
 #include "polyroots.hpp"
 // ---------- helpers ----------
 enum class CoordinatePlane{
@@ -60,6 +62,36 @@ static bool isNonCoordinatePlaneValueNonNegative(const glm::dvec4 & vec, const C
 static inline bool isDeterminantPositive(const double & a, const double & b, const double & c)
 {
     return (b * b - 4 * a * c) >= 0;
+}
+
+static inline double getClosestRoot(const double & a, const double & b, const double & c)
+{
+        double roots[2];
+        quadraticRoots(a, b, c, roots);
+
+        if (roots[0] < roots[1])
+        {
+            return roots[0];
+        } else {
+            return roots[1];
+        }
+}
+
+static inline std::optional<double> getClosestPositiveRoot(const double & a, const double & b, const double & c)
+{
+        double roots[2];
+        quadraticRoots(a, b, c, roots);
+
+        if (roots[0] < 0 && roots[1] < 0)
+        {
+            return std::nullopt;
+        } else if (roots[0] < 0) {
+            return roots[1];
+        } else if (roots[1] < 0) {
+            return roots[0];
+        } else {
+            return std::min(roots[0], roots[1]);
+        }
 }
 
 // -------------------------------------------------
@@ -184,6 +216,132 @@ findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const double &w
 }
 
 // -------------------------------------------------
+
+// clylinder radius 1, height 2
+std::optional<Intersection>
+findRayCylinderIntersection(const Ray &ray) {
+    std::optional<double> closestT = std::nullopt;
+    glm::dvec3 normal;
+
+    // intersect with shell
+    glm::dvec3 pixelDelta_xz = glm::dvec3(ray.getDirection()) * glm::dvec3(1.0, 0.0, 1.0);
+    glm::dvec3 eyePoint_xz = glm::dvec3(ray.getEyePoint()) * glm::dvec3(1.0, 0.0, 1.0);
+
+    double a = glm::dot(pixelDelta_xz, pixelDelta_xz);
+    double b = 2 * glm::dot(eyePoint_xz, pixelDelta_xz);
+    double c = glm::dot(eyePoint_xz, eyePoint_xz) - 1;
+
+    if (isDeterminantPositive(a, b, c)) {
+        auto temp = getClosestPositiveRoot(a, b, c);
+        if (temp && evaluate(ray, temp.value()).y < 1 && evaluate(ray, temp.value()).y > -1) {
+            closestT = temp;
+            normal = glm::dvec3(evaluate(ray, closestT.value())) * glm::dvec3(1.0, 0.0, 1.0);
+        }
+    }
+
+    // intersect with top and bottom
+    glm::dvec3 top (0,1,0);
+    glm::dvec3 bottom (0,-1,0);
+
+    auto topIntersect = findRayPlaneIntersect(ray, top, top);
+
+    if (topIntersect)
+    {
+        if(glm::length(glm::dvec3(evaluate(ray, topIntersect.value())) - top) < 1) {
+            if(!closestT || topIntersect.value() < closestT.value())
+            {
+                closestT = topIntersect;
+                normal = top;
+            }
+        }
+    }
+
+    auto bottomIntersect = findRayPlaneIntersect(ray, bottom, bottom);
+
+    if (bottomIntersect)
+    {
+        if (glm::length(glm::dvec3(evaluate(ray, bottomIntersect.value())) -
+                        bottom) < 1)
+        {
+            if (!closestT || bottomIntersect.value() < closestT.value())
+            {
+                closestT = bottomIntersect;
+                normal = bottom;
+            }
+        }
+    }
+
+    if (!closestT)
+    {
+        return std::nullopt;
+    }
+    else
+    {
+        // take the closest (positive)
+        return std::make_optional<Intersection>(closestT.value(),
+                                                glm::dvec4(normal, 0.0));
+    }
+}
+
+// -------------------------------------------------
+
+// cone radius 1, height 1
+std::optional<Intersection>
+findRayConeIntersection(const Ray &ray) {
+    std::optional<double> closestT = std::nullopt;
+    glm::dvec3 normal;
+
+    // intersect with shell
+    glm::dvec3 pixelDelta = glm::dvec3(ray.getDirection());
+    glm::dvec3 eyePoint = glm::dvec3(ray.getEyePoint());
+    glm::dvec3 flipY = glm::dvec3(1.0, -1.0, 1.0);
+
+    double a = glm::dot(pixelDelta, pixelDelta * flipY);
+    double b = 2 * glm::dot(eyePoint, pixelDelta * flipY);
+    double c = glm::dot(eyePoint, eyePoint * flipY);
+
+    if (isDeterminantPositive(a, b, c)) {
+        auto temp = getClosestPositiveRoot(a, b, c);
+        if (temp && evaluate(ray, temp.value()).y < 1 &&
+            evaluate(ray, temp.value()).y > 0)
+        {
+            closestT = temp;
+            normal = glm::dvec3(evaluate(ray, closestT.value())) *
+                         glm::dvec3(1.0, 0.0, 1.0) +
+                     glm::dvec3(0.0, -1.0, 0.0);
+        }
+    }
+
+    // intersect with top and bottom
+    glm::dvec3 top (0,1,0);
+    glm::dvec3 bottom (0,-1,0);
+
+    auto topIntersect = findRayPlaneIntersect(ray, top, top);
+
+    if (topIntersect)
+    {
+        if(glm::length(glm::dvec3(evaluate(ray, topIntersect.value())) - top) < 1) {
+            if(!closestT || topIntersect.value() < closestT.value())
+            {
+                closestT = topIntersect;
+                normal = top;
+            }
+        }
+    }
+
+    if (!closestT)
+    {
+        return std::nullopt;
+    }
+    else
+    {
+        // take the closest (positive)
+        return std::make_optional<Intersection>(closestT.value(),
+                                                glm::dvec4(normal, 0.0));
+    }
+}
+
+// -------------------------------------------------
 std::optional<Intersection>
 findRayPolygonIntersection(const Ray &ray, const std::vector<glm::dvec4> &vertices) {
     if (vertices.size() < 3) {
@@ -228,4 +386,13 @@ std::optional<double> findRayPlaneIntersect(const Ray & ray,
     else {
         return std::nullopt;
     }
+}
+
+
+std::optional<double> findRayPlaneIntersect(const Ray & ray,
+                                            const glm::dvec3 &planeNormal,
+                                            const glm::dvec3 &planePoint)
+
+{
+    return findRayPlaneIntersect(ray, glm::dvec4(planeNormal, 0.0), glm::dvec4(planePoint, 1.0));
 }
