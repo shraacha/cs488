@@ -78,8 +78,9 @@ ReflectiveMaterial::russianRouletteAction(const glm::dvec3 & vin,
 
     // DLOG("f: %f", f); // TESTING
 
-    return {decideMaterialAction(f * 0.9, (1 - f) * 0.9), glm::dvec3(f * 0.9),
-            glm::dvec3((1 - f) * 0.9)};
+    double scale = 0.95;
+    return {decideMaterialAction(f * scale, (1 - f) * scale), glm::dvec3(f * scale),
+            glm::dvec3((1 - f) * scale)};
 }
 
 std::pair<glm::dvec3, double> ReflectiveMaterial::sampleReflectionDirection(

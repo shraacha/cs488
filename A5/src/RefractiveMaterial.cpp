@@ -80,8 +80,7 @@ RefractiveMaterial::russianRouletteAction(const glm::dvec3 & vin,
 
     // DLOG("f: %f", f); // TESTING
 
-    return {decideMaterialAction(f * 0.9, (1 - f) * 0.9), glm::dvec3(f * 0.9),
-            glm::dvec3((1 - f) * 0.9)};
+    return {decideMaterialAction(f, (1 - f)), glm::dvec3(f), glm::dvec3(1 - f)};
 }
 
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleReflectionDirection(
