@@ -190,71 +190,81 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
             ray.getNormalizedDirection(), intersection.getNormalizedNormal());
         std::pair<glm::dvec3, double> newDirection;
 
+        // check early termination criteria
         if (earlyTerminationCriteria(materialAction.action, *material)) {
             return std::nullopt;
         }
 
-        if (materialAction.action == MaterialAction::Absorb || currDepth == maxDepth)
+        // check if the photon has been absorbed
+        if (materialAction.action == MaterialAction::Absorb)
         {
             photon.setIncidenceDir(
                 glm::normalize(glm::dvec3(-ray.getDirection())));
             photon.setPosition(glm::dvec3(intersection.getPosition()));
 
             return photon;
-        }
-        else if (materialAction.action == MaterialAction::Reflect)
-        {
-            // sample direction
-            newDirection = material->sampleReflectionDirection(
-                ray.getNormalizedDirection(),
-                intersection.getNormalizedNormal());
-
-            // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(materialAction.kS);
-        }
-        else if (materialAction.action == MaterialAction::Transmit && material->isTransmissiveRefractive())
-        {
-            newDirection = material->sampleRefractionDirection(
-                ray.getNormalizedDirection(),
-                intersection.getNormalizedNormal(), ior);
-
-            // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(material->getAlbedo() *
-                                         materialAction.kS);
-        }
-        else if (materialAction.action == MaterialAction::Transmit && material->isTransmissiveReflective())
-        {
-            // sample reflection direction
-            newDirection = material->sampleReflectionDirection(
-                ray.getNormalizedDirection(),
-                intersection.getNormalizedNormal());
-
-            // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(material->getAlbedo() *
-                                         materialAction.kD);
-        }
-        else
-        {
-            // sample diffusely
-            newDirection = material->sampleDiffuseDirection(
-                ray.getNormalizedDirection(),
-                intersection.getNormalizedNormal());
-
-            // scale photon power otherwise it may blow up the scene
-            photon.piecewiseAverageScale(material->getAlbedo() *
-                                         materialAction.kD);
-        }
-
-        if (glm::any(glm::isnan(photon.getPower())))
-        {
+        } else if (currDepth == maxDepth) {
             return std::nullopt;
         }
+        // specular/transmission cases
         else
         {
-            return castPhoton(
-                sceneManager,
-                Ray(intersection.getPosition(), newDirection.first), photon,
-                ior, currDepth + 1, maxDepth);
+            if (materialAction.action == MaterialAction::Reflect)
+            {
+                // sample direction
+                newDirection = material->sampleReflectionDirection(
+                    ray.getNormalizedDirection(),
+                    intersection.getNormalizedNormal());
+
+                // scale photon power otherwise it may blow up the scene
+                photon.piecewiseAverageScale(materialAction.kS);
+            }
+            else if (materialAction.action == MaterialAction::Transmit &&
+                     material->isTransmissiveRefractive())
+            {
+                newDirection = material->sampleRefractionDirection(
+                    ray.getNormalizedDirection(),
+                    intersection.getNormalizedNormal(), ior);
+
+                // scale photon power otherwise it may blow up the scene
+                photon.piecewiseAverageScale(material->getAlbedo() *
+                                             materialAction.kS);
+            }
+            else if (materialAction.action == MaterialAction::Transmit &&
+                     material->isTransmissiveReflective())
+            {
+                // sample reflection direction
+                newDirection = material->sampleReflectionDirection(
+                    ray.getNormalizedDirection(),
+                    intersection.getNormalizedNormal());
+
+                // scale photon power otherwise it may blow up the scene
+                photon.piecewiseAverageScale(material->getAlbedo() *
+                                             materialAction.kD);
+            }
+            else
+            {
+                // sample diffusely
+                newDirection = material->sampleDiffuseDirection(
+                    ray.getNormalizedDirection(),
+                    intersection.getNormalizedNormal());
+
+                // scale photon power otherwise it may blow up the scene
+                photon.piecewiseAverageScale(material->getAlbedo() *
+                                             materialAction.kD);
+            }
+
+            if (glm::any(glm::isnan(photon.getPower())))
+            {
+                return std::nullopt;
+            }
+            else
+            {
+                return castPhoton(
+                    sceneManager,
+                    Ray(intersection.getPosition(), newDirection.first), photon,
+                    ior, currDepth + 1, maxDepth);
+            }
         }
     }
 }
