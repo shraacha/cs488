@@ -18,7 +18,7 @@ void ThreadPool::queueJob(const std::function<void()> & job)
         m_jobQueue.push(job);
     }
 
-    m_mutexCondition.notify_one();
+    m_mutexCondition.notify_one(); // only one thread should pick up the job
 }
 
 void ThreadPool::stop()
@@ -28,7 +28,7 @@ void ThreadPool::stop()
         m_terminate = true;
     }
 
-    m_mutexCondition.notify_all();
+    m_mutexCondition.notify_all(); // all threads should terminate
     for (std::thread& active_thread : m_threads) {
         active_thread.join();
     }
@@ -52,8 +52,9 @@ void ThreadPool::threadLoop()
         std::function<void()> job;
         {
             std::unique_lock<std::mutex> lock(m_queueMutex);
-            m_mutexCondition.wait(lock, [this]
-                                 { return !m_jobQueue.empty() || m_terminate; });
+            // thread should stop waiting as soon as it can acquire a job, or as soon as it detects termination
+            m_mutexCondition.wait(
+                lock, [this]() { return !m_jobQueue.empty() || m_terminate; });
             if (m_terminate)
             {
                 return;

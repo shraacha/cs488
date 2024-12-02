@@ -21,8 +21,10 @@ class ThreadPool {
 
         const unsigned int m_numThreads;
         bool m_terminate;
+
         std::mutex m_queueMutex;
-        std::condition_variable m_mutexCondition;
-        std::vector<std::thread> m_threads;
+        std::condition_variable m_mutexCondition; // this is used to notify other threads that jobs are available
         std::queue<std::function<void()>> m_jobQueue;
+
+        std::vector<std::thread> m_threads;
 };
