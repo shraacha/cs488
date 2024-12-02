@@ -6,7 +6,6 @@
 #include <cstring>
 #include <lodepng/lodepng.h>
 
-const uint Image::m_colorComponents = 3; // Red, blue, green
 
 //---------------------------------------------------------------------------------------
 Image::Image()
@@ -88,6 +87,20 @@ double Image::operator()(uint x, uint y, uint i) const
 double & Image::operator()(uint x, uint y, uint i)
 {
   return m_data[m_colorComponents * (m_width * y + x) + i];
+}
+
+//---------------------------------------------------------------------------------------
+glm::dvec3 Image::operator()(uint x, uint y) const
+{
+    return glm::dvec3((*this)(x, y, 0), (*this)(x, y, 1), (*this)(x, y, 2));
+}
+
+//---------------------------------------------------------------------------------------
+void Image::set(uint x, uint y, const glm::dvec3 & pixel)
+{
+  (*this)(x, y, 0) = pixel.x;
+  (*this)(x, y, 1) = pixel.y;
+  (*this)(x, y, 2) = pixel.z;
 }
 
 //---------------------------------------------------------------------------------------

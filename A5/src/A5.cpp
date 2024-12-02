@@ -34,6 +34,7 @@
 #include "debug.hpp"
 
 #include "ImageHelpers.hpp"
+#include "ImageKernelHelpers.hpp" // can't include imagekernel and this directly since that ends up giving error
 #include "LightingHelpers.hpp"
 
 #include "IntersectionRoutines.hpp"
@@ -431,6 +432,7 @@ void renderDispatch(const SceneManager & sceneManager, Image & image, const Came
             setPixelColour(image, x, y, pixelColour);
 
             ++progressBar;
+            progressBar.conditionalOut(std::cout);
         }
     }
 }
@@ -474,15 +476,24 @@ void render(const SceneManager & sceneManager, Image & image,
     threadPool.start();
 
     // while thread pool is busy, update the progress bar output
-    while (threadPool.isBusy())
-    {
-        progressBar.conditionalOut(std::cout);
-    }
+    while (threadPool.isBusy());
 
     DLOG("thread stop");
     threadPool.stop();
 
     std::cout << progressBar;
+}
+
+void renderSingleThreaded(const SceneManager & sceneManager, Image & image,
+            const Camera & camera, const glm::vec3 & ambient,
+            const std::vector<const Light *> & lights, unsigned int numSamples,
+            unsigned int numThreads)
+{
+        ProgressBar progressBar(image.height() * image.width());
+
+        std::cout << progressBar;
+        renderDispatch(sceneManager, image, camera, ambient, lights, numSamples,
+                       0, image.height(), 0, image.height(),  progressBar);
 }
 
 // ------------------- main ----------------------
@@ -526,5 +537,13 @@ void A5_Render(
     {
         render(sceneManager, image, Camera(eye, view, up, fovy), ambient,
                lightVector, numSamples, numThreads);
+
+        DLOG("rendered");
+
+        Image varianceImage = apply(image, ImageKernel<1, glm::dvec3>(&varianceKernelFunc<1>));
+        Image thresholdImage = apply(varianceImage, ImageKernel<0, glm::dvec3>(&varianceThresholdKernelFunc));
+
+        varianceImage.savePng("varianceImage.png");
+        thresholdImage.savePng("thresholdImage.png");
     }
 }
