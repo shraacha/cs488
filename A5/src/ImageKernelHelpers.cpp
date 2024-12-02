@@ -5,7 +5,7 @@
 glm::dvec3 varianceThresholdKernelFunc(
     const std::array<std::optional<glm::dvec3>, 1> & elements)
 {
-    double threshold = 0.1;
+    double threshold = 0.05;
 
     glm::dvec3 returnPixel(0.0);
 

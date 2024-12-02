@@ -378,10 +378,83 @@ static inline void printSceneInfo(const uint &imgWidth, const uint &imgHeight,
     std::cout << ")" << std::endl;
 }
 
+glm::dvec3 calculatePixelValue(
+    const SceneManager & sceneManager, const glm::vec3 & ambient,
+    const std::vector<const Light *> & lights, const glm::dvec4 & viewSpaceEye,
+    const glm::dvec4 & viewSpacePixel, const glm::mat4 & viewMatrix,
+    unsigned int numSamples, bool supersample = false, bool jitter = false)
+{
+    // get vector of subpixels
+    std::vector<glm::dvec4> subPixels;
+    if (supersample)
+    {
+        subPixels = generateSubScreenPositions(viewSpacePixel, 3, 3, jitter);
+    }
+    else
+    {
+        subPixels = generateSubScreenPositions(viewSpacePixel, 1, 1, jitter);
+    }
 
-void renderDispatch(const SceneManager & sceneManager, Image & image, const Camera & camera,
-            const glm::vec3 & ambient, const std::vector<const Light *> & lights,
-            unsigned int numSamples, unsigned int startY, unsigned int endY, unsigned int startX, unsigned int endX, ProgressBar & progressBar)
+    glm::dvec3 pixelColour = glm::dvec3(0.0, 0.0, 0.0);
+
+    // iterate over subpixels, add to total
+    for (auto subPixel : subPixels)
+    {
+        glm::dvec4 worldSpaceEye = glm::inverse(viewMatrix) * viewSpaceEye;
+        glm::dvec4 worldSpacePixel = glm::inverse(viewMatrix) * subPixel;
+
+        for (unsigned int i = 0; i < numSamples; i++)
+        {
+            pixelColour += intersectAndGetColour(
+                sceneManager, Ray(worldSpaceEye, worldSpacePixel), lights,
+                ambient, 1.0, 0, 2);
+        }
+    }
+
+    // average pixel vals
+    return pixelColour * 1.0 / ((double)subPixels.size() * (double)numSamples);
+}
+
+void renderDispatch(const SceneManager & sceneManager, Image & image,
+                    const Camera & camera, const glm::vec3 & ambient,
+                    const std::vector<const Light *> & lights,
+                    const std::vector<glm::uvec2> & screenPixels,
+                    ProgressBar & progressBar, unsigned int numSamples,
+                    bool supersample = false, bool jitter = false)
+{
+
+    size_t h = image.height();
+    size_t w = image.width();
+
+    double zval = getScreenDepth(h, camera.m_fovy);
+    glm::dvec4 viewSpacePixel{0.0, 0.0, -zval, 1.0};
+    glm::dvec4 viewSpaceEye{0.0, 0.0, 0.0, 1.0};
+
+    glm::mat4 viewMatrix =
+        glm::lookAt(camera.m_eye, camera.m_view, camera.m_up);
+
+    for (const glm::uvec2 pixel : screenPixels)
+    {
+        viewSpacePixel.y = getScreenPosition(h, pixel.y, true);
+        viewSpacePixel.x = getScreenPosition(w, pixel.x);
+
+        // set colour
+        setPixelColour(image, pixel.x, pixel.y,
+                       calculatePixelValue(sceneManager, ambient, lights,
+                                           viewSpaceEye, viewSpacePixel,
+                                           viewMatrix, numSamples, supersample, jitter));
+        ++progressBar;
+        progressBar.conditionalOut(std::cout);
+    }
+}
+
+void renderDispatch(const SceneManager & sceneManager, Image & image,
+                    const Camera & camera, const glm::vec3 & ambient,
+                    const std::vector<const Light *> & lights,
+                    unsigned int startY, unsigned int endY, unsigned int startX,
+                    unsigned int endX, ProgressBar & progressBar,
+                    unsigned int numSamples, bool supersample = false,
+                    bool jitter = false)
 {
 
     size_t h = image.height();
@@ -402,45 +475,23 @@ void renderDispatch(const SceneManager & sceneManager, Image & image, const Came
         {
             viewSpacePixel.x = getScreenPosition(w, x);
 
-            // get vector of subpixels
-            std::vector<glm::dvec4> subPixels =
-                generateSubScreenPositions(viewSpacePixel);
-
-            glm::dvec3 pixelColour = glm::dvec3(0.0, 0.0, 0.0);
-
-            // iterate over subpixels, add to total
-            for (auto subPixel : subPixels)
-            {
-                glm::dvec4 worldSpaceEye =
-                    glm::inverse(viewMatrix) * viewSpaceEye;
-                glm::dvec4 worldSpacePixel =
-                    glm::inverse(viewMatrix) * subPixel;
-
-                for (unsigned int i = 0; i < numSamples; i++)
-                {
-                    pixelColour += intersectAndGetColour(
-                        sceneManager, Ray(worldSpaceEye, worldSpacePixel),
-                        lights, ambient, 1.0, 0, 2);
-                }
-            }
-
-            // average pixel vals
-            pixelColour *=
-                1.0 / ((double)subPixels.size() * (double)numSamples);
-
             // set colour
-            setPixelColour(image, x, y, pixelColour);
+            setPixelColour(image, x, y,
+                           calculatePixelValue(sceneManager, ambient, lights,
+                                               viewSpaceEye, viewSpacePixel,
+                                               viewMatrix, numSamples, supersample, jitter));
 
             ++progressBar;
-            progressBar.conditionalOut(std::cout);
         }
     }
 }
 
 void render(const SceneManager & sceneManager, Image & image,
             const Camera & camera, const glm::vec3 & ambient,
-            const std::vector<const Light *> & lights, unsigned int numSamples,
-            unsigned int numThreads)
+            const std::vector<const Light *> & lights,
+            std::vector<glm::uvec2> screenPixels, unsigned int numSamples,
+            unsigned int numThreads, unsigned int pixelsPerChunk = 128,
+            bool supersample = false, bool jitter = false)
 {
 
     ProgressBar progressBar(image.height() * image.width());
@@ -455,20 +506,27 @@ void render(const SceneManager & sceneManager, Image & image,
     std::cout << progressBar;
 
     // split up work to thread pool
-    size_t h = image.height();
-    size_t w = image.width();
+    while (screenPixels.size() > 0) {
+        std::vector<glm::uvec2> chunk;
 
-    DLOG("h, w: %zu, %zu", h, w);
-    for (unsigned int y = 0; y < h; y++)
-    {
-        // add row of pixels to queue
-        // threadPool.queueJob(std::bind(&));
+        if (screenPixels.size() > pixelsPerChunk)
+        {
+            chunk = std::vector<glm::uvec2>(
+                screenPixels.begin(), screenPixels.begin() + pixelsPerChunk);
+            screenPixels.erase(screenPixels.begin(), screenPixels.begin() + pixelsPerChunk);
+        }
+        else
+        {
+            chunk = std::move(screenPixels);
+            screenPixels.clear();
+        }
 
         threadPool.queueJob(
-            [&, y]()
+            [&, chunk]()
             {
                 renderDispatch(sceneManager, image, camera, ambient, lights,
-                               numSamples, y, y + 1, 0, w, progressBar);
+                               chunk, progressBar, numSamples, supersample,
+                               jitter);
             });
     }
 
@@ -476,7 +534,10 @@ void render(const SceneManager & sceneManager, Image & image,
     threadPool.start();
 
     // while thread pool is busy, update the progress bar output
-    while (threadPool.isBusy());
+    while (threadPool.isBusy())
+    {
+        progressBar.conditionalOut(std::cout);
+    }
 
     DLOG("thread stop");
     threadPool.stop();
@@ -492,8 +553,9 @@ void renderSingleThreaded(const SceneManager & sceneManager, Image & image,
         ProgressBar progressBar(image.height() * image.width());
 
         std::cout << progressBar;
-        renderDispatch(sceneManager, image, camera, ambient, lights, numSamples,
-                       0, image.height(), 0, image.height(),  progressBar);
+        renderDispatch(sceneManager, image, camera, ambient, lights, 0,
+                       image.height(), 0, image.height(), progressBar,
+                       numSamples);
 }
 
 // ------------------- main ----------------------
@@ -507,7 +569,7 @@ void A5_Render(
     const glm::vec3 & ambient, const std::list<Light *> & lights,
     unsigned int numSamples, bool visualizePhotons,
     double photonRadiusVisualization, unsigned int numPhotons,
-    unsigned int numThreads)
+    unsigned int numThreads, bool adaptiveSupersampling)
 {
     std::vector<const Light *> lightVector;
 
@@ -522,6 +584,8 @@ void A5_Render(
     SceneManager sceneManager;
     sceneManager.importSceneGraph(root);
 
+    Camera camera(eye, view, up, fovy);
+
     auto kdTree = createCausticPhotonMap(sceneManager, lightVector, ambient, 1, 10, numPhotons);
 
     if (visualizePhotons)
@@ -530,20 +594,36 @@ void A5_Render(
         photonManager.importSceneGraph(
             createPhotonScene(kdTree, photonRadiusVisualization));
 
-        render(photonManager, image, Camera(eye, view, up, fovy), ambient,
-               lightVector, numSamples, numThreads);
+        render(photonManager, image, camera, ambient, lightVector,
+               getAllPixelCoordinates(image), numSamples, numThreads);
     }
     else
     {
-        render(sceneManager, image, Camera(eye, view, up, fovy), ambient,
-               lightVector, numSamples, numThreads);
+        render(sceneManager, image, camera, ambient, lightVector,
+               getAllPixelCoordinates(image), numSamples, numThreads);
 
         DLOG("rendered");
 
-        Image varianceImage = apply(image, ImageKernel<1, glm::dvec3>(&varianceKernelFunc<1>));
-        Image thresholdImage = apply(varianceImage, ImageKernel<0, glm::dvec3>(&varianceThresholdKernelFunc));
+        if (adaptiveSupersampling)
+        {
+            Image varianceImage = apply(
+                image, ImageKernel<1, glm::dvec3>(&varianceKernelFunc<1>));
+            Image thresholdImage =
+                apply(varianceImage,
+                      ImageKernel<0, glm::dvec3>(&varianceThresholdKernelFunc));
 
-        varianceImage.savePng("varianceImage.png");
-        thresholdImage.savePng("thresholdImage.png");
+            DLOG("supersample pass");
+
+            std::vector<glm::uvec2> edgePixels =
+                getWhitePixelCoordinates(thresholdImage);
+            DLOG("num threshold pixels: %ld", edgePixels.size())
+            ProgressBar progressBar(edgePixels.size());
+
+            render(sceneManager, image, camera, ambient, lightVector,
+                   edgePixels, numSamples, numThreads, 128, true, true);
+
+            varianceImage.savePng("varianceImage.png");
+            thresholdImage.savePng("thresholdImage.png");
+        }
     }
 }

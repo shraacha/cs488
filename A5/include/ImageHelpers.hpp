@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <glm/glm.hpp>
 
 #include "Image.hpp"
@@ -19,3 +21,7 @@ inline void setPixelColour(Image & image, const uint &x, const uint &y,
     image(x, y, 1) = colour.y; // Green:
     image(x, y, 2) = colour.z; // Blue:
 }
+
+std::vector<glm::uvec2> getWhitePixelCoordinates (const Image & image);
+
+std::vector<glm::uvec2> getAllPixelCoordinates (const Image & image);

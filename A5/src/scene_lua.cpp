@@ -396,10 +396,13 @@ int gr_render_cmd(lua_State* L)
 
   unsigned int numThreads = luaL_checknumber(L, 15);
 
+  lua_isboolean(L, 16);
+  bool adaptiveSupersampling = lua_toboolean(L, 16);
+
   Image im(width, height);
   A5_Render(root->node, im, eye, view, up, fov, ambient, lights, numSamples,
             visualizePhotons, photonRadiusVisualization, numPhotons,
-            numThreads);
+            numThreads, adaptiveSupersampling);
   im.savePng(filename);
 
   return 0;

@@ -24,4 +24,4 @@ void A5_Render(
 
     unsigned int numSamples, bool visualizePhotons,
     double photonRadiusVisualization, unsigned int numPhotons,
-    unsigned int numThreads);
+    unsigned int numThreads, bool adaptiveSupersampling);
