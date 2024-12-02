@@ -80,6 +80,6 @@ cube:translate(-3, 0, -6)
 -- The lights
 l1 = gr.light({0, 90, -20}, {0.95, 0.85, 0.7}, {1, 0, 0})
 
-gr.render(scene, 'cornell-box-reflection.png', 256, 256,
+gr.render(scene, 'cornell-box-reflection.png', 512, 512,
 	  {0, 50, 80}, {0, 50, 7}, {0, 1, 0}, 60,
-	  {0.4, 0.4, 0.4}, {l1}, 3, true, 2, 20000, 80)
+	  {0.4, 0.4, 0.4}, {l1}, 3, false, 2, 100, 80, true)

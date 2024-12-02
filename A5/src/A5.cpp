@@ -444,45 +444,6 @@ void renderDispatch(const SceneManager & sceneManager, Image & image,
                                            viewSpaceEye, viewSpacePixel,
                                            viewMatrix, numSamples, supersample, jitter));
         ++progressBar;
-        progressBar.conditionalOut(std::cout);
-    }
-}
-
-void renderDispatch(const SceneManager & sceneManager, Image & image,
-                    const Camera & camera, const glm::vec3 & ambient,
-                    const std::vector<const Light *> & lights,
-                    unsigned int startY, unsigned int endY, unsigned int startX,
-                    unsigned int endX, ProgressBar & progressBar,
-                    unsigned int numSamples, bool supersample = false,
-                    bool jitter = false)
-{
-
-    size_t h = image.height();
-    size_t w = image.width();
-
-    double zval = getScreenDepth(h, camera.m_fovy);
-    glm::dvec4 viewSpacePixel{0.0, 0.0, -zval, 1.0};
-    glm::dvec4 viewSpaceEye{0.0, 0.0, 0.0, 1.0};
-
-    glm::mat4 viewMatrix =
-        glm::lookAt(camera.m_eye, camera.m_view, camera.m_up);
-
-    for (unsigned int y = startY; y < endY; ++y)
-    {
-        viewSpacePixel.y = getScreenPosition(h, y, true);
-
-        for (unsigned int x = startX; x < endX; ++x)
-        {
-            viewSpacePixel.x = getScreenPosition(w, x);
-
-            // set colour
-            setPixelColour(image, x, y,
-                           calculatePixelValue(sceneManager, ambient, lights,
-                                               viewSpaceEye, viewSpacePixel,
-                                               viewMatrix, numSamples, supersample, jitter));
-
-            ++progressBar;
-        }
     }
 }
 
@@ -553,9 +514,8 @@ void renderSingleThreaded(const SceneManager & sceneManager, Image & image,
         ProgressBar progressBar(image.height() * image.width());
 
         std::cout << progressBar;
-        renderDispatch(sceneManager, image, camera, ambient, lights, 0,
-                       image.height(), 0, image.height(), progressBar,
-                       numSamples);
+        renderDispatch(sceneManager, image, camera, ambient, lights,
+                       getAllPixelCoordinates(image), progressBar, numSamples);
 }
 
 // ------------------- main ----------------------
