@@ -10,7 +10,7 @@
 #include "Mesh.hpp"
 #include "Primitive.hpp"
 #include "IntersectionHelpers.hpp"
-#include "debug.hpp"
+#include "Debug.hpp"
 
 // helpers
 static BoundingBox generateBoundingBox(const Mesh &mesh)

@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "SceneNode.hpp"
-#include "debug.hpp"
+#include "Debug.hpp"
 
 static inline std::pair<NodeID, SceneNode *> findIdNodePairWithName (SceneManager & scene, const std::string & name)
 {

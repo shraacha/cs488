@@ -31,7 +31,7 @@
 #include "SceneManager.hpp"
 #include "ScreenHelpers.hpp"
 #include "ThreadPool.hpp"
-#include "debug.hpp"
+#include "Debug.hpp"
 
 #include "ImageHelpers.hpp"
 #include "ImageKernelHelpers.hpp" // can't include imagekernel and this directly since that ends up giving error

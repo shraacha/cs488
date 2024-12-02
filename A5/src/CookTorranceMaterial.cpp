@@ -7,7 +7,7 @@
 #include "LightingHelpers.hpp"
 #include "Material.hpp"
 
-#include "debug.hpp"
+#include "Debug.hpp"
 #include "glm/detail/type_vec.hpp"
 
 CookTorranceMaterial::CookTorranceMaterial(const glm::vec3 & albedo,

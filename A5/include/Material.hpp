@@ -7,7 +7,7 @@
 #include "Ray.hpp"
 #include "Intersection.hpp"
 #include "Light.hpp"
-#include "debug.hpp"
+#include "Debug.hpp"
 
 #include <glm/glm.hpp>
 

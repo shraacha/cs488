@@ -1,7 +1,7 @@
 #include "Intersection.hpp"
 #include "IntersectionHelpers.hpp"
 #include "Ray.hpp"
-#include "debug.hpp"
+#include "Debug.hpp"
 
 #include <optional>
 #include <limits>

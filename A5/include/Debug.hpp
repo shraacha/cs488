@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 #define DLOG(fmt, ...)                                                         \
-        fprintf(stderr, "DEBUG: ");                                              \
+        fprintf(stderr, "DEBUG: ");                                            \
         fprintf(stderr, fmt, ##__VA_ARGS__);                                   \
         fprintf(stderr, "\n");
 #endif // NDEBUG
