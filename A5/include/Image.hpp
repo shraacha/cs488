@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 
 #include <string>
+#include <array>
 
 const uint c_colorComponents = 3; // Red, blue, green
 
