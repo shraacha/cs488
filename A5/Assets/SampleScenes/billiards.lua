@@ -11,7 +11,7 @@ normal_map = gr.uv_map("./textures/normal_map_example.png")
 mat_normal_map = gr.material_cook_torrance({0.5, 1.0, 0.5}, {0.5, 0.5, 0.5}, 0.3)
 mat_normal_map:add_normal_map(normal_map)
 
-mat_normal_cube = gr.material_cook_torrance({0.1, 0.1, 0.9}, {0.5, 0.5, 0.5}, 0.6)
+mat_normal_cube = gr.material_cook_torrance({0.3, 0.3, 0.8}, {0.01, 0.01, 0.01}, 0.7)
 mat_normal_cube:add_normal_map(normal_map)
 mat_normal_cube:add_normal_map(normal_map)
 mat_normal_cube:add_normal_map(normal_map)
@@ -197,4 +197,4 @@ l2 = gr.light({0, 90, 100}, {0.85, 0.75, 0.6}, {1, 0, 0})
 
 gr.render(scene, 'billiards.png', 512, 512,
 	  {-10, 70, 90}, {-5, 60, 7}, {0, 1, 0}, 60,
-	  {0.4, 0.4, 0.4}, {l1, l2}, 1, false, 2, 30, 80, true)
+	  {0.4, 0.4, 0.4}, {l1, l2}, 1, false, 2, 10000, 80, false)
