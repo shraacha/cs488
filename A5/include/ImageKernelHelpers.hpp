@@ -7,9 +7,6 @@
 
 #include "Image.hpp"
 #include "ImageKernel.hpp"
-#include "Debug.hpp"
-
-#include "glm/gtx/string_cast.hpp"
 
 
 template <unsigned int rings>
