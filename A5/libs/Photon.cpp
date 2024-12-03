@@ -1,4 +1,5 @@
 #include "Photon.hpp"
+#include "glm/gtx/simd_vec4.hpp"
 
 Photon::Photon() {}
 
@@ -76,4 +77,24 @@ double PhotonDistance2::operator()(const Photon & first, const Photon & second)
 double PhotonDistance3::operator()(const Photon & first, const Photon & second)
 {
     return glm::length(first.m_position.z - second.m_position.z);
+}
+
+double getDistance(const Photon & p1, const Photon & p2)
+{
+    return glm::length(p1.getPosition() - p2.getPosition());
+}
+
+Photon findFarthest(const Photon & source, const std::vector<Photon> & photons)
+{
+    Photon furthest = source;
+
+    for(const Photon & photon : photons)
+    {
+        if (getDistance(source, photon) > getDistance(source, furthest))
+        {
+            furthest = photon;
+        }
+    }
+
+    return furthest;
 }

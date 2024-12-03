@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <vector>
+
 class Photon {
     public:
         Photon();
@@ -61,3 +63,8 @@ struct PhotonDistance3
 {
     double operator()(const Photon & first, const Photon & second);
 };
+
+
+double getDistance(const Photon & p1, const Photon & p2);
+
+Photon findFarthest(const Photon & source, const std::vector<Photon> & photons);

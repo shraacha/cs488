@@ -69,14 +69,16 @@ integrateOverPhotons(const Ray & ray, const Intersection & intersect,
     if (n > 0)
     {
         glm::dvec3 intersectionPoint(intersect.getPosition());
+        Photon intersectionPhoton(glm::dvec3(0), intersectionPoint);
 
         // locate n nearest photons
-        std::vector<Photon> nearestPhotons = causticPhotonMap.getKNearest(
-            Photon(glm::dvec3(0), intersectionPoint), n);
+        std::vector<Photon> nearestPhotons =
+            causticPhotonMap.getKNearest(intersectionPhoton, n);
 
         // r = dist to nth nearest photon
-        double r = glm::length(intersectionPoint -
-                               nearestPhotons.back().getPosition());
+        double r = glm::length(
+            intersectionPoint -
+            findFarthest(intersectionPhoton, nearestPhotons).getPosition());
 
         // flux
         glm::dvec3 flux(0.0);
