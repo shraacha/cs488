@@ -195,6 +195,6 @@ mirror:translate(1.5, 6.5, -19.9)
 l1 = gr.light({0, 90, -20}, {0.85, 0.75, 0.6}, {0.3, 0, 0})
 l2 = gr.light({0, 90, 100}, {0.85, 0.75, 0.6}, {1, 0, 0})
 
-gr.render(scene, 'sphere-texture-test.png', 512, 512,
+gr.render(scene, 'billiards.png', 512, 512,
 	  {-10, 70, 90}, {-5, 60, 7}, {0, 1, 0}, 60,
-	  {0.4, 0.4, 0.4}, {l1, l2}, 3, false, 2, 100, 80, true)
+	  {0.4, 0.4, 0.4}, {l1, l2}, 30, false, 2, 100, 80, true)

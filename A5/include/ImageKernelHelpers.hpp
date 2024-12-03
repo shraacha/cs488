@@ -7,6 +7,7 @@
 
 #include "Image.hpp"
 #include "ImageKernel.hpp"
+#include "Debug.hpp"
 
 #include "glm/gtx/string_cast.hpp"
 
@@ -15,9 +16,9 @@ template <unsigned int rings>
 glm::dvec3 varianceKernelFunc(
     const std::array<std::optional<glm::dvec3>, elementsInKernel(rings)> & elements)
 {
-    int numElements;
-    glm::dvec3 mean;
-    glm::dvec3 sum;
+    int numElements = 0;
+    glm::dvec3 mean(0);
+    glm::dvec3 sum(0);
 
     // get mean
     for(const auto & pixel : elements) {

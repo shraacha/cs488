@@ -29,7 +29,7 @@ struct ImageKernel
 };
 
 template <unsigned int rings, typename T>
-Image apply(const Image& source, ImageKernel<rings, T> kernel)
+Image apply(const Image& source, const ImageKernel<rings, T> & kernel)
 {
     Image newImage(source.width(), source.height());
     // loop over each pixel
