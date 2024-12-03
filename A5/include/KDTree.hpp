@@ -84,7 +84,7 @@ template <typename T_Key, typename T_Distance> class KDTree
         m_tree = createBalancedKDTreeNode(pointersToItems, getStartAxis());
     }
 
-    T_Key getNearest(const T_Key & key)
+    T_Key getNearest(const T_Key & key) const
     {
         std::shared_ptr<node_t> result =
             getNearestNode(key, m_tree, getStartAxis());
@@ -97,7 +97,7 @@ template <typename T_Key, typename T_Distance> class KDTree
         return **result;
     };
 
-    std::vector<T_Key> getKNearest(const T_Key & key, unsigned int k)
+    std::vector<T_Key> getKNearest(const T_Key & key, unsigned int k) const
     {
         KPriorityQueue<std::shared_ptr<node_t>> queue(
             k,
@@ -125,14 +125,14 @@ template <typename T_Key, typename T_Distance> class KDTree
     std::vector<std::function<T_Distance(const T_Key &, const T_Key &)>>
         m_distanceFunctors;
 
-    constexpr depth_t getStartAxis() { return 0; };
+    constexpr depth_t getStartAxis() const { return 0; };
 
-    axis_t getAxis(const depth_t & i)
+    axis_t getAxis(const depth_t & i) const
     {
         return i % m_comparisonFunctors.size();
     };
 
-    T_Distance distSquared(const T_Key & key1, const T_Key & key2)
+    T_Distance distSquared(const T_Key & key1, const T_Key & key2) const
     {
         T_Distance distSquared = T_Distance{};
         for (const auto & distanceFunction : m_distanceFunctors)
@@ -182,7 +182,7 @@ template <typename T_Key, typename T_Distance> class KDTree
 
     bool isNodeCloser(const T_Key & target,
                       const std::shared_ptr<node_t> & node1,
-                      const std::shared_ptr<node_t> & node2)
+                      const std::shared_ptr<node_t> & node2) const
     {
 
         if (distSquared(target, **node1) < distSquared(target, **node2))
@@ -197,7 +197,7 @@ template <typename T_Key, typename T_Distance> class KDTree
 
     std::shared_ptr<node_t>
     getNearestNode(const T_Key & target, const std::shared_ptr<node_t> & node1,
-                   const std::shared_ptr<node_t> & node2)
+                   const std::shared_ptr<node_t> & node2) const
     {
         if (node1 && !node2)
         {
@@ -226,7 +226,7 @@ template <typename T_Key, typename T_Distance> class KDTree
 
     std::shared_ptr<node_t> getNearestNode(const T_Key & target,
                                            const std::shared_ptr<node_t> root,
-                                           const depth_t & depth)
+                                           const depth_t & depth) const
     {
         if (!root)
         {
@@ -268,7 +268,7 @@ template <typename T_Key, typename T_Distance> class KDTree
 
     KPriorityQueue<std::shared_ptr<node_t>>
     getKNearestNodes(const T_Key & target, const std::shared_ptr<node_t> root,
-                     const depth_t & depth, KPriorityQueue<std::shared_ptr<node_t>> queue)
+                     const depth_t & depth, KPriorityQueue<std::shared_ptr<node_t>> queue) const
     {
         if (!root)
         {

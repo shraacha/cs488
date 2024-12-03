@@ -60,6 +60,15 @@ class Material {
         const glm::dvec3 & refractionDir = glm::dvec3(0.0),
         const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const = 0;
 
+    // both vectors should be facing away from the surface
+    virtual glm::dvec3 evaluateBRDF(const glm::dvec3 & vIncidence,
+                                    const glm::dvec3 & vOut,
+                                    const Intersection & intersect) const
+    {
+        // DLOG("base evaluateBRDF called");
+        return glm::dvec3(0.0);
+    }
+
     bool isDirect() const;
     bool isSpecularReflective() const;
     bool isTransmissiveReflective() const;

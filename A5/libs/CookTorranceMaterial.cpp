@@ -72,8 +72,6 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
             glm::normalize(glm::dvec3(light->position) - intersectionPoint);
         glm::dvec3 halfway = glm::normalize(outVector + normalizedLightVector);
 
-        double lightDotNormal =
-            glm::dot(normalizedLightVector, intersect.getNormalizedNormal());
         double attenuationFactor =
             light->calculateAttenuation(intersectionPoint);
 
@@ -107,6 +105,57 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
              specular) *
             nDotL;
     }
+
+    return lightOut;
+}
+
+glm::dvec3 CookTorranceMaterial::evaluateBRDF(const glm::dvec3 & vIncidence,
+                                    const glm::dvec3 & vOut,
+                                    const Intersection & intersect) const
+{
+    glm::dvec3 lightOut{0, 0, 0};
+
+    glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
+    glm::dvec3 inVector = glm::normalize(vIncidence);
+    glm::dvec3 outVector = glm::normalize(vOut);
+
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, outVector, value.value());
+    }
+
+    double scaleFactor = 1.0;
+
+    glm::dvec3 halfway = glm::normalize(outVector + inVector);
+
+    double vinDotN =
+        glm::dot(vIncidence, surfaceNormal);
+
+    // cook-torrance brdf
+    double ndf =
+        evaluateDistributionGGX(surfaceNormal, halfway, getRoughness());
+    double g = evaluateGeometrySmith(surfaceNormal, outVector,
+                                     vIncidence, getRoughness());
+    double f = calculateFresnelSchlick(c_f0, halfway, outVector);
+
+    glm::dvec3 kS(1);
+    glm::dvec3 kD(1 - f);
+
+    // nuked fresnel since it was really attenuating things
+    glm::dvec3 numerator(g);
+    double denominator =
+        4.0 * std::max(glm::dot(surfaceNormal, outVector), 0.0) *
+            std::max(glm::dot(surfaceNormal, vIncidence), 0.0) +
+        0.001;
+    glm::dvec3 specular = numerator / denominator;
+
+    // add to outgoing radiance Lo
+    double nDotL = std::max(glm::dot(surfaceNormal, vIncidence), 0.0);
+    lightOut +=
+        (kD * glm::pow(getAlbedo(intersect.getUV()), glm::dvec3(2.2)) * M_1_PI +
+         specular);
 
     return lightOut;
 }

@@ -2,7 +2,15 @@
 
 Photon::Photon() {}
 
-Photon::Photon(glm::dvec3 power) : m_power(power) {}
+Photon::Photon(const glm::dvec3 & power)
+    : m_power(power), m_position(0.0), m_incidenceDir(0.0)
+{
+}
+
+Photon::Photon(const glm::dvec3 & power, const glm::dvec3 & position)
+    : m_power(power), m_position(position), m_incidenceDir(0.0)
+{
+}
 
 glm::dvec3 Photon::getPower() const { return m_power; }
 

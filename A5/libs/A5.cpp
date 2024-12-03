@@ -61,10 +61,47 @@ static inline glm::dvec3 getBackgroundColour(glm::dvec3 rayDirection,
 }
 
 static glm::dvec3
+integrateOverPhotons(const Ray & ray, const Intersection & intersect,
+                     const Material & material,
+                     const KDTree<Photon, double> & causticPhotonMap,
+                     unsigned int n)
+{
+    if (n > 0)
+    {
+        glm::dvec3 intersectionPoint(intersect.getPosition());
+
+        // locate n nearest photons
+        std::vector<Photon> nearestPhotons = causticPhotonMap.getKNearest(
+            Photon(glm::dvec3(0), intersectionPoint), n);
+
+        // r = dist to nth nearest photon
+        double r = glm::length(intersectionPoint -
+                               nearestPhotons.back().getPosition());
+
+        // flux
+        glm::dvec3 flux(0.0);
+
+        for (const Photon & photon : nearestPhotons)
+        {
+            glm::dvec3 pDir = photon.getIncidenceDir();
+            glm::dvec3 power = photon.getPower();
+            flux += material.evaluateBRDF(pDir, -ray.getNormalizedDirection(),
+                                          intersect);
+        }
+
+        return flux * (1 / (2 * M_PI * r * r));
+    } else {
+        return glm::dvec3(0);
+    }
+}
+
+static glm::dvec3
 intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
                       const std::vector<const Light *> & lights,
                       const glm::dvec3 & ambient, const double & ior,
-                      unsigned int currDepth, unsigned int maxDepth)
+                      unsigned int currDepth, unsigned int maxDepth,
+                      const KDTree<Photon, double> & causticPhotonMap,
+                      unsigned int numPhotonsToAccumulate)
 {
     glm::dvec3 fragmentColour = glm::dvec3(0.0, 0.0, 0.0);
 
@@ -125,12 +162,15 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
                     material->sampleReflectionDirection(ray, intersect);
 
                 // TODO probability should be used in the calculation somewhere
-                reflectionRadiance = intersectAndGetColour(
-                    sceneManager,
-                    Ray(intersect.getPosition(),
-                        intersect.getPosition() +
-                            glm::dvec4(reflectionDir.first, 0.0)),
-                    lights, ambient, ior, currDepth + 1, maxDepth) * (1 / reflectionDir.second);
+                reflectionRadiance =
+                    intersectAndGetColour(
+                        sceneManager,
+                        Ray(intersect.getPosition(),
+                            intersect.getPosition() +
+                                glm::dvec4(reflectionDir.first, 0.0)),
+                        lights, ambient, ior, currDepth + 1, maxDepth,
+                        causticPhotonMap, numPhotonsToAccumulate) *
+                    (1 / reflectionDir.second);
             }
 
             if (material->isTransmissiveRefractive())
@@ -143,13 +183,17 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
                     Ray(intersect.getPosition(),
                         intersect.getPosition() +
                             glm::dvec4(refractionDir.first, 0.0)),
-                    lights, ambient, ior, currDepth + 1,
-                    maxDepth);
+                    lights, ambient, ior, currDepth + 1, maxDepth,
+                    causticPhotonMap, numPhotonsToAccumulate);
             }
 
             fragmentColour += material->getRadiance(
                 ray, intersect, ambient, contributingLights, reflectionDir.first,
                 reflectionRadiance, refractionDir.first, refractionRadiance);
+
+            fragmentColour +=
+                integrateOverPhotons(ray, intersect, *material, causticPhotonMap,
+                                     numPhotonsToAccumulate);
         }
     }
     else
@@ -372,7 +416,8 @@ static inline void printSceneInfo(const uint &imgWidth, const uint &imgHeight,
 
 glm::dvec3 calculatePixelValue(
     const SceneManager & sceneManager, const glm::vec3 & ambient,
-    const std::vector<const Light *> & lights, const glm::dvec4 & viewSpaceEye,
+    const std::vector<const Light *> & lights, const KDTree<Photon, double> & causticPhotonMap,
+    unsigned int numPhotonsToAccumulate, const glm::dvec4 & viewSpaceEye,
     const glm::dvec4 & viewSpacePixel, const glm::mat4 & viewMatrix,
     unsigned int numSamples, bool supersample = false, bool jitter = false)
 {
@@ -399,7 +444,7 @@ glm::dvec3 calculatePixelValue(
         {
             pixelColour += intersectAndGetColour(
                 sceneManager, Ray(worldSpaceEye, worldSpacePixel), lights,
-                ambient, 1.0, 0, 2);
+                ambient, 1.0, 0, 2, causticPhotonMap, numPhotonsToAccumulate);
         }
     }
 
@@ -410,6 +455,8 @@ glm::dvec3 calculatePixelValue(
 void renderDispatch(const SceneManager & sceneManager, Image & image,
                     const Camera & camera, const glm::vec3 & ambient,
                     const std::vector<const Light *> & lights,
+                    const KDTree<Photon, double> & causticPhotonMap,
+                    unsigned int numPhotonsToAccumulate,
                     const std::vector<glm::uvec2> & screenPixels,
                     ProgressBar & progressBar, unsigned int numSamples,
                     bool supersample = false, bool jitter = false)
@@ -431,9 +478,10 @@ void renderDispatch(const SceneManager & sceneManager, Image & image,
 
         // set colour
         setPixelColour(image, pixel.x, pixel.y,
-                       calculatePixelValue(sceneManager, ambient, lights,
-                                           viewSpaceEye, viewSpacePixel,
-                                           viewMatrix, numSamples, supersample, jitter));
+                       calculatePixelValue(
+                           sceneManager, ambient, lights, causticPhotonMap,
+                           numPhotonsToAccumulate, viewSpaceEye, viewSpacePixel,
+                           viewMatrix, numSamples, supersample, jitter));
         ++progressBar;
     }
 }
@@ -441,6 +489,8 @@ void renderDispatch(const SceneManager & sceneManager, Image & image,
 void render(const SceneManager & sceneManager, Image & image,
             const Camera & camera, const glm::vec3 & ambient,
             const std::vector<const Light *> & lights,
+            const KDTree<Photon, double> & causticPhotonMap,
+            unsigned int numPhotonsToAccumulate,
             std::vector<glm::uvec2> screenPixels, unsigned int numSamples,
             unsigned int numThreads, unsigned int pixelsPerChunk = 128,
             bool supersample = false, bool jitter = false)
@@ -473,11 +523,11 @@ void render(const SceneManager & sceneManager, Image & image,
         }
 
         threadPool.queueJob(
-            [&, chunk]()
+            [&, numPhotonsToAccumulate, chunk]()
             {
                 renderDispatch(sceneManager, image, camera, ambient, lights,
-                               chunk, progressBar, numSamples, supersample,
-                               jitter);
+                               causticPhotonMap, numPhotonsToAccumulate, chunk,
+                               progressBar, numSamples, supersample, jitter);
             });
     }
 
@@ -498,13 +548,15 @@ void render(const SceneManager & sceneManager, Image & image,
 
 void renderSingleThreaded(const SceneManager & sceneManager, Image & image,
             const Camera & camera, const glm::vec3 & ambient,
-            const std::vector<const Light *> & lights, unsigned int numSamples,
+            const std::vector<const Light *> & lights, const KDTree<Photon, double> & causticPhotonMap,
+            unsigned int numPhotonsToAccumulate, unsigned int numSamples,
             unsigned int numThreads)
 {
         ProgressBar progressBar(image.height() * image.width());
 
         std::cout << progressBar;
         renderDispatch(sceneManager, image, camera, ambient, lights,
+                       causticPhotonMap, numPhotonsToAccumulate,
                        getAllPixelCoordinates(image), progressBar, numSamples);
 }
 
@@ -538,44 +590,51 @@ void A5_Render(
 
     auto kdTree = createCausticPhotonMap(sceneManager, lightVector, ambient, 1, 10, numPhotons);
 
+    unsigned int numPhotonsToAccumulate = 20;
+
     if (visualizePhotons)
     {
         SceneManager photonManager;
         photonManager.importSceneGraph(
             createPhotonScene(kdTree, photonRadiusVisualization));
 
-        render(photonManager, image, camera, ambient, lightVector,
-               getAllPixelCoordinates(image), numSamples, numThreads);
+        std::cout << "rendering photon map" << std::endl;
+
+        render(photonManager, image, camera, ambient, lightVector, kdTree,
+               0, getAllPixelCoordinates(image),
+               numSamples, numThreads);
+
+        image.savePng("photons.png");
     }
-    else
+
+    std::cout << "rendering scene" << std::endl;
+
+    render(sceneManager, image, camera, ambient, lightVector, kdTree,
+           numPhotonsToAccumulate, getAllPixelCoordinates(image), numSamples,
+           numThreads);
+
+    if (adaptiveSupersampling)
     {
-        std::cout << "rendering scene" << std::endl;
+        std::cout << std::endl
+                  << "performing adaptive supersampling" << std::endl;
 
-        render(sceneManager, image, camera, ambient, lightVector,
-               getAllPixelCoordinates(image), numSamples, numThreads);
+        Image varianceImage =
+            apply(image, ImageKernel<1, glm::dvec3>(&varianceKernelFunc<1>));
+        Image thresholdImage =
+            apply(varianceImage,
+                  ImageKernel<0, glm::dvec3>(&varianceThresholdKernelFunc));
 
-        if (adaptiveSupersampling)
-        {
-            std::cout << std::endl
-                      << "performing adaptive supersampling" << std::endl;
+        DLOG("supersample pass");
 
-            Image varianceImage = apply(
-                image, ImageKernel<1, glm::dvec3>(&varianceKernelFunc<1>));
-            Image thresholdImage =
-                apply(varianceImage,
-                      ImageKernel<0, glm::dvec3>(&varianceThresholdKernelFunc));
+        std::vector<glm::uvec2> edgePixels =
+            getWhitePixelCoordinates(thresholdImage);
+        DLOG("num threshold pixels: %ld", edgePixels.size())
 
-            DLOG("supersample pass");
+        render(sceneManager, image, camera, ambient, lightVector, kdTree,
+               numPhotonsToAccumulate, edgePixels, numSamples, numThreads, 128,
+               true, true);
 
-            std::vector<glm::uvec2> edgePixels =
-                getWhitePixelCoordinates(thresholdImage);
-            DLOG("num threshold pixels: %ld", edgePixels.size())
-
-            render(sceneManager, image, camera, ambient, lightVector,
-                   edgePixels, numSamples, numThreads, 128, true, true);
-
-            varianceImage.savePng("varianceImage.png");
-            thresholdImage.savePng("thresholdImage.png");
-        }
+        varianceImage.savePng("varianceImage.png");
+        thresholdImage.savePng("thresholdImage.png");
     }
 }

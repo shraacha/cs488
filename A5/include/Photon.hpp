@@ -5,7 +5,8 @@
 class Photon {
     public:
         Photon();
-        Photon(glm::dvec3 power);
+        Photon(const glm::dvec3 & power);
+        Photon(const glm::dvec3 & power, const glm::dvec3 & position);
 
         glm::dvec3 getPower() const;
         glm::dvec3 getPosition() const;

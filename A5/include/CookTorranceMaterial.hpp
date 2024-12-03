@@ -20,6 +20,12 @@ class CookTorranceMaterial : public Material
         const glm::dvec3 & refractionDir = glm::dvec3(0.0),
         const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const override;
 
+
+    // both vectors should be facing away from the surface
+    virtual glm::dvec3 evaluateBRDF(const glm::dvec3 & vIncidence,
+                                    const glm::dvec3 & vOut,
+                                    const Intersection & intersect) const override;
+
     virtual MaterialActionAndConstants
     russianRouletteAction(const Ray & ray, const Intersection & intersect) const override;
 
