@@ -31,11 +31,6 @@ Cube::~Cube() {}
 std::optional<Intersection> Cube::intersect(const Ray & ray) const {
     auto result = findRayBoxIntersection(ray);
 
-    if (result.has_value())
-    {
-        result->setPosition(evaluate(ray, result->getT()));
-    }
-
     return result;
 }
 

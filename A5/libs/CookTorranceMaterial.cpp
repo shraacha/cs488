@@ -88,7 +88,7 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
         glm::dvec3 kD(1-f);
 
         // nuked fresnel since it was really attenuating things
-        glm::dvec3 numerator(ndf * g);
+        glm::dvec3 numerator(f * ndf * g);
         double denominator =
             4.0 * std::max(glm::dot(surfaceNormal, outVector), 0.0) *
                 std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0) +
