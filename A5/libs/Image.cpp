@@ -6,7 +6,6 @@
 #include <cstring>
 #include <lodepng/lodepng.h>
 
-
 //---------------------------------------------------------------------------------------
 Image::Image()
   : m_width(0),
@@ -26,6 +25,34 @@ Image::Image(
 	size_t numElements = m_width * m_height * m_colorComponents;
 	m_data = new double[numElements];
 	memset(m_data, 0, numElements*sizeof(double));
+}
+
+Image::Image(const std::string & filename, LodePNGColorType colorType)
+{
+    unsigned int w, h;
+    std::vector<unsigned char> out;
+
+    lodepng::decode(out, w, h, filename, colorType);
+
+    size_t numElements = w * h * m_colorComponents;
+    m_width = w;
+    m_height = h;
+    m_data = new double[numElements];
+
+    unsigned int pixelNumber = 0;
+    for (unsigned int i = 0; i < h; i++)
+    {
+        for (unsigned int j = 0; j < w; j++)
+        {
+            (*this)(j, i, 0) =
+                (double)out[m_colorComponents * pixelNumber + 0] / 255.0;
+            (*this)(j, i, 1) =
+                (double)out[m_colorComponents * pixelNumber + 1] / 255.0;
+            (*this)(j, i, 2) =
+                (double)out[m_colorComponents * pixelNumber + 2] / 255.0;
+            ++pixelNumber;
+        }
+    }
 }
 
 //---------------------------------------------------------------------------------------

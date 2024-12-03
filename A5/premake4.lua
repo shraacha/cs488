@@ -10,7 +10,7 @@ includeDirList = {
 
 libDirectories = { 
     "../lib",
-    "lib"
+    "lib",
 }
 
 
@@ -55,7 +55,7 @@ solution "CS488-Projects"
         links (linkLibs)
         linkoptions (linkOptionList)
         includedirs (includeDirList)
-        files { "src/*.cpp", "include/*.hpp" }
+        files { "src/*.cpp", "libs/*.cpp", "include/*.hpp" }
 
     configuration "Debug"
         defines { "DEBUG" }
@@ -71,11 +71,10 @@ solution "CS488-Projects"
         location "build"
         targetdir "."
         objdir "build"
-        files { "tests/**.cpp", "tests/**.h" }
-        includedirs { "include", "third_party/googletest/googletest/include" }
-
-        links { "googletest" }
-        libdirs { "lib", "third_party/googletest/build/lib" }
+        files { "tests/**.cpp", "tests/**.hpp", "libs/*.cpp", "include/*.hpp"}
+        links { linkLibs, "googletest" }
+        libdirs { libDirectories, "third_party/googletest/build/lib" }
+        includedirs { includeDirList, "third_party/googletest/googletest/include" }
 
     configuration "Debug"
         defines { "DEBUG" }

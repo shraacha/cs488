@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "lodepng/lodepng.h"
 #include <glm/glm.hpp>
 
 #include <string>
@@ -40,6 +41,9 @@ public:
 
 	// Construct a black image at the given width/height.
 	Image(uint width, uint height);
+
+	// Construct an image from a png
+	Image(const std::string & filename, LodePNGColorType colorType = LCT_RGB);
 
 	// Copy an image.
 	Image(const Image & other);

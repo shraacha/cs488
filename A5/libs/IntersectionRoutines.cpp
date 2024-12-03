@@ -1,4 +1,5 @@
 #include "IntersectionRoutines.hpp"
+#include "IntersectionHelpers.hpp"
 
 std::optional<std::pair<Intersection, Material *>>
 intersect(const SceneManager & sceneManager, const Ray & ray) {
@@ -13,7 +14,7 @@ intersect(const SceneManager & sceneManager, const Ray & ray) {
 
         const GeometryNode *geometryNode = nodeIt.asGeometryNode();
 
-        glm::mat4 transformationStack =
+        glm::dmat4 transformationStack =
             nodeIt.getInheritedTransformation() * geometryNode->get_transform();
 
         glm::dvec4 transformedEye =
@@ -28,11 +29,9 @@ intersect(const SceneManager & sceneManager, const Ray & ray) {
             (!intersectionAndMaterial.has_value() ||
              (result->getT() < intersectionAndMaterial->first.getT())) &&
             result->getT() >= ray.getMinThreshold()) {
+
             intersectionAndMaterial = std::make_pair<Intersection, Material *>(
-                Intersection(
-                    result->getT(), transformationStack * result->getPosition(),
-                    result->getNormal() * glm::inverse(transformationStack)),
-                geometryNode->getMaterial());
+                transformationStack * result.value(), geometryNode->getMaterial());
         }
     }
 

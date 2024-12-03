@@ -3,11 +3,14 @@
 #pragma once
 
 #include <vector>
+#include <optional>
+#include <memory>
 
-#include "Ray.hpp"
+#include "Debug.hpp"
+#include "Image.hpp"
 #include "Intersection.hpp"
 #include "Light.hpp"
-#include "Debug.hpp"
+#include "Ray.hpp"
 
 #include <glm/glm.hpp>
 
@@ -50,7 +53,7 @@ class Material {
 
     virtual glm::dvec3 getRadiance(
         const Ray & ray, const Intersection & intersect,
-        const glm::vec3 & ambient, const std::vector<const Light *> & lights,
+        const glm::dvec3 & ambient, const std::vector<const Light *> & lights,
         const glm::dvec3 & reflectionDir = glm::dvec3(0.0),
         const glm::dvec3 & reflectionRadiance = glm::dvec3(0.0),
         const glm::dvec3 & refractionDir = glm::dvec3(0.0),
@@ -64,6 +67,8 @@ class Material {
 
     material_type_t getTypeFlags() const;
 
+    void setAlbedoMap(std::shared_ptr<Image> image);
+
     double getIOR() const;
     virtual glm::dvec3 getKS() const
     {
@@ -75,7 +80,8 @@ class Material {
         DLOG("base getKD called");
         return c_defaultDVec3;
     }
-    virtual glm::dvec3 getAlbedo() const
+
+    virtual glm::dvec3 getAlbedo(std::optional<glm::dvec2> uvCoord = std::nullopt) const
     {
         DLOG("base getAlbedo called");
         return c_defaultDVec3;
@@ -114,4 +120,6 @@ class Material {
 
     material_type_t m_typeFlags;
     double m_ior;
+
+    std::shared_ptr<Image> m_albedoMap = nullptr;
 };

@@ -207,6 +207,7 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
         } else if (currDepth == maxDepth) {
             return std::nullopt;
         }
+
         // specular/transmission cases
         else
         {
@@ -422,7 +423,6 @@ void renderDispatch(const SceneManager & sceneManager, Image & image,
                     ProgressBar & progressBar, unsigned int numSamples,
                     bool supersample = false, bool jitter = false)
 {
-
     size_t h = image.height();
     size_t w = image.width();
 
@@ -454,8 +454,7 @@ void render(const SceneManager & sceneManager, Image & image,
             unsigned int numThreads, unsigned int pixelsPerChunk = 128,
             bool supersample = false, bool jitter = false)
 {
-
-    ProgressBar progressBar(image.height() * image.width());
+    ProgressBar progressBar(screenPixels.size());
     std::atomic<bool> b;
     numThreads =
         std::max(std::min(std::thread::hardware_concurrency(), numThreads), 1u);
@@ -559,10 +558,12 @@ void A5_Render(
     }
     else
     {
+        std::cout << "rendering scene" << std::endl;
+
         render(sceneManager, image, camera, ambient, lightVector,
                getAllPixelCoordinates(image), numSamples, numThreads);
 
-        DLOG("rendered");
+        std::cout << "performing adaptive supersampling" << std::endl;
 
         if (adaptiveSupersampling)
         {

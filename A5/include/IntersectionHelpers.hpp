@@ -72,3 +72,6 @@ inline bool doesRayIntersectPlane(const Ray & ray,
 {
     return !(glm::dot(ray.getDirection(), planeNormal) == 0.0);
 }
+
+// -------------------------------------------------
+Intersection operator*(const glm::dmat4 & mat, const Intersection & intersection);

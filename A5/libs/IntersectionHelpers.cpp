@@ -396,3 +396,14 @@ std::optional<double> findRayPlaneIntersect(const Ray & ray,
 {
     return findRayPlaneIntersect(ray, glm::dvec4(planeNormal, 0.0), glm::dvec4(planePoint, 1.0));
 }
+
+// -------------------------------------------------
+Intersection operator*(const glm::dmat4 & mat, const Intersection & intersection)
+{
+    Intersection newIntersection(intersection);
+
+    newIntersection.setPosition(mat * newIntersection.getPosition());
+    newIntersection.setNormal(newIntersection.getNormal() * glm::inverse(mat)); // inverse transpose
+
+    return newIntersection;
+}

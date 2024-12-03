@@ -25,6 +25,8 @@ glm::dvec4 Intersection::getPosition() const
     return m_position;
 }
 
+std::optional<glm::dvec2> Intersection::getUV() const { return m_uv; }
+
 void Intersection::setT(const double &t)
 {
     m_t = t;
@@ -40,3 +42,5 @@ void Intersection::setPosition(const glm::dvec4 &position)
 {
     m_position = position;
 }
+
+void Intersection::setUV(const glm::dvec2 & uv) { m_uv = uv; }

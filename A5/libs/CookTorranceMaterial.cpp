@@ -6,6 +6,7 @@
 
 #include "LightingHelpers.hpp"
 #include "Material.hpp"
+#include "ImageSampleHelpers.hpp"
 
 #include "Debug.hpp"
 #include "glm/detail/type_vec.hpp"
@@ -28,17 +29,24 @@ glm::dvec3 CookTorranceMaterial::getKD() const { return glm::dvec3{1.0, 1.0, 1.0
 
 glm::dvec3 CookTorranceMaterial::getKS() const { return m_ks; }
 
-glm::dvec3 CookTorranceMaterial::getAlbedo() const { return m_albedo; }
+glm::dvec3 CookTorranceMaterial::getAlbedo(std::optional<glm::dvec2> uvCoord) const
+{
+    if (uvCoord && m_albedoMap)
+    {
+        return sample(*m_albedoMap, uvCoord.value());
+    } else {
+        return m_albedo;
+    }
+}
 
 double CookTorranceMaterial::getRoughness() const { return m_roughness; }
 
 glm::dvec3 CookTorranceMaterial::getRadiance(
-    const Ray & ray, const Intersection & intersect, const glm::vec3 & ambient,
+    const Ray & ray, const Intersection & intersect, const glm::dvec3 & ambient,
     const std::vector<const Light *> & lights, const glm::dvec3 & reflectionDir,
     const glm::dvec3 & reflectionRadiance, const glm::dvec3 & refractionDir,
     const glm::dvec3 & refractionRadiance) const
 {
-    // ambient
     glm::dvec3 lightOut{0, 0, 0};
 
     glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
@@ -86,7 +94,9 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
             std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0);
         lightOut +=
             radiance *
-            (kD * glm::pow(getAlbedo(), glm::dvec3(2.2)) * M_1_PI + specular) *
+            (kD * glm::pow(getAlbedo(intersect.getUV()), glm::dvec3(2.2)) *
+                 M_1_PI +
+             specular) *
             nDotL;
     }
 

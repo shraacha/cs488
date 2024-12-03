@@ -1,6 +1,8 @@
 #include "RefractiveMaterial.hpp"
 
 #include "LightingHelpers.hpp"
+#include "ImageSampleHelpers.hpp"
+
 #include "glm/detail/type_vec.hpp"
 
 RefractiveMaterial::RefractiveMaterial(const glm::vec3 & albedo,
@@ -13,12 +15,23 @@ RefractiveMaterial::RefractiveMaterial(const glm::vec3 & albedo,
 
 RefractiveMaterial::~RefractiveMaterial() {}
 
-glm::dvec3 RefractiveMaterial::getAlbedo() const { return m_albedo; }
+glm::dvec3
+RefractiveMaterial::getAlbedo(std::optional<glm::dvec2> uvCoord) const
+{
+    if (uvCoord && m_albedoMap)
+    {
+        return sample(*m_albedoMap, uvCoord.value());
+    }
+    else
+    {
+        return m_albedo;
+    }
+}
 
 double RefractiveMaterial::getRoughness() const { return m_roughness; }
 
 glm::dvec3 RefractiveMaterial::getRadiance(
-    const Ray & ray, const Intersection & intersect, const glm::vec3 & ambient,
+    const Ray & ray, const Intersection & intersect, const glm::dvec3 & ambient,
     const std::vector<const Light *> & lights, const glm::dvec3 & reflectionDir,
     const glm::dvec3 & reflectionRadiance, const glm::dvec3 & refractionDir,
     const glm::dvec3 & refractionRadiance) const

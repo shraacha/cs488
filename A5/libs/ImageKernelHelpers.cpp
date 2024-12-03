@@ -1,11 +1,9 @@
 #include "ImageKernelHelpers.hpp"
 
-#include "glm/detail/func_vector_relational.hpp"
-
 glm::dvec3 varianceThresholdKernelFunc(
     const std::array<std::optional<glm::dvec3>, 1> & elements)
 {
-    double threshold = 0.05;
+    double threshold = 0.08;
 
     glm::dvec3 returnPixel(0.0);
 
@@ -13,8 +11,7 @@ glm::dvec3 varianceThresholdKernelFunc(
     {
         if (pixel)
         {
-            if (glm::any(glm::greaterThanEqual(pixel.value(),
-                                               glm::dvec3(threshold))))
+            if (glm::dot(pixel.value(), glm::dvec3(1)) > threshold)
             {
                 returnPixel = glm::dvec3(1.0);
             }

@@ -56,3 +56,8 @@ double Material::getIOR() const
 {
     return m_ior;
 }
+
+void Material::setAlbedoMap(std::shared_ptr<Image> imagePtr)
+{
+    m_albedoMap = imagePtr;
+}

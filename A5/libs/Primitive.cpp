@@ -2,7 +2,11 @@
 
 #include "Primitive.hpp"
 
+#include <glm/ext.hpp>
+
 #include "IntersectionHelpers.hpp"
+#include "UVMapHelpers.hpp"
+#include "Debug.hpp"
 
 // ------------------------------
 Primitive::~Primitive() {}
@@ -18,7 +22,9 @@ std::optional<Intersection> Sphere::intersect(const Ray & ray) const {
 
     if (result.has_value())
     {
-        result->setPosition(evaluate(ray, result->getT()));
+        auto position = evaluate(ray, result->getT());
+        result->setPosition(position);
+        result->setUV(uvMapSphere(position));
     }
 
     return result;
