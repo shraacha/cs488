@@ -11,6 +11,7 @@
 #include "Intersection.hpp"
 #include "Light.hpp"
 #include "Ray.hpp"
+#include "UVMap.hpp"
 
 #include <glm/glm.hpp>
 
@@ -67,7 +68,8 @@ class Material {
 
     material_type_t getTypeFlags() const;
 
-    void setAlbedoMap(std::shared_ptr<Image> image);
+    void addAlbedoMap(const std::shared_ptr<Image> & map);
+    void addNormalMap(const std::shared_ptr<Image> & map);
 
     double getIOR() const;
     virtual glm::dvec3 getKS() const
@@ -81,32 +83,28 @@ class Material {
         return c_defaultDVec3;
     }
 
-    virtual glm::dvec3 getAlbedo(std::optional<glm::dvec2> uvCoord = std::nullopt) const
+    virtual glm::dvec3 getAlbedo(const std::optional<UVLookup> & uvLookup = std::nullopt) const
     {
         DLOG("base getAlbedo called");
         return c_defaultDVec3;
     }
 
     virtual MaterialActionAndConstants
-    russianRouletteAction(const glm::dvec3 & vin,
-                          const glm::dvec3 & surfaceNormal) const
+    russianRouletteAction(const Ray & ray, const Intersection & intersect) const
     {
         DLOG("base russianRouletteAction called");
         return {MaterialAction::Absorb, glm::dvec3(0.0), glm::dvec3(0.0)};
     }
 
     virtual std::pair<glm::dvec3, double>
-    sampleReflectionDirection(const glm::dvec3 & vin,
-                              const glm::dvec3 & surfaceNormal) const = 0;
+    sampleReflectionDirection(const Ray & ray, const Intersection & intersect) const = 0;
 
     virtual std::pair<glm::dvec3, double>
-    sampleRefractionDirection(const glm::dvec3 & vin,
-                              const glm::dvec3 & surfaceNormal,
+    sampleRefractionDirection(const Ray & ray, const Intersection & intersect,
                               double ior1) const = 0;
 
     virtual std::pair<glm::dvec3, double>
-    sampleDiffuseDirection(const glm::dvec3 & vin,
-                           const glm::dvec3 & surfaceNormal) const
+    sampleDiffuseDirection(const Ray & ray, const Intersection & intersect) const
 
     {
         DLOG("base sampleDiffuseDirection called");
@@ -121,5 +119,6 @@ class Material {
     material_type_t m_typeFlags;
     double m_ior;
 
-    std::shared_ptr<Image> m_albedoMap = nullptr;
+    UVMap m_albedoMap;
+    UVMap m_normalMap;
 };

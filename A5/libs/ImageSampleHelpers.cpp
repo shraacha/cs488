@@ -6,8 +6,8 @@ glm::dvec3 sample(const Image & image, const glm::dvec2 & uvCoordinate)
     double width = image.width();
     double height = image.height();
 
-    int x = uvCoordinate.x * width;
-    int y = uvCoordinate.y * height;
+    int x = uvCoordinate.x * (width - 1);
+    int y = uvCoordinate.y * (height - 1);
 
     return image(x, y);
 }

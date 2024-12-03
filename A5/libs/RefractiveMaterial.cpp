@@ -1,7 +1,7 @@
 #include "RefractiveMaterial.hpp"
 
 #include "LightingHelpers.hpp"
-#include "ImageSampleHelpers.hpp"
+#include "GLMHelpers.hpp"
 
 #include "glm/detail/type_vec.hpp"
 
@@ -15,12 +15,11 @@ RefractiveMaterial::RefractiveMaterial(const glm::vec3 & albedo,
 
 RefractiveMaterial::~RefractiveMaterial() {}
 
-glm::dvec3
-RefractiveMaterial::getAlbedo(std::optional<glm::dvec2> uvCoord) const
+glm::dvec3 RefractiveMaterial::getAlbedo(const std::optional<UVLookup> & uvLookup) const
 {
-    if (uvCoord && m_albedoMap)
+    if (auto value = lookup(m_albedoMap, uvLookup); value)
     {
-        return sample(*m_albedoMap, uvCoord.value());
+        return value.value();
     }
     else
     {
@@ -43,6 +42,11 @@ glm::dvec3 RefractiveMaterial::getRadiance(
         glm::normalize(glm::dvec3(ray.getEyePoint()) - intersectionPoint);
 
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, outVector, value.value());
+    }
 
     glm::dvec3 normalizedLightVector =
         glm::normalize(reflectionDir);
@@ -83,9 +87,16 @@ glm::dvec3 RefractiveMaterial::getRadiance(
 }
 
 MaterialActionAndConstants
-RefractiveMaterial::russianRouletteAction(const glm::dvec3 & vin,
-                                          const glm::dvec3 & surfaceNormal) const
+RefractiveMaterial::russianRouletteAction(const Ray & ray, const Intersection & intersect) const
 {
+    glm::dvec3 vin = ray.getNormalizedDirection();
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -vin, value.value());
+    }
+
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
 
     glm::dvec3 halfway = glm::normalize(-vin + getReflectedVector(vin, normalSample.first));
@@ -97,15 +108,31 @@ RefractiveMaterial::russianRouletteAction(const glm::dvec3 & vin,
 }
 
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleReflectionDirection(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
+    const Ray & ray, const Intersection & intersect) const
 {
+    glm::dvec3 vin = ray.getNormalizedDirection();
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -vin, value.value());
+    }
+
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     return std::make_pair(getReflectedVector(vin, normalSample.first), normalSample.second);
 }
 
 std::pair<glm::dvec3, double> RefractiveMaterial::sampleRefractionDirection(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
+    const Ray & ray, const Intersection & intersect, double ior1) const
 {
+    glm::dvec3 vin = ray.getNormalizedDirection();
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -vin, value.value());
+    }
+
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     auto refractedVector = getRefractedVector(vin, normalSample.first, m_ior, ior1);
     if (refractedVector)

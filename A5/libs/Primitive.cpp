@@ -5,7 +5,7 @@
 #include <glm/ext.hpp>
 
 #include "IntersectionHelpers.hpp"
-#include "UVMapHelpers.hpp"
+#include "UVMap.hpp"
 #include "Debug.hpp"
 
 // ------------------------------
@@ -19,14 +19,6 @@ Sphere::~Sphere() {}
 // other
 std::optional<Intersection> Sphere::intersect(const Ray & ray) const {
     auto result = findRaySphereIntersection(ray);
-
-    if (result.has_value())
-    {
-        auto position = evaluate(ray, result->getT());
-        result->setPosition(position);
-        result->setUV(uvMapSphere(position));
-    }
-
     return result;
 }
 

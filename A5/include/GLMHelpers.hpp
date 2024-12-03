@@ -25,6 +25,11 @@ inline glm::dvec3 maxWithZero(const glm::dvec3 & vec)
 
 glm::dmat3 getChangeOfBasis(glm::dvec3 up, glm::dvec3 coplanar);
 
+// perturb source vector to target's frame
+glm::dvec3 perturbVector(const glm::dvec3 & target,
+                         const glm::dvec3 & coplanarTarget,
+                         const glm::dvec3 & source);
+
 // y up, -z forward
 inline glm::dvec3 sphericalToCartesianYUp(const double &theta, const double &phi) {
     return glm::dvec3(sin(phi) * sin(theta), cos(theta), cos(phi) * sin(theta));

@@ -1,5 +1,7 @@
 #include "NormalMaterial.hpp"
 
+#include "GLMHelpers.hpp"
+
 NormalMaterial::NormalMaterial() {}
 
 NormalMaterial::~NormalMaterial() {}
@@ -10,5 +12,13 @@ glm::dvec3 NormalMaterial::getRadiance(
     const glm::dvec3 & reflectionRadiance, const glm::dvec3 & refractionDir,
     const glm::dvec3 & refractionRadiance) const
 {
-    return (intersect.getNormalizedNormal() + glm::dvec3{1.0, 1.0, 1.0}) * 0.5;
+
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -ray.getNormalizedDirection(), value.value());
+    }
+
+    return (surfaceNormal + glm::dvec3{1.0, 1.0, 1.0}) * 0.5;
 }

@@ -6,9 +6,10 @@
 
 #include "LightingHelpers.hpp"
 #include "Material.hpp"
-#include "ImageSampleHelpers.hpp"
+#include "GLMHelpers.hpp"
 
 #include "Debug.hpp"
+#include "UVMap.hpp"
 #include "glm/detail/type_vec.hpp"
 
 CookTorranceMaterial::CookTorranceMaterial(const glm::vec3 & albedo,
@@ -29,12 +30,14 @@ glm::dvec3 CookTorranceMaterial::getKD() const { return glm::dvec3{1.0, 1.0, 1.0
 
 glm::dvec3 CookTorranceMaterial::getKS() const { return m_ks; }
 
-glm::dvec3 CookTorranceMaterial::getAlbedo(std::optional<glm::dvec2> uvCoord) const
+glm::dvec3 CookTorranceMaterial::getAlbedo(const std::optional<UVLookup> & uvLookup) const
 {
-    if (uvCoord && m_albedoMap)
+    if (auto value = lookup(m_albedoMap, uvLookup); value)
     {
-        return sample(*m_albedoMap, uvCoord.value());
-    } else {
+        return value.value();
+    }
+    else
+    {
         return m_albedo;
     }
 }
@@ -54,6 +57,11 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
         glm::normalize(glm::dvec3(ray.getEyePoint()) - intersectionPoint);
 
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, outVector, value.value());
+    }
 
     double scaleFactor = 1.0; // not sure exactly why I need this scale factor,
                               // but otherwise the objects are too dim
@@ -103,10 +111,17 @@ glm::dvec3 CookTorranceMaterial::getRadiance(
     return lightOut;
 }
 
-MaterialActionAndConstants
-CookTorranceMaterial::russianRouletteAction(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
+MaterialActionAndConstants CookTorranceMaterial::russianRouletteAction(
+    const Ray & ray, const Intersection & intersect) const
 {
+    glm::dvec3 vin = ray.getNormalizedDirection();
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -vin, value.value());
+    }
+
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
 
     glm::dvec3 halfway = glm::normalize(-vin + getReflectedVector(vin, normalSample.first));
@@ -119,21 +134,36 @@ CookTorranceMaterial::russianRouletteAction(
 }
 
 std::pair<glm::dvec3, double> CookTorranceMaterial::sampleReflectionDirection(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
+    const Ray & ray, const Intersection & intersect) const
 {
+    glm::dvec3 vin = ray.getNormalizedDirection();
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -vin, value.value());
+    }
+
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     return std::make_pair(getReflectedVector(vin, normalSample.first), 1.0);
 }
 
 std::pair<glm::dvec3, double> CookTorranceMaterial::sampleRefractionDirection(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
+    const Ray & ray, const Intersection & intersect, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
 }
 
 std::pair<glm::dvec3, double>
-CookTorranceMaterial::sampleDiffuseDirection(const glm::dvec3 & vin,
-                       const glm::dvec3 & surfaceNormal) const
+CookTorranceMaterial::sampleDiffuseDirection(const Ray & ray, const Intersection & intersect) const
 {
+    glm::dvec3 vin = ray.getNormalizedDirection();
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -vin, value.value());
+    }
+
     return sampleCosineWeightedHemisphere(-vin, surfaceNormal);
 }

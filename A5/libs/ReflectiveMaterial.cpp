@@ -1,7 +1,7 @@
 #include "ReflectiveMaterial.hpp"
 
 #include "LightingHelpers.hpp"
-#include "ImageSampleHelpers.hpp"
+#include "GLMHelpers.hpp"
 
 ReflectiveMaterial::ReflectiveMaterial(const glm::vec3 & albedo,
                                        double roughness)
@@ -12,12 +12,14 @@ ReflectiveMaterial::ReflectiveMaterial(const glm::vec3 & albedo,
 
 ReflectiveMaterial::~ReflectiveMaterial() {}
 
-glm::dvec3 ReflectiveMaterial::getAlbedo(std::optional<glm::dvec2> uvCoord) const
+glm::dvec3 ReflectiveMaterial::getAlbedo(const std::optional<UVLookup> & uvLookup) const
 {
-    if (uvCoord && m_albedoMap)
+    if (auto value = lookup(m_albedoMap, uvLookup); value)
     {
-        return sample(*m_albedoMap, uvCoord.value());
-    } else {
+        return value.value();
+    }
+    else
+    {
         return m_albedo;
     }
 }
@@ -38,6 +40,11 @@ glm::dvec3 ReflectiveMaterial::getRadiance(
         glm::normalize(glm::dvec3(ray.getEyePoint()) - intersectionPoint);
 
     glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, outVector, value.value());
+    }
 
     double scaleFactor = 2.0; // not sure exactly why I need this scale factor,
                               // but otherwise the objects are too dim
@@ -77,9 +84,16 @@ glm::dvec3 ReflectiveMaterial::getRadiance(
 }
 
 MaterialActionAndConstants
-ReflectiveMaterial::russianRouletteAction(const glm::dvec3 & vin,
-                                          const glm::dvec3 & surfaceNormal) const
+ReflectiveMaterial::russianRouletteAction(const Ray & ray, const Intersection & intersect) const
 {
+    glm::dvec3 vin = ray.getNormalizedDirection();
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -vin, value.value());
+    }
+
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
 
     glm::dvec3 halfway = glm::normalize(-vin + getReflectedVector(vin, normalSample.first));
@@ -93,14 +107,22 @@ ReflectiveMaterial::russianRouletteAction(const glm::dvec3 & vin,
 }
 
 std::pair<glm::dvec3, double> ReflectiveMaterial::sampleReflectionDirection(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
+    const Ray & ray, const Intersection & intersect) const
 {
+    glm::dvec3 vin = ray.getNormalizedDirection();
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -vin, value.value());
+    }
+
     auto normalSample = sampleNormalGGX(-vin, surfaceNormal, getRoughness());
     return std::make_pair(getReflectedVector(vin, normalSample.first), 1.0);
 }
 
 std::pair<glm::dvec3, double> ReflectiveMaterial::sampleRefractionDirection(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
+    const Ray & ray, const Intersection & intersect, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
 }

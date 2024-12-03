@@ -107,8 +107,8 @@ struct gr_light_ud {
   Light* light;
 };
 
-// The "userdata" type for a texture.
-struct gr_texture_ud {
+// The "userdata" type for a UV map.
+struct gr_uv_map_ud {
   std::shared_ptr<Image> image;
 };
 
@@ -351,13 +351,13 @@ int gr_light_cmd(lua_State* L)
   return 1;
 }
 
-// Make a Texture
+// Make a uv map
 extern "C"
-int gr_texture_cmd(lua_State* L)
+int gr_uv_map_cmd(lua_State* L)
 {
   GRLUA_DEBUG_CALL;
 
-  gr_texture_ud* data = (gr_texture_ud*)lua_newuserdata(L, sizeof(gr_texture_ud));
+  gr_uv_map_ud* data = (gr_uv_map_ud*)lua_newuserdata(L, sizeof(gr_uv_map_ud));
   data->image = nullptr;
 
 	const char* img_fName = luaL_checkstring(L, 1);
@@ -366,7 +366,7 @@ int gr_texture_cmd(lua_State* L)
 
   data->image = std::make_shared<Image>(img_fName);
 
-  luaL_newmetatable(L, "gr.texture");
+  luaL_newmetatable(L, "gr.uv_map");
   lua_setmetatable(L, -2);
 
   return 1;
@@ -668,24 +668,40 @@ int gr_node_gc_cmd(lua_State* L)
   return 0;
 }
 
-// set the texture of a material.
+// add a an albedo map to a material.
 extern "C"
-int gr_material_set_albedo_texture_cmd(lua_State* L)
+int gr_material_add_albedo_map_cmd(lua_State* L)
 {
   GRLUA_DEBUG_CALL;
 
   gr_material_ud* selfdata = (gr_material_ud*)luaL_checkudata(L, 1, "gr.material");
   luaL_argcheck(L, selfdata != 0, 1, "Material expected");
 
-  gr_texture_ud* texturedata = (gr_texture_ud*)luaL_checkudata(L, 2, "gr.texture");
-  luaL_argcheck(L, texturedata != 0, 2, "Texture expected");
+  gr_uv_map_ud* uvMapData = (gr_uv_map_ud*)luaL_checkudata(L, 2, "gr.uv_map");
+  luaL_argcheck(L, uvMapData != 0, 2, "Uv_Map expected");
 
   Material* material = selfdata->material;
 
-  // TODO testing
-  std::cout << "texture image width" << texturedata->image->width() << std::endl;
+  material->addAlbedoMap(uvMapData->image);
 
-  material->setAlbedoMap(texturedata->image);
+  return 0;
+}
+
+// add a normal map to a material.
+extern "C"
+int gr_material_add_normal_map_cmd(lua_State* L)
+{
+  GRLUA_DEBUG_CALL;
+
+  gr_material_ud* selfdata = (gr_material_ud*)luaL_checkudata(L, 1, "gr.material");
+  luaL_argcheck(L, selfdata != 0, 1, "Material expected");
+
+  gr_uv_map_ud* uvMapData = (gr_uv_map_ud*)luaL_checkudata(L, 2, "gr.uv_map");
+  luaL_argcheck(L, uvMapData != 0, 2, "Uv_Map expected");
+
+  Material* material = selfdata->material;
+
+  material->addNormalMap(uvMapData->image);
 
   return 0;
 }
@@ -708,7 +724,7 @@ static const luaL_Reg grlib_functions[] = {
   {"nh_box", gr_nh_box_cmd},
   {"mesh", gr_mesh_cmd},
   {"light", gr_light_cmd},
-  {"texture", gr_texture_cmd},
+  {"uv_map", gr_uv_map_cmd},
   {"render", gr_render_cmd},
   {0, 0}
 };
@@ -737,7 +753,8 @@ static const luaL_Reg grlib_node_methods[] = {
 };
 
 static const luaL_Reg grlib_material_methods[] = {
-  {"set_albedo_texture", gr_material_set_albedo_texture_cmd},
+  {"add_albedo_map", gr_material_add_albedo_map_cmd},
+  {"add_normal_map", gr_material_add_normal_map_cmd},
   {0, 0}
 };
 

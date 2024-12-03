@@ -1,14 +1,18 @@
-#include "Intersection.hpp"
 #include "IntersectionHelpers.hpp"
-#include "Ray.hpp"
-#include "Debug.hpp"
 
 #include <optional>
 #include <limits>
 
-#include "Clipping.hpp"
+#include <glm/ext.hpp>
 #include "glm/detail/func_geometric.hpp"
+
+#include "Intersection.hpp"
+#include "Ray.hpp"
+#include "Debug.hpp"
+#include "Clipping.hpp"
+#include "UVMap.hpp"
 #include "polyroots.hpp"
+
 // ---------- helpers ----------
 enum class CoordinatePlane{
  xz, xy, yz
@@ -119,8 +123,13 @@ std::optional<Intersection> findRaySphereIntersection(const Ray &ray,
             closestRoot = roots[1];
         }
 
-        return std::make_optional<Intersection>(closestRoot, evaluate(ray, closestRoot) - centre);
-    } else {
+        return std::make_optional<Intersection>(
+            closestRoot, evaluate(ray, closestRoot),
+            evaluate(ray, closestRoot) - centre,
+            UVLookup(getUnitSphereUVMap(evaluate(ray, closestRoot)), 0));
+    }
+    else
+    {
         return std::nullopt;
     }
 }
@@ -212,12 +221,44 @@ findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const glm::dvec
 
 std::optional<Intersection>
 findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const double &width) {
-    return findRayBoxIntersection(ray, corner, glm::dvec3(width, width, width));
+    double t = std::numeric_limits<double>::max();
+    glm::dvec4 normal;
+    glm::dvec4 position;
+    glm::dvec2 uvCoord;
+    unsigned int uvIndex;
+
+    for (size_t i = 0; i < 6; ++i) {
+        std::optional<Intersection> result{std::nullopt};
+
+        std::vector<glm::dvec4> boxFaceVertices =
+            getBoxFaceVertices(corner, glm::dvec3(width), i);
+
+        result = findRayPolygonIntersection(ray, boxFaceVertices);
+
+        if (result.has_value() && result->getT() < t && result->getT() >= 0.0) {
+            t = result->getT();
+            normal = result->getNormal();
+            position = evaluate(ray, t);
+
+            // DLOG("corner: %s", glm::to_string(corner).c_str())
+            // DLOG("position: %s", glm::to_string(position).c_str())
+
+            uvCoord = getUnitCubeFaceUVMap(glm::dvec3(position), boxFaceVertices, width);
+            uvIndex = i;
+        }
+    }
+
+    if (t != std::numeric_limits<double>::max())
+    {
+        return Intersection(t, position, normal, UVLookup(uvCoord, uvIndex));
+    } else {
+        return std::nullopt;
+    }
 }
 
 // -------------------------------------------------
 
-// clylinder radius 1, height 2
+// clylinder radius 1, from y = -1 to y = 1
 std::optional<Intersection>
 findRayCylinderIntersection(const Ray &ray) {
     std::optional<double> closestT = std::nullopt;

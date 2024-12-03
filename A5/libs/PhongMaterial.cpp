@@ -41,18 +41,25 @@ glm::dvec3 PhongMaterial::getRadiance(
 
     glm::dvec3 intersectionPoint = glm::dvec3(intersect.getPosition());
 
+    glm::dvec3 surfaceNormal = intersect.getNormalizedNormal();
+
+    if (auto value = lookup(m_normalMap, intersect.getUV(), true); value)
+    {
+        surfaceNormal = perturbVector(surfaceNormal, -ray.getNormalizedDirection(), value.value());
+    }
+
     for (const Light *light : lights)
     {
         glm::dvec3 normalizedLightVector =
             glm::normalize(glm::dvec3(light->position) - intersectionPoint);
 
         double lightDotNormal =
-            glm::dot(normalizedLightVector, intersect.getNormalizedNormal());
+            glm::dot(normalizedLightVector, surfaceNormal);
         double attenuationFactor = light->calculateAttenuation(intersectionPoint);
 
         glm::dvec3 reflectedVector =
             -normalizedLightVector +
-            2 * lightDotNormal * intersect.getNormalizedNormal();
+            2 * lightDotNormal * surfaceNormal;
 
         // difuse
         lightOut +=
@@ -72,7 +79,7 @@ glm::dvec3 PhongMaterial::getRadiance(
 }
 
 std::pair<glm::dvec3, double> PhongMaterial::sampleReflectionDirection(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal) const
+const Ray & ray, const Intersection & intersect) const
 {
     // TODO
     // sample based on roughness
@@ -80,7 +87,7 @@ std::pair<glm::dvec3, double> PhongMaterial::sampleReflectionDirection(
 }
 
 std::pair<glm::dvec3, double> PhongMaterial::sampleRefractionDirection(
-    const glm::dvec3 & vin, const glm::dvec3 & surfaceNormal, double ior1) const
+const Ray & ray, const Intersection & intersect, double ior1) const
 {
     return std::make_pair(glm::dvec3(0.0), 0.0);
 }

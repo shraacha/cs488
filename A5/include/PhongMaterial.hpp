@@ -25,11 +25,10 @@ class PhongMaterial : public Material
     double getShininess() const;
 
     virtual std::pair<glm::dvec3, double>
-    sampleReflectionDirection(const glm::dvec3 & vin,
-                              const glm::dvec3 & surfaceNormal) const override;
+    sampleReflectionDirection(const Ray & ray, const Intersection & intersect) const override;
+
     virtual std::pair<glm::dvec3, double>
-    sampleRefractionDirection(const glm::dvec3 & vin,
-                              const glm::dvec3 & surfaceNormal,
+    sampleRefractionDirection(const Ray & ray, const Intersection & intersect,
                               double ior1) const override;
   private:
     glm::vec3 m_kd;

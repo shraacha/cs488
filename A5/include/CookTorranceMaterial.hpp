@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "Material.hpp"
+#include "UVMap.hpp"
 
 class CookTorranceMaterial : public Material
 {
@@ -20,24 +21,21 @@ class CookTorranceMaterial : public Material
         const glm::dvec3 & refractionRadiance = glm::dvec3(0.0)) const override;
 
     virtual MaterialActionAndConstants
-    russianRouletteAction(const glm::dvec3 & vin,
-                          const glm::dvec3 & surfaceNormal) const override;
+    russianRouletteAction(const Ray & ray, const Intersection & intersect) const override;
 
     virtual std::pair<glm::dvec3, double>
-    sampleReflectionDirection(const glm::dvec3 & vin,
-                              const glm::dvec3 & surfaceNormal) const override;
+    sampleReflectionDirection(const Ray & ray, const Intersection & intersect) const override;
+
     virtual std::pair<glm::dvec3, double>
-    sampleRefractionDirection(const glm::dvec3 & vin,
-                              const glm::dvec3 & surfaceNormal,
+    sampleRefractionDirection(const Ray & ray, const Intersection & intersect,
                               double ior1) const override;
 
     virtual std::pair<glm::dvec3, double>
-    sampleDiffuseDirection(const glm::dvec3 & vin,
-                           const glm::dvec3 & surfaceNormal) const override;
+    sampleDiffuseDirection(const Ray & ray, const Intersection & intersect) const override;
 
     virtual glm::dvec3 getKS() const override;
     virtual glm::dvec3 getKD() const override;
-    virtual glm::dvec3 getAlbedo(std::optional<glm::dvec2> uvCoord = std::nullopt) const override;
+    virtual glm::dvec3 getAlbedo(const std::optional<UVLookup> & uvlookup = std::nullopt) const override;
 
     double getRoughness() const;
   private:

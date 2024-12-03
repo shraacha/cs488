@@ -16,3 +16,11 @@ glm::dmat3 getChangeOfBasis(glm::dvec3 up, glm::dvec3 coplanar)
 
     return changeOfBasis;
 }
+
+glm::dvec3 perturbVector(const glm::dvec3 & target,
+                         const glm::dvec3 & coplanarTarget,
+                         const glm::dvec3 & source)
+{
+    glm::dmat3 sourceToTarget = getChangeOfBasis(target, coplanarTarget);
+    return sourceToTarget * source;
+}

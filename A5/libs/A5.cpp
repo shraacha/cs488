@@ -121,10 +121,8 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
 
             if (material->isSpecularReflective())
             {
-                reflectionDir = material
-                        ->sampleReflectionDirection(
-                            glm::normalize(glm::dvec3(ray.getDirection())),
-                            intersect.getNormalizedNormal());
+                reflectionDir =
+                    material->sampleReflectionDirection(ray, intersect);
 
                 // TODO probability should be used in the calculation somewhere
                 reflectionRadiance = intersectAndGetColour(
@@ -138,10 +136,7 @@ intersectAndGetColour(const SceneManager & sceneManager, const Ray & ray,
             if (material->isTransmissiveRefractive())
             {
                 refractionDir =
-                    material
-                        ->sampleRefractionDirection(
-                            glm::normalize(glm::dvec3(ray.getDirection())),
-                            intersect.getNormalizedNormal(), ior) ;
+                    material->sampleRefractionDirection(ray, intersect, ior);
 
                 refractionRadiance = intersectAndGetColour(
                     sceneManager,
@@ -187,8 +182,8 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
     {
         Material *material = intersectionResult.value().second;
         Intersection & intersection = intersectionResult.value().first;
-        MaterialActionAndConstants materialAction = material->russianRouletteAction(
-            ray.getNormalizedDirection(), intersection.getNormalizedNormal());
+        MaterialActionAndConstants materialAction =
+            material->russianRouletteAction(ray, intersection);
         std::pair<glm::dvec3, double> newDirection;
 
         // check early termination criteria
@@ -214,9 +209,8 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
             if (materialAction.action == MaterialAction::Reflect)
             {
                 // sample direction
-                newDirection = material->sampleReflectionDirection(
-                    ray.getNormalizedDirection(),
-                    intersection.getNormalizedNormal());
+                newDirection =
+                    material->sampleReflectionDirection(ray, intersection);
 
                 // scale photon power otherwise it may blow up the scene
                 photon.piecewiseAverageScale(materialAction.kS);
@@ -224,9 +218,8 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
             else if (materialAction.action == MaterialAction::Transmit &&
                      material->isTransmissiveRefractive())
             {
-                newDirection = material->sampleRefractionDirection(
-                    ray.getNormalizedDirection(),
-                    intersection.getNormalizedNormal(), ior);
+                newDirection =
+                    material->sampleRefractionDirection(ray, intersection, ior);
 
                 // scale photon power otherwise it may blow up the scene
                 photon.piecewiseAverageScale(material->getAlbedo() *
@@ -236,9 +229,8 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
                      material->isTransmissiveReflective())
             {
                 // sample reflection direction
-                newDirection = material->sampleReflectionDirection(
-                    ray.getNormalizedDirection(),
-                    intersection.getNormalizedNormal());
+                newDirection =
+                    material->sampleReflectionDirection(ray, intersection);
 
                 // scale photon power otherwise it may blow up the scene
                 photon.piecewiseAverageScale(material->getAlbedo() *
@@ -247,9 +239,8 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
             else
             {
                 // sample diffusely
-                newDirection = material->sampleDiffuseDirection(
-                    ray.getNormalizedDirection(),
-                    intersection.getNormalizedNormal());
+                newDirection =
+                    material->sampleDiffuseDirection(ray, intersection);
 
                 // scale photon power otherwise it may blow up the scene
                 photon.piecewiseAverageScale(material->getAlbedo() *

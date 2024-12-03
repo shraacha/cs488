@@ -7,6 +7,10 @@ Intersection::Intersection(const double &t, const glm::dvec4 & position,
                            const glm::dvec4 & normal)
     : m_t{t}, m_position{position}, m_normal{normal} {}
 
+Intersection::Intersection(const double & t, const glm::dvec4 & position,
+                           const glm::dvec4 & normal, const UVLookup & uv)
+    : m_t{t}, m_position{position}, m_normal{normal}, m_uvLookup(uv) {}
+
 // member functions
 double Intersection::getT() const { return m_t; }
 
@@ -25,7 +29,7 @@ glm::dvec4 Intersection::getPosition() const
     return m_position;
 }
 
-std::optional<glm::dvec2> Intersection::getUV() const { return m_uv; }
+std::optional<UVLookup> Intersection::getUV() const { return m_uvLookup; }
 
 void Intersection::setT(const double &t)
 {
@@ -43,4 +47,4 @@ void Intersection::setPosition(const glm::dvec4 &position)
     m_position = position;
 }
 
-void Intersection::setUV(const glm::dvec2 & uv) { m_uv = uv; }
+void Intersection::setUV(const UVLookup & uv) { m_uvLookup = uv; }
