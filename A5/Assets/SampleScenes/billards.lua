@@ -27,7 +27,7 @@ blue_rough = gr.material_cook_torrance({0.1, 0.1, 0.7}, {0.01, 0.01, 0.01}, 0.9)
 white_rough = gr.material_cook_torrance({1.0, 1.0, 1.0}, {0.01, 0.01, 0.01}, 0.9)
 black_rough = gr.material_cook_torrance({0.0, 0.0, 0.0}, {0.01, 0.01, 0.01}, 0.9)
 
-white_reflective = gr.material_reflective({1.0, 1.0, 1.0}, 0.005)
+white_reflective = gr.material_reflective({1.0, 1.0, 1.0}, 0)
 green_reflective = gr.material_reflective({0.1, 1.0, 0.1}, 0.1)
 yellow_reflective = gr.material_reflective({0.6, 0.7, 0.1}, 0.1)
 
@@ -197,4 +197,4 @@ l2 = gr.light({0, 90, 100}, {0.85, 0.75, 0.6}, {1, 0, 0})
 
 gr.render(scene, 'sphere-texture-test.png', 512, 512,
 	  {-10, 70, 90}, {-5, 60, 7}, {0, 1, 0}, 60,
-	  {0.4, 0.4, 0.4}, {l1, l2}, 20, false, 2, 100, 80, true)
+	  {0.4, 0.4, 0.4}, {l1, l2}, 3, false, 2, 100, 80, true)
