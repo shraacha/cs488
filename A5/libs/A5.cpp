@@ -554,10 +554,11 @@ void A5_Render(
         render(sceneManager, image, camera, ambient, lightVector,
                getAllPixelCoordinates(image), numSamples, numThreads);
 
-        std::cout << "performing adaptive supersampling" << std::endl;
-
         if (adaptiveSupersampling)
         {
+            std::cout << std::endl
+                      << "performing adaptive supersampling" << std::endl;
+
             Image varianceImage = apply(
                 image, ImageKernel<1, glm::dvec3>(&varianceKernelFunc<1>));
             Image thresholdImage =
@@ -569,7 +570,6 @@ void A5_Render(
             std::vector<glm::uvec2> edgePixels =
                 getWhitePixelCoordinates(thresholdImage);
             DLOG("num threshold pixels: %ld", edgePixels.size())
-            ProgressBar progressBar(edgePixels.size());
 
             render(sceneManager, image, camera, ambient, lightVector,
                    edgePixels, numSamples, numThreads, 128, true, true);
