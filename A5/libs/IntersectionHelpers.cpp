@@ -250,7 +250,7 @@ findRayBoxIntersection(const Ray &ray, const glm::dvec4 &corner, const double &w
 
     if (t != std::numeric_limits<double>::max())
     {
-        return Intersection(t, position, normal, UVLookup(uvCoord, uvIndex));
+        return Intersection(t, position, glm::normalize(normal), UVLookup(uvCoord, uvIndex));
     } else {
         return std::nullopt;
     }
