@@ -68,8 +68,8 @@ class Material {
 
     material_type_t getTypeFlags() const;
 
-    void addAlbedoMap(const std::shared_ptr<Image> & map);
-    void addNormalMap(const std::shared_ptr<Image> & map);
+    void addAlbedoMap(Image * map);
+    void addNormalMap(Image * map);
 
     double getIOR() const;
     virtual glm::dvec3 getKS() const

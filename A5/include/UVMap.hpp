@@ -25,7 +25,7 @@ struct UVLookup {
  *    a cube).
  */
 struct UVMap {
-    std::vector<std::shared_ptr<Image>> m_textures;
+    std::vector<Image *> m_textures;
 
     std::optional<glm::dvec3> getValue(const UVLookup & uvLookup) const;
 };

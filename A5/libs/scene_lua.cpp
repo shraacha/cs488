@@ -109,7 +109,7 @@ struct gr_light_ud {
 
 // The "userdata" type for a UV map.
 struct gr_uv_map_ud {
-  std::shared_ptr<Image> image;
+  Image * image;
 };
 
 // Useful function to retrieve and check an n-tuple of numbers.
@@ -364,7 +364,7 @@ int gr_uv_map_cmd(lua_State* L)
 
   Image i(img_fName);
 
-  data->image = std::make_shared<Image>(img_fName);
+  data->image = new Image(img_fName);
 
   luaL_newmetatable(L, "gr.uv_map");
   lua_setmetatable(L, -2);
