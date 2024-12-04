@@ -1,38 +1,52 @@
 # Compilation
-To compile, use the default premake/make commands in the A4 directory:
+To compile, use the premake command in the A5 directory:
 
 ``` 
 $ premake4 gmake
-$ make
+```
+
+To compile the test suite, use:
+
+``` 
+$ make Tests
+```
+
+To compile the A5 executable, use:
+
+``` 
+$ make A5
 ```
 
 To run, `cd` to the assets directory and run:
 
 ``` 
-$ ../A4 ./<file.lua>
+$ ../A5 ./<file.lua>
 ```
 
 Note that the code uses C++17 features (this is reflected in the premake file). The graphics lab machines (`gl39`) seemed to support this.
 
 # Manual
 ## Sample Scenes
-My `sample.lua` scene is located in the `Assets` directory. All of my sample renders (including `sample.png`) can be found in `Assets/SampleImages`.
+Sample scenes can be found under `Assets/SampleScenes`. All of my sample renders can be found in `Assets/SampleImages`.
 
-## Extra Feature
-My extra feature is antialiasing via jittered supersampling. Here are some comparison images of renderer with AA off and on:
-
-### Non-AA scene
-![macho_cows_non_antialiased](./Assets/SampleImages/macho-cows-no-antialiasing.png)
-
-### Anti-aliased scene
-The image uses a 3x3 pixel subdivision.
-![macho_cows_antialiased](./Assets/SampleImages/macho-cows.png)
-
-## Unique Scene
-My unique scene `Assets/scene.lua` contains my puppet from A3, and the cow model. It pictures Alphonse transmuting a white cow sculpture (hence why its floating). The picture is included below as `screenshot.png`.
+## Shortcomings
+Due to time limitations, I was unable to implement soft shadows via area lights.
 
 # Images
+![screenshot](./screenshot.png)
 
-## Transmuted Cow Sculpture
-![screenshot_with_gui](./screenshot.png)
+# Objectives
+- [x] Cylinders and cone primitives are properly rendered.
+- [x] Adaptive antialiasing is applied to the correct portions of the scene.
+- [x] Objects are able to reflect light in the scene.
+- [x] Objects are able to refract light in the scene.
+- [ ] Soft shadows have been implemented.
+- [x] Texture mapping has been implemented.
+- [x] Normal mapping has been implemented.
+- [x] Photons for photon mapping can be cast into the scene and collected for lighting calculations.
+- [x] Photon maps can be used for caustic illumination calculations.
 
+# Extra Objectives
+- Multi threading is used to speed up the photon casting and ray tracing processes.
+- The Cook-Torrance material model is supported.
+- Glossy reflective and refractive surfaces are supported.
