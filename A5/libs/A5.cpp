@@ -24,6 +24,7 @@
 #include "NormalMaterial.hpp"
 #include "PhongMaterial.hpp"
 #include "Photon.hpp"
+#include "PhotonCollector.hpp"
 #include "PhotonMapHelpers.hpp"
 #include "Primitive.hpp"
 #include "ProgressBar.hpp"
@@ -310,49 +311,102 @@ castPhoton(const SceneManager & sceneManager, const Ray & ray, Photon & photon,
     }
 }
 
-static KDTree<Photon, double>
-createCausticPhotonMap(const SceneManager & sceneManager,
-                    const std::vector<const Light *> & lights,
-                    const glm::dvec3 & ambient, const double & ior,
-                    unsigned int maxDepth, unsigned int numSamples = 100)
+void photonMapDispatch(unsigned int numSamples, const SceneManager & sceneManager,
+                       const Light * light,
+                       const glm::dvec3 & ambient, const double & ior,
+                       unsigned int maxDepth, ProgressBar & progressBar, PhotonCollector & photonCollector)
 {
     std::vector<Photon> photons;
 
-    for (const auto * light : lights)
+    for (int i = 0; i < numSamples; i++)
     {
-        for (int i = 0; i < numSamples; i++)
+        Photon photon(light->colour);
+        // DLOG("photon power initial: %s",
+        // glm::to_string(photon.getPower()).c_str());
+
+        std::optional<Photon> result = castPhoton(
+            sceneManager, light->sampleRay().first, photon, ior, 1, maxDepth,
+            [](const MaterialAction & action, const Material & material) -> bool
+            {
+                return !(action == MaterialAction::Reflect ||
+                         action == MaterialAction::Transmit &&
+                             material.isTransmissiveRefractive() ||
+                         action == MaterialAction::Transmit &&
+                             material.isTransmissiveReflective() &&
+                             !material.isTransmissiveDiffuse());
+            });
+
+        if (result)
         {
-            Photon photon (light->colour);
-            // DLOG("photon power initial: %s", glm::to_string(photon.getPower()).c_str());
-
-            std::optional<Photon> result =
-                castPhoton(sceneManager, light->sampleRay().first, photon, ior,
-                           1, maxDepth,
-                           [](const MaterialAction & action,
-                              const Material & material) -> bool
-                           {
-                               return !(action == MaterialAction::Reflect ||
-                                        action == MaterialAction::Transmit &&
-                                            material.isTransmissiveRefractive()||
-                                        action == MaterialAction::Transmit &&
-                                            material.isTransmissiveReflective()&&
-                                            !material.isTransmissiveDiffuse());
-                           });
-
-            if (result)
-            {
-                // DLOG("photon colour: %s", glm::to_string(photon.getPower()).c_str());
-                photons.emplace_back(result.value());
-            }
-            else
-            {
-                --i;
-            }
+            // DLOG("photon colour: %s",
+            // glm::to_string(photon.getPower()).c_str());
+            photons.emplace_back(result.value());
+            ++progressBar;
+        }
+        else
+        {
+            --i;
         }
     }
 
+    photonCollector.addPhotons(photons);
+}
+
+static KDTree<Photon, double>
+createCausticPhotonMap(const SceneManager & sceneManager,
+                       const std::vector<const Light *> & lights,
+                       const glm::dvec3 & ambient, const double & ior,
+                       unsigned int maxDepth, unsigned int numThreads,
+                       unsigned int numSamples = 100)
+{
+    unsigned int photonsPerChunk = 128;
+
+    numThreads =
+        std::max(std::min(std::thread::hardware_concurrency(), numThreads), 1u);
+
+    ThreadPool threadPool(numThreads);
+
+    ProgressBar progressBar(lights.size() * numSamples);
+
+    PhotonCollector photonCollector;
+
+    for (const auto * light : lights)
+    {
+        unsigned int lightSamples = numSamples;
+
+        while (lightSamples > 0) {
+            unsigned int dispatchSamples;
+            if (lightSamples >= photonsPerChunk) {
+                dispatchSamples = photonsPerChunk;
+            } else {
+                dispatchSamples = lightSamples;
+            }
+            lightSamples -= dispatchSamples;
+
+            threadPool.queueJob(
+                [&, light, dispatchSamples]() {
+                    photonMapDispatch(dispatchSamples, sceneManager, light, ambient, ior,
+                                      maxDepth, progressBar, photonCollector);
+                });
+        }
+    }
+
+    DLOG("thread start");
+    threadPool.start();
+
+    // while thread pool is busy, update the progress bar output
+    while (threadPool.isBusy())
+    {
+        progressBar.conditionalOut(std::cout);
+    }
+
+    threadPool.stop();
+    DLOG("thread stop");
+
+    std::cout << progressBar;
+
     return KDTree<Photon, double>(
-        photons, {PhotonCompare1(), PhotonCompare2(), PhotonCompare3()},
+        photonCollector.m_photons, {PhotonCompare1(), PhotonCompare2(), PhotonCompare3()},
         {PhotonDistance1(), PhotonDistance2(), PhotonDistance3()});
 }
 
