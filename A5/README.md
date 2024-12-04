@@ -35,6 +35,10 @@ Due to time limitations, I was unable to implement soft shadows via area lights.
 # Images
 ![screenshot](./screenshot.png)
 
+![screenshot](./screenshot2.png)
+
+![screenshot](./screenshot3.png)
+
 # Objectives
 - [x] Cylinders and cone primitives are properly rendered.
 - [x] Adaptive antialiasing is applied to the correct portions of the scene.
