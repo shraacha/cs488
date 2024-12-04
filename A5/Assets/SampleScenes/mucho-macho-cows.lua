@@ -5,9 +5,9 @@
 -- We'll need an extra function that knows how to read Wavefront .OBJ
 -- files.
 
-stone = gr.material({0.8, 0.7, 0.7}, {0.0, 0.0, 0.0}, 0)
-grass = gr.material({0.1, 0.7, 0.1}, {0.0, 0.0, 0.0}, 0)
-hide = gr.material({0.84, 0.6, 0.53}, {0.3, 0.3, 0.3}, 20)
+stone = gr.material_cook_torrance({0.8, 0.7, 0.7}, {0.0, 0.0, 0.0}, 1)
+grass = gr.material_cook_torrance({0.1, 0.7, 0.1}, {0.0, 0.0, 0.0}, 1)
+hide = gr.material_cook_torrance({0.84, 0.6, 0.53}, {0.3, 0.3, 0.3}, 0)
 
 -- ##############################################
 -- the arch
@@ -106,7 +106,6 @@ lights = {gr.light({10, 5, 25}, {0.8, 0.8, 0.8}, {1, 0, 0.0005})}
 --{0, 2, 30}, {0, 0, -1}, {0, 1, 0}, 50,
 imSize = 512
 --{200, 202, 430}
-gr.render(scene,
-	  'real-macho-cows-newview.png', imSize, imSize,
+gr.render(scene, 'real-macho-cows-newview.png', imSize, imSize,
 	  {20.8, 2, 21}, {-1.1, -0.1, -1}, {0, 1, 0.5}, 50,
-	  {0.4, 0.4, 0.4}, lights)
+	  {0.4, 0.4, 0.4}, lights, 1, false, 2, 400, 1, false, 2)
