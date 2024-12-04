@@ -8,7 +8,7 @@ mat_ball4 = gr.material_cook_torrance({0.1, 1.0, 0.1}, {0.5, 0.5, 0.5}, 0.3)
 mat_ball4:add_albedo_map(tex_ball4)
 
 normal_map = gr.uv_map("./textures/normal_map_example.png")
-mat_normal_map = gr.material_cook_torrance({0.5, 1.0, 0.5}, {0.5, 0.5, 0.5}, 0.3)
+mat_normal_map = gr.material_cook_torrance({0.5, 1.0, 0.5}, {0.5, 0.5, 0.5}, 0.1)
 mat_normal_map:add_normal_map(normal_map)
 
 mat_normal_cube = gr.material_cook_torrance({0.3, 0.3, 0.8}, {0.01, 0.01, 0.01}, 0.7)
@@ -194,7 +194,8 @@ mirror:translate(1.5, 6.5, -19.9)
 -- The lights
 l1 = gr.light({0, 90, -20}, {0.85, 0.75, 0.6}, {0.3, 0, 0})
 l2 = gr.light({0, 90, 100}, {0.85, 0.75, 0.6}, {1, 0, 0})
+l3 = gr.light({30, 70, -20}, {0.85, 0.75, 0.6}, {1, 0, 0})
 
 gr.render(scene, 'billiards.png', 512, 512,
 	  {-10, 70, 90}, {-5, 60, 7}, {0, 1, 0}, 60,
-	  {0.4, 0.4, 0.4}, {l1, l2}, 1, true, 2, 1000, 80, false, 2)
+	  {0.4, 0.4, 0.4}, {l1, l2, l3}, 1, false, 2, 150000, 80, false, 2)

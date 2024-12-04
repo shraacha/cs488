@@ -1386,7 +1386,8 @@ head_cheek_stripe_2:set_material(black)
 -- The lights
 l1 = gr.light({0, 90, -20}, {0.85, 0.75, 0.6}, {0.3, 0, 0})
 l2 = gr.light({0, 90, 100}, {0.85, 0.75, 0.6}, {1, 0, 0})
+l3 = gr.light({30, 70, -20}, {0.85, 0.75, 0.6}, {1, 0, 0})
 
 gr.render(scene, 'billiards-with-alphonse.png', 768, 512,
 	  {-4, 70, 90}, {-9, 60, 7}, {0, 1, 0}, 60,
-	  {0.4, 0.4, 0.4}, {l1, l2}, 5, false, 2, 200000, 80, false, 2)
+	  {0.4, 0.4, 0.4}, {l1, l2, l3}, 9, false, 2, 200000, 80, true, 2)
