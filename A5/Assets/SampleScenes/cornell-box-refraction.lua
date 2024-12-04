@@ -70,7 +70,7 @@ front:translate(0, 5, 10)
 sphere = gr.sphere('sphere')
 scene:add_child(sphere)
 sphere:set_material(blue_refractive)
-sphere:scale(1.5, 0.2, 1.5)
+sphere:scale(1.5, 1.5, 1.5)
 sphere:rotate('X', 25)
 sphere:translate(-2, 3, -3)
 
@@ -86,4 +86,4 @@ l1 = gr.light({0, 90, -20}, {0.95, 0.85, 0.7}, {1, 0, 0})
 
 gr.render(scene, 'cornell-box-refraction.png', 512, 512,
 	  {0, 50, 80}, {0, 50, 7}, {0, 1, 0}, 60,
-	  {0.4, 0.4, 0.4}, {l1}, 3, false, 2, 3000, 4, false, 2)
+	  {0.4, 0.4, 0.4}, {l1}, 3, false, 2, 10000, 4, false, 2)
