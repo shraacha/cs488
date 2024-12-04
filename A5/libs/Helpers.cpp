@@ -15,7 +15,10 @@ double getRandNeg1To1()
 
 int intRand(const int & min, const int & max)
 {
-    static thread_local std::mt19937 generator;
+    std::random_device r;
+    // Choose a random mean between 1 and 6
+    std::default_random_engine e1(r());
+    // static thread_local std::mt19937 generator;
     std::uniform_int_distribution<int> distribution(min, max);
-    return distribution(generator);
+    return distribution(e1);
 }
