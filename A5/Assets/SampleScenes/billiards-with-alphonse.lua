@@ -1,26 +1,213 @@
--- materials
-mat1 = gr.material({0.7, 1.0, 0.7}, {0.5, 0.7, 0.5}, 25)
+-- mats
+tex_ball8 = gr.uv_map("./textures/Ball8.png")
+mat_ball8 = gr.material_cook_torrance({0.1, 1.0, 0.1}, {0.5, 0.5, 0.5}, 0.3)
+mat_ball8:add_albedo_map(tex_ball8)
 
-black = gr.material({0, 0, 0}, {0, 0, 0}, 0)
+tex_ball4 = gr.uv_map("./textures/Ball4.png")
+mat_ball4 = gr.material_cook_torrance({0.1, 1.0, 0.1}, {0.5, 0.5, 0.5}, 0.3)
+mat_ball4:add_albedo_map(tex_ball4)
 
-black_leather = gr.material({0, 0, 0}, {0.1, 0.1, 0.1}, 1)
-brown_leather = gr.material({0.21, 0.097, 0.019}, {0.1, 0.1, 0.1}, 1)
+normal_map = gr.uv_map("./textures/normal_map_example.png")
+mat_normal_map = gr.material_cook_torrance({0.5, 1.0, 0.5}, {0.5, 0.5, 0.5}, 0.3)
+mat_normal_map:add_normal_map(normal_map)
 
-metal = gr.material_reflective({0.2, 0.7, 0.7}, 0.1)
+mat_normal_cube = gr.material_cook_torrance({0.3, 0.3, 0.8}, {0.01, 0.01, 0.01}, 0.7)
+mat_normal_cube:add_normal_map(normal_map)
+mat_normal_cube:add_normal_map(normal_map)
+mat_normal_cube:add_normal_map(normal_map)
+mat_normal_cube:add_normal_map(normal_map)
+mat_normal_cube:add_normal_map(normal_map)
+mat_normal_cube:add_normal_map(normal_map)
 
-shiny_red = gr.material({1.0, 0, 0}, {1.0, 1.0, 1.0}, 5)
+red_rough = gr.material_cook_torrance({1.0, 0.1, 0.1}, {0.01, 0.01, 0.01}, 0.9)
+dark_red_rough = gr.material_cook_torrance({0.6, 0.1, 0.1}, {0.01, 0.01, 0.01}, 0.9)
+green_rough = gr.material_cook_torrance({0.1, 0.7, 0.1}, {0.01, 0.01, 0.01}, 0.9)
+dark_green_rough = gr.material_cook_torrance({0.1, 0.5, 0.1}, {0.01, 0.01, 0.01}, 0.9)
+blue_rough = gr.material_cook_torrance({0.1, 0.1, 0.7}, {0.01, 0.01, 0.01}, 0.9)
+white_rough = gr.material_cook_torrance({1.0, 1.0, 1.0}, {0.01, 0.01, 0.01}, 0.9)
+black_rough = gr.material_cook_torrance({0.0, 0.0, 0.0}, {0.01, 0.01, 0.01}, 0.9)
 
-wood = gr.material({0.28, 0.05, 0.09}, {0.2, 0.1, 0.1}, 1)
+white_reflective = gr.material_reflective({1.0, 1.0, 1.0}, 0)
+green_reflective = gr.material_reflective({0.1, 1.0, 0.1}, 0.1)
+yellow_reflective = gr.material_reflective({0.6, 0.7, 0.1}, 0.1)
 
-green = gr.material_cook_torrance({0.1, 0.7, 0.1}, {0.01, 0.01, 0.01}, 0.9)
-leaf_colour = gr.material_cook_torrance({0.1, 0.7, 0.1}, {0.01, 0.01, 0.01}, 0.9)
+white_refractive = gr.material_refractive({1.0, 1.0, 1.0}, 0.05, 2.0)
+red_refractive = gr.material_refractive({1.0, 0.5, 0.3}, 0.05, 2.0)
 
-hide = gr.material({0.84, 0.84, 0.84}, {0.3, 0.3, 0.3}, 20)
+wood = gr.material_cook_torrance({1.0, 0.7, 0.5}, {0.01, 0.01, 0.01}, 0.7)
 
+scene = gr.node('scene')
+scene:scale(10, 10 , 10)
+scene:translate(-2, 10, 0)
+
+black = gr.material_cook_torrance({0.0, 0.0, 0.0}, {0.01, 0.01, 0.01}, 0.9)
+
+black_leather = gr.material_cook_torrance({0, 0, 0}, {0.1, 0.1, 0.1}, 0.9)
+brown_leather = gr.material_cook_torrance({0.21, 0.097, 0.019}, {0.1, 0.1, 0.1}, 0.9)
+
+metal = gr.material_reflective({1.0, 1.0, 1.0}, 0.1)
+
+shiny_red = gr.material_cook_torrance({1.0, 0.2, 0.2}, {0.01, 0.01, 0.01}, 0.3)
+
+-- the floor
+floor = gr.mesh( 'floor', 'plane.obj' )
+scene:add_child(floor)
+floor:set_material(dark_red_rough)
+floor:scale(30, 1, 30)
+
+-- ceil
+ceil = gr.mesh( 'ceil', 'plane.obj' )
+scene:add_child(ceil)
+ceil:set_material(white_rough)
+ceil:scale(30, 1, 30)
+ceil:rotate('Z', 180)
+ceil:translate(0, 10, 0)
+
+-- back
+back = gr.mesh( 'back', 'plane.obj' )
+scene:add_child(back)
+back:set_material(white_rough)
+back:scale(20, 1, 20)
+back:rotate('X', 90)
+back:translate(0, 0, -20)
+
+-- front
+front = gr.mesh( 'front', 'plane.obj' )
+scene:add_child(front)
+front:set_material(white_rough)
+front:scale(30, 1, 30)
+front:rotate('X', -90)
+front:translate(0, 10, 10)
+
+-- left
+left = gr.mesh( 'left', 'plane.obj' )
+scene:add_child(left)
+left:set_material(white_rough)
+left:scale(30, 1, 30)
+left:rotate('Z', -90)
+left:translate(-20, 10, 0)
+
+-- right
+right = gr.mesh( 'right', 'plane.obj' )
+scene:add_child(right)
+right:set_material(white_rough)
+right:scale(30, 1, 30)
+right:rotate('Z', 90)
+right:translate(20, 0, 0)
+
+-- The Stuff
+
+-- table
+table = gr.node('table')
+scene:add_child(table)
+table:translate(0.5, 4, 0)
+
+tableTop = gr.mesh( 'tableTop', 'plane.obj' )
+table:add_child(tableTop)
+tableTop:set_material(dark_green_rough)
+tableTop:scale(4, 1, 7)
+
+tableBarLeft = gr.cube('tableBarLeft')
+table:add_child(tableBarLeft)
+tableBarLeft:set_material(wood)
+tableBarLeft:scale(0.5, 0.5, 16)
+tableBarLeft:translate(-4, 0, -8)
+
+tableBarRight = gr.cube('tableBarRight')
+table:add_child(tableBarRight)
+tableBarRight:set_material(wood)
+tableBarRight:scale(0.5, 0.5, 16)
+tableBarRight:translate(4, 0, -8)
+
+tableBarBack = gr.cube('tableBarBack')
+table:add_child(tableBarBack)
+tableBarBack:set_material(wood)
+tableBarBack:scale(8, 0.5, 0.5)
+tableBarBack:translate(-4, 0, -8)
+
+tableBarFront = gr.cube('tableBarFront')
+table:add_child(tableBarFront)
+tableBarFront:set_material(wood)
+tableBarFront:scale(8, 0.5, 0.5)
+tableBarFront:translate(-4, 0, 8)
+
+
+-- stuff
+ball8 = gr.sphere('ball8')
+scene:add_child(ball8)
+ball8:set_material(mat_ball8)
+ball8:rotate('X', -15)
+ball8:rotate('Y', -25)
+ball8:scale(0.5, 0.5, 0.5)
+ball8:translate(1.5, 4.5, 4.5)
+
+ball4 = gr.sphere('ball4')
+scene:add_child(ball4)
+ball4:set_material(mat_ball4)
+ball4:rotate('X', -45)
+ball4:rotate('Y', 25)
+ball4:scale(0.5, 0.5, 0.5)
+ball4:translate(-1.5, 4.5, 5.5)
+
+normalCube = gr.cube('normalCube')
+scene:add_child(normalCube)
+normalCube:set_material(mat_normal_cube)
+normalCube:rotate('Y', 45)
+normalCube:translate(0.6, 4.0, 0)
+
+ball = gr.sphere('ball')
+scene:add_child(ball)
+ball:set_material(red_refractive)
+ball:scale(0.5, 0.5, 0.5)
+ball:translate(-0.5, 4.5, 2.8)
+
+-- pole
+pole_node = gr.node('pole_node')
+scene:add_child(pole_node)
+pole_node:scale(1.3, 1, 1.3)
+pole_node:translate(10, 3, -9.5)
+
+pole = gr.cylinder('pole')
+pole_node:add_child(pole)
+pole:set_material(yellow_reflective)
+pole:scale(0.3, 5, 0.3)
+
+hook1_to_pole = gr.node('hook1_to_pole')
+pole_node:add_child(hook1_to_pole)
+hook1_to_pole:translate(0.5, 3, 0)
+
+hook1 = gr.cylinder('hook1')
+hook1_to_pole:add_child(hook1)
+hook1:set_material(yellow_reflective)
+hook1:scale(0.1, 0.5, 0.1)
+hook1:rotate('Z', -60)
+
+hook2_to_pole = gr.node('hook2_to_pole')
+pole_node:add_child(hook2_to_pole)
+hook2_to_pole:translate(-0.4, 4, 0)
+
+hook2 = gr.cylinder('hook2')
+hook2_to_pole:add_child(hook2)
+hook2:set_material(yellow_reflective)
+hook2:scale(0.1, 0.5, 0.1)
+hook2:rotate('Z', 60)
+
+-- mirror
+mirror = gr.mesh( 'mirror', 'plane.obj' )
+scene:add_child(mirror)
+mirror:set_material(white_reflective)
+mirror:scale(8, 1, 2.5)
+mirror:rotate('X', 90)
+mirror:translate(1.5, 6.5, -19.9)
+
+-- al
 --- A puppet of Alphonse Elric from the Anime Fullmetal Alchemist
 
 alphonse = gr.node('alphonse')
-alphonse:scale(4, 4, 4)
+scene:add_child(alphonse)
+alphonse:scale(1.5, 1.5, 1.5)
+alphonse:rotate('Y', 65)
+alphonse:translate(-5, 4, 1)
 
 -- START OF HIP
 hip = gr.node('hip')
@@ -38,7 +225,7 @@ left_leg_joint_to_hip_connector = gr.node('left_leg_joint_to_hip_connector')
 hip:add_child(left_leg_joint_to_hip_connector)
 left_leg_joint_to_hip_connector:translate(0.27, -0.17, 0)
 
-left_leg_joint = gr.joint('left_leg_joint', {-90, -90, 10}, {0, 0, 0})
+left_leg_joint = gr.joint('left_leg_joint', {-90, 0, 10}, {0, 0, 0})
 left_leg_joint_to_hip_connector:add_child(left_leg_joint)
 
 -- LEFT LEG JOINT GEOMETRY
@@ -119,7 +306,7 @@ left_knee_joint_to_upper_leg_connector = gr.node('left_knee_joint_to_upper_leg_c
 left_upper_leg:add_child(left_knee_joint_to_upper_leg_connector)
 left_knee_joint_to_upper_leg_connector:translate(0.04, -1, -0.01)
 
-left_knee_joint = gr.joint('left_knee_joint', {0, 90, 90}, {0, 0, 0})
+left_knee_joint = gr.joint('left_knee_joint', {0, 0, 90}, {0, 0, 0})
 left_knee_joint_to_upper_leg_connector:add_child(left_knee_joint)
 
 -- KNEE GEOMETRY
@@ -262,7 +449,7 @@ right_leg_joint_to_hip_connector = gr.node('right_leg_joint_to_hip_connector')
 hip:add_child(right_leg_joint_to_hip_connector)
 right_leg_joint_to_hip_connector:translate(-0.27, -0.17, 0)
 
-right_leg_joint = gr.joint('right_leg_joint', {-90, -90, 10}, {0, 0, 0})
+right_leg_joint = gr.joint('right_leg_joint', {-90, 0, 10}, {0, 0, 0})
 right_leg_joint_to_hip_connector:add_child(right_leg_joint)
 
 -- RIGHT LEG JOINT GEOMETRY
@@ -343,7 +530,7 @@ right_knee_joint_to_upper_leg_connector = gr.node('right_knee_joint_to_upper_leg
 right_upper_leg:add_child(right_knee_joint_to_upper_leg_connector)
 right_knee_joint_to_upper_leg_connector:translate(-0.01, -1, 0.005)
 
-right_knee_joint = gr.joint('right_knee_joint', {0, 90, 90}, {0, 0, 0})
+right_knee_joint = gr.joint('right_knee_joint', {0, 0, 90}, {0, 0, 0})
 right_knee_joint_to_upper_leg_connector:add_child(right_knee_joint)
 
 -- KNEE GEOMETRY
@@ -818,7 +1005,7 @@ left_elbow_joint_to_upper_arm_connector = gr.node('left_elbow_joint_to_upper_arm
 left_upper_arm:add_child(left_elbow_joint_to_upper_arm_connector)
 left_elbow_joint_to_upper_arm_connector:translate(0.08, -0.6, 0.01)
 
-left_elbow_joint = gr.joint('left_elbow_joint', {-110, -35, 0}, {0, 0, 0})
+left_elbow_joint = gr.joint('left_elbow_joint', {-110, -50, 0}, {0, 0, 0})
 left_elbow_joint_to_upper_arm_connector:add_child(left_elbow_joint)
 
 left_lower_arm = gr.node("left_lower_arm")
@@ -898,7 +1085,7 @@ right_shoulder_joint_to_torso_connector = gr.node('right_shoulder_joint_to_torso
 torso:add_child(right_shoulder_joint_to_torso_connector)
 right_shoulder_joint_to_torso_connector:translate(-1.0, 1.2, 0.0)
 
-right_shoulder_joint = gr.joint('right_shoulder_joint', {-120, -35, 10}, {0, 0, 0})
+right_shoulder_joint = gr.joint('right_shoulder_joint', {-120, -10, 10}, {0, 0, 0})
 right_shoulder_joint_to_torso_connector:add_child(right_shoulder_joint)
 
 right_upper_arm = gr.node('right_upper_arm')
@@ -942,7 +1129,7 @@ right_elbow_joint_to_upper_arm_connector = gr.node('right_elbow_joint_to_upper_a
 right_upper_arm:add_child(right_elbow_joint_to_upper_arm_connector)
 right_elbow_joint_to_upper_arm_connector:translate(-0.08, -0.6, 0.01)
 
-right_elbow_joint = gr.joint('right_elbow_joint', {-110, -35, 0}, {0, 0, 0})
+right_elbow_joint = gr.joint('right_elbow_joint', {-110, 0, 0}, {0, 0, 0})
 right_elbow_joint_to_upper_arm_connector:add_child(right_elbow_joint)
 
 right_lower_arm = gr.node("right_lower_arm")
@@ -1035,7 +1222,7 @@ head_joint_to_neck_connector = gr.node('head_joint_to_neck_connector')
 neck:add_child(head_joint_to_neck_connector)
 head_joint_to_neck_connector:translate(0.0, 0.4, 0)
 
-head_joint = gr.joint("head_joint", {0.0, 0.0, 0.0}, {-15, 0, 15})
+head_joint = gr.joint("head_joint", {0.0, 0.0, 0.0}, {-15, -10, 15})
 head_joint_to_neck_connector:add_child(head_joint)
 
 head = gr.node("head")
@@ -1195,70 +1382,11 @@ head_cheek_stripe_2:rotate('y', -70.7389646676906)
 head_cheek_stripe_2:translate(0.1316719502210617, 0.15924543142318726, 0.32841622829437256)
 head_cheek_stripe_2:set_material(black)
 
--- END OF HEAD
-
--- scene
-scene_root = gr.node('root')
-scene_root:rotate('Y', -60)
-scene_root:rotate('X', 15)
-
-
--- adding character
-alphonse_to_scene = gr.node('alphonse_to_scene')
-alphonse_to_scene:add_child(alphonse)
-alphonse_to_scene:translate(2, 9, -7)
-scene_root:add_child(alphonse_to_scene)
-
--- box
-box = gr.cube( 'box' )
-scene_root:add_child(box)
-box:scale(4, 4, 4)
-box:translate(0, 4, -9)
-box:set_material(wood)
-
--- tree
-tree = gr.node('tree')
-scene_root:add_child(tree)
-
-log = gr.mesh('log', 'cylinder.obj')
-scene_root:add_child(log)
-log:scale(4, 15, 4)
-log:translate(-35, 0, 0)
-log:set_material(wood)
-
-leaves = gr.sphere('leaves')
-scene_root:add_child(leaves)
-leaves:scale(12, 12, 12)
-leaves:translate(-35, 20, 0)
-leaves:set_material(leaf_colour)
-
--- floor
-plane = gr.mesh( 'plane', 'plane.obj' )
-scene_root:add_child(plane)
-plane:set_material(green)
-plane:rotate('Y', 60)
-plane:scale(100, 100, 100)
-
-
--- cow
-cow_poly = gr.mesh('cow', 'cow.obj')
-factor = 1.5
-
-cow_poly:set_material(hide)
-
-cow_poly:translate(0.0, 3.637, 5)
-cow_poly:scale(factor, factor, factor)
-cow_poly:translate(0.0, 5, 0.0)
-
-scene_root:add_child(cow_poly)
-
-
 
 -- The lights
-l1 = gr.light({200,200,400}, {0.8, 0.6, 0.6}, {1, 0, 0})
-l2 = gr.light({0, 5, -20}, {0.5, 0.4, 0.4}, {1, 0, 0})
-l3 = gr.light({200,200,-400}, {1, 0.525, 0}, {1, 2, 2})
+l1 = gr.light({0, 90, -20}, {0.85, 0.75, 0.6}, {0.3, 0, 0})
+l2 = gr.light({0, 90, 100}, {0.85, 0.75, 0.6}, {1, 0, 0})
 
-gr.render(scene_root, 'sample.png', 256, 256,
-	  {-4, 20, 42}, {0, -0.1, -1}, {0, 1, 0}, 50,
-	  {0.3, 0.3, 0.3}, {l1, l2, l3}, 3, false, 2, 0, 4, false, 2)
+gr.render(scene, 'billiards-with-alphonse.png', 768, 512,
+	  {-4, 70, 90}, {-9, 60, 7}, {0, 1, 0}, 60,
+	  {0.4, 0.4, 0.4}, {l1, l2}, 1, false, 2, 300, 80, false, 2)

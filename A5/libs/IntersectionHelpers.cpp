@@ -390,8 +390,12 @@ findRayPolygonIntersection(const Ray &ray, const std::vector<glm::dvec4> &vertic
         DLOG("findRayPolygonIntersection: less than 3 vertices supplied");
     }
 
-    glm::dvec4 polyNormal(glm::cross(glm::dvec3(vertices[2] - vertices[1]), glm::dvec3(vertices[0] - vertices[1])), 0.0);
-    std::optional<double> t = findRayPlaneIntersect(ray, polyNormal, vertices[0]);
+    glm::dvec4 polyNormal(
+        glm::normalize(glm::cross(glm::dvec3(vertices[2] - vertices[1]),
+                                  glm::dvec3(vertices[0] - vertices[1]))),
+        0.0);
+    std::optional<double> t =
+        findRayPlaneIntersect(ray, polyNormal, vertices[0]);
 
     CoordinatePlane closestCoordinatePlane = getClosestCoordinatePlane(polyNormal);
     VertexOrder order = isNonCoordinatePlaneValueNonNegative(polyNormal, closestCoordinatePlane) ? VertexOrder::CCW : VertexOrder::CW;

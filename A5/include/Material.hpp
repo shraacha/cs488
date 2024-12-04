@@ -83,25 +83,25 @@ class Material {
     double getIOR() const;
     virtual glm::dvec3 getKS() const
     {
-        DLOG("base getKS called");
+        // DLOG("base getKS called");
         return c_defaultDVec3;
     }
     virtual glm::dvec3 getKD() const
     {
-        DLOG("base getKD called");
+        // DLOG("base getKD called");
         return c_defaultDVec3;
     }
 
     virtual glm::dvec3 getAlbedo(const std::optional<UVLookup> & uvLookup = std::nullopt) const
     {
-        DLOG("base getAlbedo called");
+        // DLOG("base getAlbedo called");
         return c_defaultDVec3;
     }
 
     virtual MaterialActionAndConstants
     russianRouletteAction(const Ray & ray, const Intersection & intersect) const
     {
-        DLOG("base russianRouletteAction called");
+        // DLOG("base russianRouletteAction called");
         return {MaterialAction::Absorb, glm::dvec3(0.0), glm::dvec3(0.0)};
     }
 
@@ -116,7 +116,7 @@ class Material {
     sampleDiffuseDirection(const Ray & ray, const Intersection & intersect) const
 
     {
-        DLOG("base sampleDiffuseDirection called");
+        // DLOG("base sampleDiffuseDirection called");
         return c_defaultDVec3DoublePair;
     }
 

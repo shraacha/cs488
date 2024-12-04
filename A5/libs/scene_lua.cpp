@@ -427,10 +427,12 @@ int gr_render_cmd(lua_State* L)
   lua_isboolean(L, 16);
   bool adaptiveSupersampling = lua_toboolean(L, 16);
 
+  unsigned int maxDepth = luaL_checknumber(L, 17);
+
   Image im(width, height);
   A5_Render(root->node, im, eye, view, up, fov, ambient, lights, numSamples,
             visualizePhotons, photonRadiusVisualization, numPhotons,
-            numThreads, adaptiveSupersampling);
+            numThreads, adaptiveSupersampling, maxDepth);
   im.savePng(filename);
 
   return 0;

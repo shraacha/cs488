@@ -1,26 +1,82 @@
 -- materials
-mat1 = gr.material({0.7, 1.0, 0.7}, {0.5, 0.7, 0.5}, 25)
 
-black = gr.material({0, 0, 0}, {0, 0, 0}, 0)
+red_rough = gr.material_cook_torrance({1.0, 0.1, 0.1}, {0.01, 0.01, 0.01}, 0.9)
+green_rough = gr.material_cook_torrance({0.1, 0.7, 0.1}, {0.01, 0.01, 0.01}, 0.9)
+blue_rough = gr.material_cook_torrance({0.1, 0.1, 0.7}, {0.01, 0.01, 0.01}, 0.9)
+white_rough = gr.material_cook_torrance({1.0, 1.0, 1.0}, {0.01, 0.01, 0.01}, 0.9)
+black_rough = gr.material_cook_torrance({0.0, 0.0, 0.0}, {0.01, 0.01, 0.01}, 0.9)
 
-black_leather = gr.material({0, 0, 0}, {0.1, 0.1, 0.1}, 1)
-brown_leather = gr.material({0.21, 0.097, 0.019}, {0.1, 0.1, 0.1}, 1)
+white_reflective = gr.material_reflective({1.0, 1.0, 1.0}, 0.1)
+green_reflective = gr.material_reflective({0.1, 1.0, 0.1}, 0.1)
 
-metal = gr.material_reflective({0.2, 0.7, 0.7}, 0.1)
+black = gr.material_cook_torrance({0.0, 0.0, 0.0}, {0.01, 0.01, 0.01}, 0.9)
 
-shiny_red = gr.material({1.0, 0, 0}, {1.0, 1.0, 1.0}, 5)
+black_leather = gr.material_cook_torrance({0, 0, 0}, {0.1, 0.1, 0.1}, 0.9)
+brown_leather = gr.material_cook_torrance({0.21, 0.097, 0.019}, {0.1, 0.1, 0.1}, 0.9)
 
-wood = gr.material({0.28, 0.05, 0.09}, {0.2, 0.1, 0.1}, 1)
+metal = gr.material_reflective({1.0, 1.0, 1.0}, 0.1)
 
-green = gr.material_cook_torrance({0.1, 0.7, 0.1}, {0.01, 0.01, 0.01}, 0.9)
-leaf_colour = gr.material_cook_torrance({0.1, 0.7, 0.1}, {0.01, 0.01, 0.01}, 0.9)
+shiny_red = gr.material_reflective({1.0, 0.1, 0.1}, 0.1)
 
-hide = gr.material({0.84, 0.84, 0.84}, {0.3, 0.3, 0.3}, 20)
+-- Scene
+scene = gr.node('scene')
+scene:scale(10, 10 , 10)
+
+-- The Box
+-- the floor
+floor = gr.mesh( 'floor', 'plane.obj' )
+scene:add_child(floor)
+floor:set_material(white_rough)
+floor:scale(10, 1, 10)
+
+-- left
+left = gr.mesh( 'left', 'plane.obj' )
+scene:add_child(left)
+left:set_material(green_rough)
+left:scale(10, 1, 10)
+left:rotate('Z', -90)
+left:translate(-5, 10, 0)
+
+-- right
+right = gr.mesh( 'right', 'plane.obj' )
+scene:add_child(right)
+right:set_material(red_rough)
+right:scale(10, 1, 10)
+right:rotate('Z', 90)
+right:translate(5, 0, 0)
+
+-- ceil
+ceil = gr.mesh( 'ceil', 'plane.obj' )
+scene:add_child(ceil)
+ceil:set_material(white_rough)
+ceil:scale(10, 1, 10)
+ceil:rotate('Z', 180)
+ceil:translate(0, 10, 0)
+
+-- back
+back = gr.mesh( 'back', 'plane.obj' )
+scene:add_child(back)
+back:set_material(white_rough)
+back:scale(10, 1, 10)
+back:rotate('X', 90)
+back:translate(0, 0, -10)
+
+-- front
+front = gr.mesh( 'front', 'plane.obj' )
+scene:add_child(front)
+front:set_material(black_rough)
+front:scale(10, 1, 10)
+front:rotate('X', -90)
+front:translate(0, 5, 10)
+
+-- The Stuff
 
 --- A puppet of Alphonse Elric from the Anime Fullmetal Alchemist
 
 alphonse = gr.node('alphonse')
-alphonse:scale(4, 4, 4)
+scene:add_child(alphonse)
+alphonse:scale(1.5, 1.5, 1.5)
+alphonse:translate(0, 2, -4)
 
 -- START OF HIP
 hip = gr.node('hip')
@@ -38,7 +94,7 @@ left_leg_joint_to_hip_connector = gr.node('left_leg_joint_to_hip_connector')
 hip:add_child(left_leg_joint_to_hip_connector)
 left_leg_joint_to_hip_connector:translate(0.27, -0.17, 0)
 
-left_leg_joint = gr.joint('left_leg_joint', {-90, -90, 10}, {0, 0, 0})
+left_leg_joint = gr.joint('left_leg_joint', {-90, 0, 10}, {0, 0, 0})
 left_leg_joint_to_hip_connector:add_child(left_leg_joint)
 
 -- LEFT LEG JOINT GEOMETRY
@@ -119,7 +175,7 @@ left_knee_joint_to_upper_leg_connector = gr.node('left_knee_joint_to_upper_leg_c
 left_upper_leg:add_child(left_knee_joint_to_upper_leg_connector)
 left_knee_joint_to_upper_leg_connector:translate(0.04, -1, -0.01)
 
-left_knee_joint = gr.joint('left_knee_joint', {0, 90, 90}, {0, 0, 0})
+left_knee_joint = gr.joint('left_knee_joint', {0, 0, 90}, {0, 0, 0})
 left_knee_joint_to_upper_leg_connector:add_child(left_knee_joint)
 
 -- KNEE GEOMETRY
@@ -262,7 +318,7 @@ right_leg_joint_to_hip_connector = gr.node('right_leg_joint_to_hip_connector')
 hip:add_child(right_leg_joint_to_hip_connector)
 right_leg_joint_to_hip_connector:translate(-0.27, -0.17, 0)
 
-right_leg_joint = gr.joint('right_leg_joint', {-90, -90, 10}, {0, 0, 0})
+right_leg_joint = gr.joint('right_leg_joint', {-90, 0, 10}, {0, 0, 0})
 right_leg_joint_to_hip_connector:add_child(right_leg_joint)
 
 -- RIGHT LEG JOINT GEOMETRY
@@ -343,7 +399,7 @@ right_knee_joint_to_upper_leg_connector = gr.node('right_knee_joint_to_upper_leg
 right_upper_leg:add_child(right_knee_joint_to_upper_leg_connector)
 right_knee_joint_to_upper_leg_connector:translate(-0.01, -1, 0.005)
 
-right_knee_joint = gr.joint('right_knee_joint', {0, 90, 90}, {0, 0, 0})
+right_knee_joint = gr.joint('right_knee_joint', {0, 0, 90}, {0, 0, 0})
 right_knee_joint_to_upper_leg_connector:add_child(right_knee_joint)
 
 -- KNEE GEOMETRY
@@ -1197,68 +1253,21 @@ head_cheek_stripe_2:set_material(black)
 
 -- END OF HEAD
 
--- scene
-scene_root = gr.node('root')
-scene_root:rotate('Y', -60)
-scene_root:rotate('X', 15)
 
 
--- adding character
-alphonse_to_scene = gr.node('alphonse_to_scene')
-alphonse_to_scene:add_child(alphonse)
-alphonse_to_scene:translate(2, 9, -7)
-scene_root:add_child(alphonse_to_scene)
-
--- box
-box = gr.cube( 'box' )
-scene_root:add_child(box)
-box:scale(4, 4, 4)
-box:translate(0, 4, -9)
-box:set_material(wood)
-
--- tree
-tree = gr.node('tree')
-scene_root:add_child(tree)
-
-log = gr.mesh('log', 'cylinder.obj')
-scene_root:add_child(log)
-log:scale(4, 15, 4)
-log:translate(-35, 0, 0)
-log:set_material(wood)
-
-leaves = gr.sphere('leaves')
-scene_root:add_child(leaves)
-leaves:scale(12, 12, 12)
-leaves:translate(-35, 20, 0)
-leaves:set_material(leaf_colour)
-
--- floor
-plane = gr.mesh( 'plane', 'plane.obj' )
-scene_root:add_child(plane)
-plane:set_material(green)
-plane:rotate('Y', 60)
-plane:scale(100, 100, 100)
 
 
--- cow
-cow_poly = gr.mesh('cow', 'cow.obj')
-factor = 1.5
 
-cow_poly:set_material(hide)
 
-cow_poly:translate(0.0, 3.637, 5)
-cow_poly:scale(factor, factor, factor)
-cow_poly:translate(0.0, 5, 0.0)
 
-scene_root:add_child(cow_poly)
+
 
 
 
 -- The lights
-l1 = gr.light({200,200,400}, {0.8, 0.6, 0.6}, {1, 0, 0})
-l2 = gr.light({0, 5, -20}, {0.5, 0.4, 0.4}, {1, 0, 0})
-l3 = gr.light({200,200,-400}, {1, 0.525, 0}, {1, 2, 2})
+l1 = gr.light({0, 90, -20}, {0.95, 0.85, 0.7}, {1, 0, 0})
+l2 = gr.light({0, 90, 0}, {0.95, 0.85, 0.7}, {1, 0, 0})
 
-gr.render(scene_root, 'sample.png', 256, 256,
-	  {-4, 20, 42}, {0, -0.1, -1}, {0, 1, 0}, 50,
-	  {0.3, 0.3, 0.3}, {l1, l2, l3}, 3, false, 2, 0, 4, false, 2)
+gr.render(scene, 'cornell-box-reflection.png', 128, 128,
+	  {0, 50, 80}, {0, 50, 7}, {0, 1, 0}, 60,
+	  {0.4, 0.4, 0.4}, {l1, l2}, 3, false, 2, 100, 80, false, 2)

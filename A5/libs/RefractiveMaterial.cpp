@@ -79,7 +79,7 @@ glm::dvec3 RefractiveMaterial::getRadiance(
     double nDotL =
         std::max(glm::dot(surfaceNormal, normalizedLightVector), 0.0);
     lightOut += scaleFactor *
-                (kD * refractionRadiance +
+                (kD * getAlbedo(intersect.getUV()) * refractionRadiance +
                  kS * specular * reflectionRadiance) *
                 nDotL;
 
@@ -141,6 +141,6 @@ std::pair<glm::dvec3, double> RefractiveMaterial::sampleRefractionDirection(
     }
     else
     {
-        return std::make_pair(glm::dvec3(0.0), 0.0);
+        return std::make_pair(getReflectedVector(vin, normalSample.first), normalSample.second);
     }
 }

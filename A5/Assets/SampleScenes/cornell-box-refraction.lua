@@ -10,6 +10,7 @@ white_reflective = gr.material_reflective({1.0, 1.0, 1.0}, 0.1)
 green_reflective = gr.material_reflective({0.1, 1.0, 0.1}, 0.1)
 
 white_refractive = gr.material_refractive({1.0, 1.0, 1.0}, 0.05, 2.0)
+blue_refractive = gr.material_refractive({0.3, 0.3, 1.0}, 0.05, 2.0)
 
 -- green_rough = gr.material({0.1, 0.7, 0.1}, {0.5, 0.5, 0.5}, 10)
 -- white_rough = gr.material({1.0, 1.0, 1.0}, {0.5, 0.5, 0.5}, 10)
@@ -68,8 +69,9 @@ front:translate(0, 5, 10)
 -- The Stuff
 sphere = gr.sphere('sphere')
 scene:add_child(sphere)
-sphere:set_material(white_refractive)
-sphere:scale(1.5, 1.5, 1.5)
+sphere:set_material(blue_refractive)
+sphere:scale(1.5, 0.2, 1.5)
+sphere:rotate('X', 25)
 sphere:translate(-2, 3, -3)
 
 cube = gr.cube('cube')
@@ -84,4 +86,4 @@ l1 = gr.light({0, 90, -20}, {0.95, 0.85, 0.7}, {1, 0, 0})
 
 gr.render(scene, 'cornell-box-refraction.png', 512, 512,
 	  {0, 50, 80}, {0, 50, 7}, {0, 1, 0}, 60,
-	  {0.4, 0.4, 0.4}, {l1}, 3, false, 2, 200, 4, false)
+	  {0.4, 0.4, 0.4}, {l1}, 3, false, 2, 3000, 4, false, 2)
