@@ -54,3 +54,11 @@ Due to time limitations, I was unable to implement soft shadows via area lights.
 - Multi threading is used to speed up the photon casting and ray tracing processes.
 - The Cook-Torrance material model is supported.
 - Glossy reflective and refractive surfaces are supported.
+
+# Credits
+- stack overflow user "PhD AP EcE" for providing information about writing a Thread Pool class. I found the forum thread very helpful as I was struggling to understand how to efficiently use threads to perform computations without losing performance to deleting threads. That can be found [here](https://stackoverflow.com/questions/15752659/thread-pooling-in-c11).
+
+
+- the writer of ~LearnOpenGL~ for providing a [helpful explanation](https://learnopengl.com/PBR/Theory) of the Cook-Torrance model, and providing a shader implementation that I was able to adapt for my ray tracer. 
+
+- thank you to [Robin Wood](https://www.robinwood.com/Catalog/FreeStuff/Textures/TextureSet.html) , and [Julian Herzog](https://commons.wikimedia.org/wiki/File:Normal_map_example_-_Map.png) for the fre billiard ball texture maps, and test normal maps respectively.
