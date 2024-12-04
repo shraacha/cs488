@@ -647,7 +647,7 @@ void A5_Render(
 
     Camera camera(eye, view, up, fovy);
 
-    auto kdTree = createCausticPhotonMap(sceneManager, lightVector, ambient, 1, 10, numPhotons);
+    auto kdTree = createCausticPhotonMap(sceneManager, lightVector, ambient, 1, 10, numThreads, numPhotons);
 
     unsigned int numPhotonsToAccumulate = 20;
 
